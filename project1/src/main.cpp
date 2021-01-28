@@ -56,6 +56,7 @@ void monte_carlo()
     const int n_variations = 100;
     const int n_mc_cycles = 1e5;
     const int seed = 1337;
+    const int n_particles = 1;
     const double y = 0;
     const double z = 0;
     const double beta = 0;
@@ -81,13 +82,12 @@ void monte_carlo()
 
     for (int i = 0; i < n_variations; i++)
     {   
-        alpha += 0.05;
+        alpha += 0.02;
         alphas[i] = alpha;
 
         e_expectation_squared = 0;
         x_current = dx*(uniform(engine) - 0.5);
         wave_current = wave_function_exponent(x_current, y, z, alphas[i], beta);
-        // wave_current = wave_function(x_current, y, z, alphas[i], beta);
 
         for (int _ = 0; _ < n_mc_cycles; _++)
         {   /*
@@ -95,16 +95,14 @@ void monte_carlo()
             */
             
             x_new = x_current + dx*(uniform(engine) - 0.5);
-            // wave_new = wave_function(x_new, y, z, alphas[i], beta);
             wave_new = wave_function_exponent(x_new, y, z, alphas[i], beta);
             exponential_diff = 2*(wave_new - wave_current);
 
-            // if (uniform(engine) < (wave_new*wave_new/(wave_current*wave_current)))
             if (uniform(engine) < std::exp(exponential_diff))
             {   /*
                 Perform the Metropolis algorithm.  To save one exponential
                 calculation, the difference is taken of the exponents instead
-                of the ratio of the exponentials. 
+                of the ratio of the exponentials. Marginally better...
                 */
                 x_current = x_new;
                 wave_current = wave_new;
@@ -123,8 +121,8 @@ void monte_carlo()
 
     outfile.open("outfile.txt", std::ios::out);
     outfile << std::setw(20) << "alpha";
-    outfile << std::setw(20) << "var";
-    outfile << std::setw(21) << "exp\n";
+    outfile << std::setw(20) << "variance_energy";
+    outfile << std::setw(21) << "expected_energy\n";
 
     for (int i = 0; i < n_variations; i++)
     {   /*
@@ -137,7 +135,6 @@ void monte_carlo()
         outfile << std::setw(20) << std::setprecision(10);
         outfile << e_expectations[i] << "\n";
     }
-
 
     outfile.close();
 }
