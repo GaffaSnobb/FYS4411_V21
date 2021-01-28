@@ -50,114 +50,131 @@ double local_energy(double x, double alpha)
     return -hbar*hbar*alpha/m*(2*alpha*x*x - 1) + 0.5*m*omega*x*x;
 }
 
+void allocate(double ***arr, int n_rows, int n_cols)
+{   
+    *arr = new double*[n_cols];
+    (*arr)[0] = new double[n_cols*n_rows];
+    for (int i = 1; i < n_cols; i++)
+    {   
+        (*arr)[i] = (*arr)[i-1] + n_rows;
+    }
+}
+
 
 void monte_carlo()
 {
     const int n_variations = 100;
     const int n_mc_cycles = 1e4;
     const int seed = 1337;
-    const int n_particles = 100;
+    const int n_particles = 100;        // Number of particles.
+    const int n_dims = 3;               // Number of spatial dimenstions.
     const double y = 0;
     const double z = 0;
     const double beta = 0;
 
-    double dx = 1;                  // Step size.
-    // double x_current = 0;           // Current step.
-    double x_current[n_particles];
-    double x_new[n_particles];
-    // double x_new = 0;               // Proposed new step.
+    double dx = 1;                      // Step size.
+    double alpha = 0;                   // Intial value.
+    double e_expectation_squared;
+    double de;                          // Energy step size.
+    double exponential_diff;
+    // double x_current[n_particles];      // Current step.
+    double **x_current = 0;
+    std::cout << x_current << std::endl;
+    allocate(&x_current, n_dims, n_particles);
+    double x_new[n_particles];          // Proposed new step.
     double alphas[n_variations];
     double e_variances[n_variations];
     double e_expectations[n_variations] = {0};
-    double alpha = 0;             // Intial value.
-    double e_expectation_squared;
-    double de;                      // Energy step size.
-    // double wave_current;            // Current wave function.
-    double wave_current[n_particles];
-    // double wave_new;                // Proposed new wave function.
-    double wave_new[n_particles];
+    double wave_current[n_particles];   // Current wave function.
+    double wave_new[n_particles];       // Proposed new wave function.
 
+    // x_current = new double*[n_particles];
+    // x_current[0] = new double[n_particles*n_dims];
+    // for (int i = 1; i < n_particles; i++)
+    // {
+    //     x_current[i] = x_current[i-1] + n_dims;
+    // }
+
+
+    x_current[2][3] = 99;
+
+    std::cout << x_current[2][3] << std::endl;
+
+    // std::ofstream outfile;
     
+    // std::mt19937 engine(seed);      // Seed the random engine which uses mersenne twister.
+    // std::uniform_real_distribution<double> uniform;  // Create continuous uniform distribution.
 
-    double exponential_diff;
+    // for (int i = 0; i < n_variations; i++)
+    // {   /*
+    //     Run over all variations.
+    //     */
+    //     alpha += 0.02;
+    //     alphas[i] = alpha;
 
-    std::ofstream outfile;
-    
-    std::mt19937 engine(seed);      // Seed the random engine which uses mersenne twister.
-    std::uniform_real_distribution<double> uniform;  // Create continuous uniform distribution.
-
-    for (int i = 0; i < n_variations; i++)
-    {   
-        alpha += 0.02;
-        alphas[i] = alpha;
-
-        e_expectation_squared = 0;
-        // x_current = dx*(uniform(engine) - 0.5);
+    //     e_expectation_squared = 0;
         
-        for (int particle = 0; particle < n_particles; particle++)
-        {
-            x_current[particle] = dx*(uniform(engine) - 0.5);
-            wave_current[particle] = wave_function_exponent(x_current[particle], y, z, alphas[i], beta);
-        }
-        
-        // wave_current = wave_function_exponent(x_current, y, z, alphas[i], beta);
+    //     for (int particle = 0; particle < n_particles; particle++)
+    //     {
+    //         x_current[particle] = dx*(uniform(engine) - 0.5);
+    //         wave_current[particle] = wave_function_exponent(x_current[particle], y, z, alphas[i], beta);
+    //     }
 
-        for (int _ = 0; _ < n_mc_cycles; _++)
-        {   /*
-            Run over all Monte Carlo cycles.
-            */
+    //     for (int _ = 0; _ < n_mc_cycles; _++)
+    //     {   /*
+    //         Run over all Monte Carlo cycles.
+    //         */
 
-            for (int particle = 0; particle < n_particles; particle++)
-            {
-                x_new[particle] = x_current[particle] + dx*(uniform(engine) - 0.5);
-                wave_new[particle] = wave_function_exponent(x_new[particle], y, z, alphas[i], beta);
-                exponential_diff = 2*(wave_new[particle] - wave_current[particle]);
+    //         for (int particle = 0; particle < n_particles; particle++)
+    //         {
+    //             x_new[particle] = x_current[particle] + dx*(uniform(engine) - 0.5);
+    //             wave_new[particle] = wave_function_exponent(x_new[particle], y, z, alphas[i], beta);
+    //             exponential_diff = 2*(wave_new[particle] - wave_current[particle]);
                 
-                if (uniform(engine) < std::exp(exponential_diff))
-                {   /*
-                    Perform the Metropolis algorithm.  To save one exponential
-                    calculation, the difference is taken of the exponents instead
-                    of the ratio of the exponentials. Marginally better...
-                    */
-                    x_current[particle] = x_new[particle];
-                    wave_current[particle] = wave_new[particle];
-                }
+    //             if (uniform(engine) < std::exp(exponential_diff))
+    //             {   /*
+    //                 Perform the Metropolis algorithm.  To save one exponential
+    //                 calculation, the difference is taken of the exponents
+    //                 instead of the ratio of the exponentials. Marginally
+    //                 better...
+    //                 */
+    //                 x_current[particle] = x_new[particle];
+    //                 wave_current[particle] = wave_new[particle];
+    //             }
                 
-                de = local_energy(x_current[particle], alphas[i]);
-                e_expectations[i] += de;
-                e_expectation_squared += de*de;
-            }
-            
-            // x_new = x_current + dx*(uniform(engine) - 0.5);
-            // wave_new = wave_function_exponent(x_new, y, z, alphas[i], beta);
+    //             de = local_energy(x_current[particle], alphas[i]);
+    //             e_expectations[i] += de;
+    //             e_expectation_squared += de*de;
+    //         }
+    //     }
 
+    //     e_expectations[i] /= n_mc_cycles;
+    //     e_expectation_squared /= n_mc_cycles;
+    //     e_variances[i] = e_expectation_squared - e_expectations[i]*e_expectations[i];
 
-        }
+    // }
 
-        e_expectations[i] /= n_mc_cycles;
-        e_expectation_squared /= n_mc_cycles;
-        e_variances[i] = e_expectation_squared - e_expectations[i]*e_expectations[i];
+    // outfile.open("outfile.txt", std::ios::out);
+    // outfile << std::setw(20) << "alpha";
+    // outfile << std::setw(20) << "variance_energy";
+    // outfile << std::setw(21) << "expected_energy\n";
 
-    }
+    // for (int i = 0; i < n_variations; i++)
+    // {   /*
+    //     Write data to file.
+    //     */
+    //     outfile << std::setw(20) << std::setprecision(10);
+    //     outfile << alphas[i];
+    //     outfile << std::setw(20) << std::setprecision(10);
+    //     outfile << e_variances[i];
+    //     outfile << std::setw(20) << std::setprecision(10);
+    //     outfile << e_expectations[i] << "\n";
+    // }
 
-    outfile.open("outfile.txt", std::ios::out);
-    outfile << std::setw(20) << "alpha";
-    outfile << std::setw(20) << "variance_energy";
-    outfile << std::setw(21) << "expected_energy\n";
+    // outfile.close();
 
-    for (int i = 0; i < n_variations; i++)
-    {   /*
-        Write data to file.
-        */
-        outfile << std::setw(20) << std::setprecision(10);
-        outfile << alphas[i];
-        outfile << std::setw(20) << std::setprecision(10);
-        outfile << e_variances[i];
-        outfile << std::setw(20) << std::setprecision(10);
-        outfile << e_expectations[i] << "\n";
-    }
-
-    outfile.close();
+    delete[] x_current[0];
+    delete[] x_current;
 }
 
 
