@@ -30,6 +30,11 @@ double wave_function(double x, double y, double z, double alpha, double beta)
     return std::exp(-alpha*(x*x + y*y + beta*z*z));
 }
 
+double wave_function_exponent(double x, double y, double z, double alpha, double beta)
+{   
+    return -alpha*(x*x + y*y + beta*z*z);
+}
+
 double local_energy(double x, double alpha)
 {   /*
     Analytical expression for the local energy for n particles, 1 dimension.
@@ -67,13 +72,12 @@ void monte_carlo()
     double wave_current;            // Current wave function.
     double wave_new;                // Proposed new wave function.
 
-    double ratio;
+    double exponential_diff;
 
     std::ofstream outfile;
     
     std::mt19937 engine(seed);      // Seed the random engine which uses mersenne twister.
     std::uniform_real_distribution<double> uniform;  // Create continuous uniform distribution.
-    // std::cout << uniform(engine) << std::endl;
 
     for (int i = 0; i < n_variations; i++)
     {   
@@ -82,22 +86,25 @@ void monte_carlo()
 
         e_expectation_squared = 0;
         x_current = dx*(uniform(engine) - 0.5);
+        wave_current = wave_function_exponent(x_current, y, z, alphas[i], beta);
         // wave_current = wave_function(x_current, y, z, alphas[i], beta);
-        wave_new = -alphas[i]*(x_current*x_current);
 
         for (int _ = 0; _ < n_mc_cycles; _++)
         {   /*
             Run over all Monte Carlo cycles.
             */
+            
             x_new = x_current + dx*(uniform(engine) - 0.5);
             // wave_new = wave_function(x_new, y, z, alphas[i], beta);
-            wave_new = -alphas[i]*(x_new*x_new);
-            ratio = 2*(wave_new - wave_current);
+            wave_new = wave_function_exponent(x_new, y, z, alphas[i], beta);
+            exponential_diff = 2*(wave_new - wave_current);
 
             // if (uniform(engine) < (wave_new*wave_new/(wave_current*wave_current)))
-            if (uniform(engine) < ratio)
+            if (uniform(engine) < std::exp(exponential_diff))
             {   /*
-                Perform the Metropolis algorithm.
+                Perform the Metropolis algorithm.  To save one exponential
+                calculation, the difference is taken of the exponents instead
+                of the ratio of the exponentials. 
                 */
                 x_current = x_new;
                 wave_current = wave_new;
@@ -115,19 +122,19 @@ void monte_carlo()
     }
 
     outfile.open("outfile.txt", std::ios::out);
-    outfile << std::setw(15) << "alpha";
-    outfile << std::setw(15) << "var";
-    outfile << std::setw(16) << "exp\n";
+    outfile << std::setw(20) << "alpha";
+    outfile << std::setw(20) << "var";
+    outfile << std::setw(21) << "exp\n";
 
     for (int i = 0; i < n_variations; i++)
     {   /*
         Write data to file.
         */
-        outfile << std::setw(15) << std::setprecision(10);
+        outfile << std::setw(20) << std::setprecision(10);
         outfile << alphas[i];
-        outfile << std::setw(15) << std::setprecision(10);
+        outfile << std::setw(20) << std::setprecision(10);
         outfile << e_variances[i];
-        outfile << std::setw(15) << std::setprecision(10);
+        outfile << std::setw(20) << std::setprecision(10);
         outfile << e_expectations[i] << "\n";
     }
 
