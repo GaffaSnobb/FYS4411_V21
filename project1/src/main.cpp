@@ -54,24 +54,30 @@ double local_energy(double x, double alpha)
 void monte_carlo()
 {
     const int n_variations = 100;
-    const int n_mc_cycles = 1e5;
+    const int n_mc_cycles = 1e4;
     const int seed = 1337;
-    const int n_particles = 1;
+    const int n_particles = 100;
     const double y = 0;
     const double z = 0;
     const double beta = 0;
 
     double dx = 1;                  // Step size.
-    double x_current = 0;           // Current step.
-    double x_new = 0;               // Proposed new step.
+    // double x_current = 0;           // Current step.
+    double x_current[n_particles];
+    double x_new[n_particles];
+    // double x_new = 0;               // Proposed new step.
     double alphas[n_variations];
     double e_variances[n_variations];
     double e_expectations[n_variations] = {0};
     double alpha = 0;             // Intial value.
     double e_expectation_squared;
     double de;                      // Energy step size.
-    double wave_current;            // Current wave function.
-    double wave_new;                // Proposed new wave function.
+    // double wave_current;            // Current wave function.
+    double wave_current[n_particles];
+    // double wave_new;                // Proposed new wave function.
+    double wave_new[n_particles];
+
+    
 
     double exponential_diff;
 
@@ -86,31 +92,46 @@ void monte_carlo()
         alphas[i] = alpha;
 
         e_expectation_squared = 0;
-        x_current = dx*(uniform(engine) - 0.5);
-        wave_current = wave_function_exponent(x_current, y, z, alphas[i], beta);
+        // x_current = dx*(uniform(engine) - 0.5);
+        
+        for (int particle = 0; particle < n_particles; particle++)
+        {
+            x_current[particle] = dx*(uniform(engine) - 0.5);
+            wave_current[particle] = wave_function_exponent(x_current[particle], y, z, alphas[i], beta);
+        }
+        
+        // wave_current = wave_function_exponent(x_current, y, z, alphas[i], beta);
 
         for (int _ = 0; _ < n_mc_cycles; _++)
         {   /*
             Run over all Monte Carlo cycles.
             */
-            
-            x_new = x_current + dx*(uniform(engine) - 0.5);
-            wave_new = wave_function_exponent(x_new, y, z, alphas[i], beta);
-            exponential_diff = 2*(wave_new - wave_current);
 
-            if (uniform(engine) < std::exp(exponential_diff))
-            {   /*
-                Perform the Metropolis algorithm.  To save one exponential
-                calculation, the difference is taken of the exponents instead
-                of the ratio of the exponentials. Marginally better...
-                */
-                x_current = x_new;
-                wave_current = wave_new;
+            for (int particle = 0; particle < n_particles; particle++)
+            {
+                x_new[particle] = x_current[particle] + dx*(uniform(engine) - 0.5);
+                wave_new[particle] = wave_function_exponent(x_new[particle], y, z, alphas[i], beta);
+                exponential_diff = 2*(wave_new[particle] - wave_current[particle]);
+                
+                if (uniform(engine) < std::exp(exponential_diff))
+                {   /*
+                    Perform the Metropolis algorithm.  To save one exponential
+                    calculation, the difference is taken of the exponents instead
+                    of the ratio of the exponentials. Marginally better...
+                    */
+                    x_current[particle] = x_new[particle];
+                    wave_current[particle] = wave_new[particle];
+                }
+                
+                de = local_energy(x_current[particle], alphas[i]);
+                e_expectations[i] += de;
+                e_expectation_squared += de*de;
             }
+            
+            // x_new = x_current + dx*(uniform(engine) - 0.5);
+            // wave_new = wave_function_exponent(x_new, y, z, alphas[i], beta);
 
-            de = local_energy(x_current, alphas[i]);
-            e_expectations[i] += de;
-            e_expectation_squared += de*de;
+
         }
 
         e_expectations[i] /= n_mc_cycles;
