@@ -67,11 +67,12 @@ void monte_carlo()
     arma::Mat<double> pos_new(n_dims, n_particles);
     arma::Mat<double> pos_current(n_dims, n_particles);
 
-    double alphas[n_variations];
-    double e_variances[n_variations];
-    double e_expectations[n_variations] = {0};
-    double wave_current[n_particles];   // Current wave function.
-    double wave_new[n_particles];       // Proposed new wave function.
+    arma::Col<double> alphas(n_variations);
+    arma::Col<double> wave_current(n_particles);    // Current wave function.
+    arma::Col<double> wave_new(n_particles);        // Proposed new wave function.
+    arma::Col<double> e_variances(n_variations);    // Energy variances.
+    arma::Col<double> e_expectations(n_variations); // Energy expectation values.
+    e_expectations.zeros();
 
     std::ofstream outfile;
     std::mt19937 engine(seed);      // Seed the random engine which uses mersenne twister.
@@ -82,7 +83,7 @@ void monte_carlo()
         Run over all variations.
         */
         alpha += 0.02;
-        alphas[i] = alpha;
+        alphas(i) = alpha;
 
         e_expectation_squared = 0;
 
@@ -94,12 +95,12 @@ void monte_carlo()
             pos_current(0, particle) = step_size*(uniform(engine) - 0.5);
             pos_current(1, particle) = step_size*(uniform(engine) - 0.5);
             pos_current(2, particle) = step_size*(uniform(engine) - 0.5);
-            wave_current[particle] =
+            wave_current(particle) =
                 wave_function_exponent(
                     pos_current(0, particle),   // x.
                     pos_current(1, particle),   // y.
                     pos_current(2, particle),   // z.
-                    alphas[i],
+                    alphas(i),
                     beta
                 );
         }
@@ -121,11 +122,11 @@ void monte_carlo()
                         pos_new(0, particle),   // x.
                         pos_new(1, particle),   // y.
                         pos_new(2, particle),   // z.
-                        alphas[i],
+                        alphas(i),
                         beta
                     );
 
-                exponential_diff = 2*(wave_new[particle] - wave_current[particle]);
+                exponential_diff = 2*(wave_new(particle) - wave_current(particle));
 
                 if (uniform(engine) < std::exp(exponential_diff))
                 {   /*
@@ -137,25 +138,25 @@ void monte_carlo()
                     pos_current(0, particle) = pos_new(0, particle);
                     pos_current(1, particle) = pos_new(1, particle);
                     pos_current(2, particle) = pos_new(2, particle);
-                    wave_current[particle] = wave_new[particle];
+                    wave_current(particle) = wave_new(particle);
                 }
 
                 de = local_energy_3d(
                     pos_current(0, particle),
                     pos_current(1, particle),
                     pos_current(2, particle),
-                    alphas[i]
+                    alphas(i)
                 );
-                // de = local_energy_1d(pos_current[0][particle], alphas[i]);
+                // de = local_energy_1d(pos_current[0][particle], alphas(i));
 
-                e_expectations[i] += de;
+                e_expectations(i) += de;
                 e_expectation_squared += de*de;
             }
         }
 
-        e_expectations[i] /= n_mc_cycles;
+        e_expectations(i) /= n_mc_cycles;
         e_expectation_squared /= n_mc_cycles;
-        e_variances[i] = e_expectation_squared - e_expectations[i]*e_expectations[i];
+        e_variances(i) = e_expectation_squared - e_expectations(i)*e_expectations(i);
 
     }
 
@@ -169,11 +170,11 @@ void monte_carlo()
         Write data to file.
         */
         outfile << std::setw(20) << std::setprecision(10);
-        outfile << alphas[i];
+        outfile << alphas(i);
         outfile << std::setw(20) << std::setprecision(10);
-        outfile << e_variances[i];
+        outfile << e_variances(i);
         outfile << std::setw(20) << std::setprecision(10);
-        outfile << e_expectations[i] << "\n";
+        outfile << e_expectations(i) << "\n";
     }
 
     outfile.close();
