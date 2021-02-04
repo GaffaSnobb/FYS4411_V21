@@ -47,20 +47,6 @@ double local_energy_3d(double x, double y, double z, double alpha)
     return -hbar*hbar*alpha/m*(2*alpha*x*x - 1) + 0.5*m*omega*x*x;
 }
 
-void allocate(double ***arr, int n_rows, int n_cols)
-{   /*
-    Generalised allocator for dynamic arrays on the heap.  We should
-    prob. use armadillo vectors or something alike instead...
-    */
-    *arr = new double*[n_cols];
-    (*arr)[0] = new double[n_cols*n_rows];
-    for (int i = 1; i < n_cols; i++)
-    {
-        (*arr)[i] = (*arr)[i-1] + n_rows;
-    }
-}
-
-
 void monte_carlo()
 {
     char fpath[] = "generated_data/output.txt";
@@ -69,8 +55,6 @@ void monte_carlo()
     const int seed = 1337;
     const int n_particles = 100;        // Number of particles.
     const int n_dims = 3;               // Number of spatial dimenstions.
-    const double y = 0;
-    const double z = 0;
     const double beta = 0;
 
     double step_size = 1;                      // Step size.
@@ -79,13 +63,8 @@ void monte_carlo()
     double de;                          // Energy step size.
     double exponential_diff;
 
-    // double **pos_current = 0;   // xyz position at current step.
-    // allocate(&pos_current, n_dims, n_particles);
-    // double **pos_new = 0;   // xyz position at proposed new step.
-    // allocate(&pos_new, n_dims, n_particles);
-
-    double pos_new[n_particles];          // Proposed new step.
-    double pos_current[n_particles];    
+    double pos_new[n_dims][n_particles];    // Proposed new position.
+    double pos_current[n_dims][n_particles];// Current position.
 
     double alphas[n_variations];
     double e_variances[n_variations];
@@ -111,13 +90,13 @@ void monte_carlo()
         {   /*
             Loop over all particles.
             */
-            pos_current[particle] = step_size*(uniform(engine) - 0.5);
-            // pos_current[0][particle] = step_size*(uniform(engine) - 0.5);
-            // pos_current[1][particle] = step_size*(uniform(engine) - 0.5);
-            // pos_current[2][particle] = step_size*(uniform(engine) - 0.5);
+            // pos_current[particle] = step_size*(uniform(engine) - 0.5);
+            pos_current[0][particle] = step_size*(uniform(engine) - 0.5);
+            pos_current[1][particle] = step_size*(uniform(engine) - 0.5);
+            pos_current[2][particle] = step_size*(uniform(engine) - 0.5);
             wave_current[particle] =
                 wave_function_exponent(
-                    pos_current[particle],   // x.
+                    pos_current[0][particle],   // x.
                     0,   // y.
                     0,   // z.
                     alphas[i],
@@ -137,13 +116,13 @@ void monte_carlo()
             */
             for (int particle = 0; particle < n_particles; particle++)
             {
-                pos_new[particle] = pos_current[particle] + step_size*(uniform(engine) - 0.5);
-                // pos_new[0][particle] = pos_current[0][particle] + step_size*(uniform(engine) - 0.5);
-                // pos_new[1][particle] = pos_current[1][particle] + step_size*(uniform(engine) - 0.5);
-                // pos_new[2][particle] = pos_current[2][particle] + step_size*(uniform(engine) - 0.5);
+                // pos_new[particle] = pos_current[particle] + step_size*(uniform(engine) - 0.5);
+                pos_new[0][particle] = pos_current[0][particle] + step_size*(uniform(engine) - 0.5);
+                pos_new[1][particle] = pos_current[1][particle] + step_size*(uniform(engine) - 0.5);
+                pos_new[2][particle] = pos_current[2][particle] + step_size*(uniform(engine) - 0.5);
                 wave_new[particle] =
                     wave_function_exponent(
-                        pos_new[particle],   // x.
+                        pos_new[0][particle],   // x.
                         0,   // y.
                         0,   // z.
                         alphas[i],
@@ -165,10 +144,10 @@ void monte_carlo()
                     instead of the ratio of the exponentials. Marginally
                     better...
                     */
-                    pos_current[particle] = pos_new[particle];
-                    // pos_current[0][particle] = pos_new[0][particle];
-                    // pos_current[1][particle] = pos_new[1][particle];
-                    // pos_current[2][particle] = pos_new[2][particle];
+                    // pos_current[particle] = pos_new[particle];
+                    pos_current[0][particle] = pos_new[0][particle];
+                    pos_current[1][particle] = pos_new[1][particle];
+                    pos_current[2][particle] = pos_new[2][particle];
                     wave_current[particle] = wave_new[particle];
                 }
 
@@ -178,7 +157,7 @@ void monte_carlo()
                 //     pos_current[2][particle],
                 //     alphas[i]
                 // );
-                de = local_energy_1d(pos_current[particle], alphas[i]);
+                de = local_energy_1d(pos_current[0][particle], alphas[i]);
 
                 e_expectations[i] += de;
                 e_expectation_squared += de*de;
@@ -209,11 +188,6 @@ void monte_carlo()
     }
 
     outfile.close();
-
-    // delete[] pos_current[0];
-    // delete[] pos_current;
-    // delete[] pos_new[0];
-    // delete[] pos_new;
 }
 
 
