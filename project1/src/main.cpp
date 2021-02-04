@@ -10,7 +10,7 @@
 const double hbar = 1;
 const double m = 1;
 const double omega = 1;
-const double beta = 0;
+const double beta = 1;
 
 
 double spherical_harmonic_oscillator(double x, double y, double z, double omega)
@@ -53,49 +53,39 @@ double local_energy_3d(double x, double y, double z, double alpha)
     */
     // double r_squared = x*x + y*y + z*z;
     // return -hbar*hbar*alpha/m*(2*alpha*r_squared - 3) + 0.5*m*omega*omega*r_squared;
-    return -hbar*hbar/(2*m)*(2*alpha*(x*x + y*y + beta*beta*z*z) - 2 - beta) + 0.5*m*omega*omega*(x*x + y*y + z*z);
+    return -hbar*hbar*alpha/m*(2*alpha*(x*x + y*y + beta*beta*z*z) - 2 - beta) + 0.5*m*omega*omega*(x*x + y*y + z*z);
 }
 
 void monte_carlo()
 {
     char fpath[] = "generated_data/output.txt";
     const int n_variations = 100;
-    const int n_mc_cycles = 1e5;
+    const int n_mc_cycles = 1e4;
     const int seed = 1337;
     const int n_particles = 100;        // Number of particles.
     const int n_dims = 3;               // Number of spatial dimensions.
     // const double beta = 0; // Declared at the top.
 
     const double step_size = 1;               // Step size.
-    double alpha = 0;                   // Intial value.
     const double alpha_step = 0.1;
     double e_expectation_squared;
     double de;                          // Energy step size.
     double exponential_diff;
 
+    // Declared outside loop due to parallelization.
     int particle;   // Index for particle loop.
-    int _;  // Index for MC loop.
+    int _;          // Index for MC loop.
 
-
-    // Before parallelization:
-    // arma::Mat<double> pos_new(n_dims, n_particles);
-    // arma::Mat<double> pos_current(n_dims, n_particles);
-    // arma::Col<double> wave_current(n_particles);    // Current wave function.
-    // arma::Col<double> wave_new(n_particles);        // Proposed new wave function.
-    // Before parallelization:
-    
-    // After parallelization:
-    arma::Mat<double> pos_new;
-    arma::Mat<double> pos_current;
-    arma::Col<double> wave_current;    // Current wave function.
-    arma::Col<double> wave_new;        // Proposed new wave function.
-    // After parallelization:
+    arma::Mat<double> pos_new(n_dims, n_particles);
+    arma::Mat<double> pos_current(n_dims, n_particles);
+    arma::Col<double> wave_current(n_particles);    // Current wave function.
+    arma::Col<double> wave_new(n_particles);        // Proposed new wave function.
 
     arma::Col<double> e_variances(n_variations);    // Energy variances.
     arma::Col<double> e_expectations(n_variations); // Energy expectation values.
     e_expectations.zeros();
 
-    // Pre-filling the alphas vector.
+    // Pre-filling the alphas vector due to parallelization.
     arma::Col<double> alphas(n_variations);
     alphas.fill(alpha_step);
     alphas = arma::cumsum(alphas);
@@ -104,21 +94,11 @@ void monte_carlo()
     std::mt19937 engine(seed);      // Seed the random engine which uses mersenne twister.
     std::uniform_real_distribution<double> uniform;  // Create continuous uniform distribution.
 
-    // #pragma omp parallel for \
-    //     private(e_expectation_squared, particle, _, exponential_diff, de) \
-    //     private(pos_current, pos_new, wave_current, wave_new)
     for (int i = 0; i < n_variations; i++)
     {   /*
         Run over all variations.
         */
         e_expectation_squared = 0;
-
-        // After parallelization:
-        pos_new = arma::Mat<double>(n_dims, n_particles);
-        pos_current = arma::Mat<double>(n_dims, n_particles);
-        wave_current = arma::Col<double>(n_particles);    // Current wave function.
-        wave_new = arma::Col<double>(n_particles);        // Proposed new wave function.
-        // After parallelization:
 
         for (particle = 0; particle < n_particles; particle++)
         {   /*
@@ -174,19 +154,19 @@ void monte_carlo()
                     wave_current(particle) = wave_new(particle);
                 }
 
-                // de = local_energy_3d(
-                //     pos_current(0, particle),
-                //     pos_current(1, particle),
-                //     pos_current(2, particle),
-                //     alphas(i)
-                // );
+                de = local_energy_3d(
+                    pos_current(0, particle),
+                    pos_current(1, particle),
+                    pos_current(2, particle),
+                    alphas(i)
+                );
                 // de = local_energy_3d(
                 //     pos_current(0, particle),
                 //     0,
                 //     0,
                 //     alphas(i)
                 // );
-                de = local_energy_1d(pos_current(0, particle), alphas(i));
+                // de = local_energy_1d(pos_current(0, particle), alphas(i));
 
                 e_expectations(i) += de;
                 e_expectation_squared += de*de;
