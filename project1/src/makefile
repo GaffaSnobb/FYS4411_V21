@@ -1,7 +1,7 @@
 all : main.out
 
 main.out :
-	g++ -std=c++17 -o run.out main.cpp -O1
+	g++ -std=c++17 -o run.out main.cpp -O1 -larmadillo
 
 valgrind : main.out
 	valgrind --tool=memcheck ./run.out
