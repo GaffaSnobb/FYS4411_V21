@@ -26,7 +26,7 @@ private:
     const int n_particles = 100;    // Number of particles.
     const int n_dims = 3;           // Number of spatial dimensions.
     const double step_size = 1;
-    const double alpha_step = 0.1;
+    const double alpha_step = 0.02;
     
     double e_expectation_squared;   // Square of the energy expectation value.
     double de;                      // Energy step size.
@@ -64,8 +64,11 @@ public:
     }
 
     void brute_force()
-    {
-        //Declared outside loop due to parallelization.
+    {   /*
+        Brute-force Monte Carlo simulation using Metropolis.
+        */
+
+        // Declared outside loop due to parallelization.
         int particle;   // Index for particle loop.
         int _;          // Index for MC loop.
 
@@ -78,7 +81,9 @@ public:
             for (particle = 0; particle < n_particles; particle++)
             {   /*
                 Iterate over all particles.  The dim iteration is hard-
-                coded to avoid loop overhead.
+                coded to avoid loop overhead.  In this loop, all current
+                positions are calulated along with the current wave
+                functions.
                 */
                 pos_current(0, particle) = step_size*(uniform(engine) - 0.5);
                 pos_current(1, particle) = step_size*(uniform(engine) - 0.5);
@@ -99,8 +104,10 @@ public:
                 */
                 for (particle = 0; particle < n_particles; particle++)
                 {   /*
-                    Iterate over all particles.  The dim iteration is hard-
-                    coded to avoid loop overhead.
+                    Iterate over all particles.  The dim iteration is
+                    hard-coded to avoid loop overhead.  In this loop,
+                    new proposed positions and wave functions are
+                    calculated.
                     */
                     pos_new(0, particle) = pos_current(0, particle) + step_size*(uniform(engine) - 0.5);
                     pos_new(1, particle) = pos_current(1, particle) + step_size*(uniform(engine) - 0.5);
@@ -114,14 +121,15 @@ public:
                             beta
                         );
 
-                    exponential_diff = 2*(wave_new(particle) - wave_current(particle));
+                    exponential_diff =
+                        2*(wave_new(particle) - wave_current(particle));
 
                     if (uniform(engine) < std::exp(exponential_diff))
                     {   /*
-                        Perform the Metropolis algorithm.  To save one exponential
-                        calculation, the difference is taken of the exponents
-                        instead of the ratio of the exponentials. Marginally
-                        better...
+                        Perform the Metropolis algorithm.  To save one
+                        exponential calculation, the difference is taken
+                        of the exponents instead of the ratio of the
+                        exponentials. Marginally better...
                         */
                         pos_current(0, particle) = pos_new(0, particle);
                         pos_current(1, particle) = pos_new(1, particle);
@@ -135,14 +143,6 @@ public:
                         pos_current(2, particle),
                         alphas(i)
                     );
-                    // de = local_energy_3d(
-                    //     pos_current(0, particle),
-                    //     0,
-                    //     0,
-                    //     alphas(i)
-                    // );
-                    // de = local_energy_1d(pos_current(0, particle), alphas(i));
-
                     e_expectations(i) += de;
                     e_expectation_squared += de*de;
                 }
@@ -150,9 +150,19 @@ public:
 
             e_expectations(i) /= n_mc_cycles;
             e_expectation_squared /= n_mc_cycles;
-            e_variances(i) = e_expectation_squared - e_expectations(i)*e_expectations(i);
+            e_variances(i) =
+                e_expectation_squared - e_expectations(i)*e_expectations(i);
         }
     }
+
+
+    void importance_sampling()
+    {   /*
+        Task 1c importance sampling is implemented here.
+        */
+
+    }
+
 
     void write_to_file()
     {
@@ -194,7 +204,6 @@ int main()
     std::chrono::duration<double> comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
 
     std::cout << "\ntotal time: " << comp_time.count() << "s" << std::endl;
-
 
     return 0;
 }
