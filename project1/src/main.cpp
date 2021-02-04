@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iomanip>
 #include <chrono>
+#include <armadillo>
 
 const int hbar = 1;
 const double m = 1;
@@ -63,8 +64,8 @@ void monte_carlo()
     double de;                          // Energy step size.
     double exponential_diff;
 
-    double pos_new[n_dims][n_particles];    // Proposed new position.
-    double pos_current[n_dims][n_particles];// Current position.
+    arma::Mat<double> pos_new(n_dims, n_particles);
+    arma::Mat<double> pos_current(n_dims, n_particles);
 
     double alphas[n_variations];
     double e_variances[n_variations];
@@ -73,7 +74,6 @@ void monte_carlo()
     double wave_new[n_particles];       // Proposed new wave function.
 
     std::ofstream outfile;
-
     std::mt19937 engine(seed);      // Seed the random engine which uses mersenne twister.
     std::uniform_real_distribution<double> uniform;  // Create continuous uniform distribution.
 
@@ -88,26 +88,20 @@ void monte_carlo()
 
         for (int particle = 0; particle < n_particles; particle++)
         {   /*
-            Loop over all particles.
+            Iterate over all particles.  The dim iteration is hard-
+            coded to avoid loop overhead.
             */
-            // pos_current[particle] = step_size*(uniform(engine) - 0.5);
-            pos_current[0][particle] = step_size*(uniform(engine) - 0.5);
-            pos_current[1][particle] = step_size*(uniform(engine) - 0.5);
-            pos_current[2][particle] = step_size*(uniform(engine) - 0.5);
+            pos_current(0, particle) = step_size*(uniform(engine) - 0.5);
+            pos_current(1, particle) = step_size*(uniform(engine) - 0.5);
+            pos_current(2, particle) = step_size*(uniform(engine) - 0.5);
             wave_current[particle] =
                 wave_function_exponent(
-                    pos_current[0][particle],   // x.
-                    0,   // y.
-                    0,   // z.
+                    pos_current(0, particle),   // x.
+                    pos_current(1, particle),   // y.
+                    pos_current(2, particle),   // z.
                     alphas[i],
                     beta
                 );
-                //     pos_current[0][particle],   // x.
-                //     pos_current[1][particle],   // y.
-                //     pos_current[2][particle],   // z.
-                //     alphas[i],
-                //     beta
-                // );
         }
 
         for (int _ = 0; _ < n_mc_cycles; _++)
@@ -115,25 +109,21 @@ void monte_carlo()
             Run over all Monte Carlo cycles.
             */
             for (int particle = 0; particle < n_particles; particle++)
-            {
-                // pos_new[particle] = pos_current[particle] + step_size*(uniform(engine) - 0.5);
-                pos_new[0][particle] = pos_current[0][particle] + step_size*(uniform(engine) - 0.5);
-                pos_new[1][particle] = pos_current[1][particle] + step_size*(uniform(engine) - 0.5);
-                pos_new[2][particle] = pos_current[2][particle] + step_size*(uniform(engine) - 0.5);
+            {   /*
+                Iterate over all particles.  The dim iteration is hard-
+                coded to avoid loop overhead.
+                */
+                pos_new(0, particle) = pos_current(0, particle) + step_size*(uniform(engine) - 0.5);
+                pos_new(1, particle) = pos_current(1, particle) + step_size*(uniform(engine) - 0.5);
+                pos_new(2, particle) = pos_current(2, particle) + step_size*(uniform(engine) - 0.5);
                 wave_new[particle] =
                     wave_function_exponent(
-                        pos_new[0][particle],   // x.
-                        0,   // y.
-                        0,   // z.
+                        pos_new(0, particle),   // x.
+                        pos_new(1, particle),   // y.
+                        pos_new(2, particle),   // z.
                         alphas[i],
                         beta
                     );
-                    //     pos_new[0][particle],   // x.
-                    //     pos_new[1][particle],   // y.
-                    //     pos_new[2][particle],   // z.
-                    //     alphas[i],
-                    //     beta
-                    // );
 
                 exponential_diff = 2*(wave_new[particle] - wave_current[particle]);
 
@@ -144,20 +134,19 @@ void monte_carlo()
                     instead of the ratio of the exponentials. Marginally
                     better...
                     */
-                    // pos_current[particle] = pos_new[particle];
-                    pos_current[0][particle] = pos_new[0][particle];
-                    pos_current[1][particle] = pos_new[1][particle];
-                    pos_current[2][particle] = pos_new[2][particle];
+                    pos_current(0, particle) = pos_new(0, particle);
+                    pos_current(1, particle) = pos_new(1, particle);
+                    pos_current(2, particle) = pos_new(2, particle);
                     wave_current[particle] = wave_new[particle];
                 }
 
-                // de = local_energy_3d(
-                //     pos_current[0][particle],
-                //     pos_current[1][particle],
-                //     pos_current[2][particle],
-                //     alphas[i]
-                // );
-                de = local_energy_1d(pos_current[0][particle], alphas[i]);
+                de = local_energy_3d(
+                    pos_current(0, particle),
+                    pos_current(1, particle),
+                    pos_current(2, particle),
+                    alphas[i]
+                );
+                // de = local_energy_1d(pos_current[0][particle], alphas[i]);
 
                 e_expectations[i] += de;
                 e_expectation_squared += de*de;
@@ -193,7 +182,8 @@ void monte_carlo()
 
 int main()
 {
-
+    // arma::mat A(5, 5);
+    // A.print();
     std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
     monte_carlo();
     std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
