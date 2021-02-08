@@ -28,4 +28,12 @@ double local_energy_3d(double x, double y, double z, double alpha)
     return -hbar*hbar*alpha/m*(2*alpha*(x*x + y*y + beta*beta*z*z) - 2 - beta) + 0.5*m*omega*omega*(x*x + y*y + z*z);
 }
 
+double quantum_force(double x, double y, double z, double alpha, double beta)
+{   /*
+    Analytical expression for quantum force with beta=1 and a=0.
+    */
+
+    return -4.0 * alpha * (x + y + z);
+}
+
 #endif

@@ -27,10 +27,13 @@ private:
     const int n_dims = 3;           // Number of spatial dimensions.
     const double step_size = 1;
     const double alpha_step = 0.02;
-    
+
+    const double diffusion_coeff = 0.5;
+    const double time_step = 0.005;      // time steps in range [0.0001, 0.001] stable?
+
     double e_expectation_squared;   // Square of the energy expectation value.
     double de;                      // Energy step size.
-    double exponential_diff;        // Difference of the exponentials, for Metropolis.  
+    double exponential_diff;        // Difference of the exponentials, for Metropolis.
 
     arma::Mat<double> pos_new;          // Proposed new position.
     arma::Mat<double> pos_current;      // Current position.
@@ -40,13 +43,17 @@ private:
     arma::Col<double> e_expectations;   // Energy expectation values.
     arma::Col<double> alphas;           // Variational parameter.
 
+    arma::Mat<double> qforce_current;   // Current quantum force.
+    arma::Mat<double> qforce_new;       // New quantum force.
+
     std::mt19937 engine;      // Mersenne Twister RNG.
     std::uniform_real_distribution<double> uniform;  // Continuous uniform distribution.
+    std::normal_distribution<double> normal;         // Gaussian distribution
 
 public:
     VMC()
     {
-        fpath = "generated_data/output.txt";                    // Path to output text file.
+        //fpath = "generated_data/output.txt";                    // Path to output text file.
         pos_new = arma::Mat<double>(n_dims, n_particles);       // Proposed new position.
         pos_current = arma::Mat<double>(n_dims, n_particles);   // Current position.
         wave_current = arma::Col<double>(n_particles);          // Current wave function.
@@ -54,7 +61,10 @@ public:
         e_variances = arma::Col<double>(n_variations);          // Energy variances.
         e_expectations = arma::Col<double>(n_variations);       // Energy expectation values.
         e_expectations.zeros();
-        
+
+        qforce_current = arma::Col<double>(n_particles);  // current quantum force
+        qforce_new = arma::Col<double>(n_particles);      // new quantum force
+
         // Pre-filling the alphas vector due to parallelization.
         alphas = arma::Col<double>(n_variations);   // Variational parameter.
         alphas.fill(alpha_step);
@@ -71,6 +81,8 @@ public:
         // Declared outside loop due to parallelization.
         int particle;   // Index for particle loop.
         int _;          // Index for MC loop.
+
+        int brute_force_counter = 0; // conter for the metropolis algorithm
 
         for (int i = 0; i < n_variations; i++)
         {   /*
@@ -135,6 +147,7 @@ public:
                         pos_current(1, particle) = pos_new(1, particle);
                         pos_current(2, particle) = pos_new(2, particle);
                         wave_current(particle) = wave_new(particle);
+                        brute_force_counter += 1;
                     }
 
                     de = local_energy_3d(
@@ -153,6 +166,7 @@ public:
             e_variances(i) =
                 e_expectation_squared - e_expectations(i)*e_expectations(i);
         }
+    std::cout << "\nbrute_force: " << brute_force_counter/n_mc_cycles << std::endl;
     }
 
 
@@ -161,10 +175,135 @@ public:
         Task 1c importance sampling is implemented here.
         */
 
+        // Declared outside loop due to parallelization.
+        int particle;   // Index for particle loop.
+        int _;          // Index for MC loop.
+
+        int importance_counter = 0;
+
+        for (int i = 0; i < n_variations; i++)
+        {   /*
+            Run over all variations.
+            */
+            e_expectation_squared = 0;
+
+            for (particle = 0; particle < n_particles; particle++)
+            {   /*
+                Iterate over all particles. Set the initial current positions
+                calculate the wave function and quantum force.
+                */
+
+                pos_current(0, particle) = normal(engine)*sqrt(time_step);
+                pos_current(1, particle) = normal(engine)*sqrt(time_step);
+                pos_current(2, particle) = normal(engine)*sqrt(time_step);
+                wave_current(particle) =
+                    wave_function_exponent(
+                        pos_current(0, particle),   // x.
+                        pos_current(1, particle),   // y.
+                        pos_current(2, particle),   // z.
+                        alphas(i),
+                        beta
+                      );
+
+                qforce_current(particle) =
+                    quantum_force(
+                        pos_current(0, particle),   // x.
+                        pos_current(1, particle),   // y.
+                        pos_current(2, particle),   // z.
+                        alphas(i),
+                        beta
+                      );
+            }
+
+            for (_ = 0; _ < n_mc_cycles; _++)
+            {   /* Run over all Monte Carlo cycles. */
+
+                for (particle = 0; particle < n_particles; particle++)
+                {   /*
+                    Iterate over all particles. Suggest new positions,
+                    calculate new wave function and quantum force.
+                    TODO: break lines on long expressions.
+                    */
+                    pos_new(0, particle) = pos_current(0, particle) +
+                        diffusion_coeff*qforce_current(particle)*time_step +
+                        normal(engine)*sqrt(time_step);
+
+                    pos_new(1, particle) = pos_current(1, particle) +
+                        diffusion_coeff*qforce_current(particle)*time_step +
+                        normal(engine)*sqrt(time_step);
+
+                    pos_new(2, particle) = pos_current(2, particle) +
+                        diffusion_coeff*qforce_current(particle)*time_step +
+                        normal(engine)*sqrt(time_step);
+
+                    wave_new(particle) =
+                        wave_function_exponent(
+                            pos_new(0, particle),   // x.
+                            pos_new(1, particle),   // y.
+                            pos_new(2, particle),   // z.
+                            alphas(i),
+                            beta
+                        );
+
+                    qforce_new(particle) =
+                        quantum_force(
+                            pos_current(0, particle),   // x.
+                            pos_current(1, particle),   // y.
+                            pos_current(2, particle),   // z.
+                            alphas(i),
+                            beta
+                          );
+
+                    double greens_ratio = 0.0;
+                    for (int j=0; j < n_dims; j++)
+                    {   /*
+                        Calculate greens ratio for the accepance criteria.
+                        TODO: hardcode dims to match code convention?
+                        */
+                        greens_ratio += 0.5*(qforce_current(particle) + qforce_new(particle))*
+                                    (0.5*diffusion_coeff*time_step*(qforce_current(particle)
+                                    + qforce_new(particle))-pos_new(j, particle) + pos_current(j,particle));
+                    }
+
+                    greens_ratio = exp(greens_ratio);
+
+                    exponential_diff =
+                        2*(wave_new(particle) - wave_current(particle));
+
+                    if (uniform(engine) < greens_ratio*std::exp(exponential_diff))
+                    {   /*
+                        Metropolis step with new acceptance criteria.
+                        */
+                        pos_current(0, particle) = pos_new(0, particle);
+                        pos_current(1, particle) = pos_new(1, particle);
+                        pos_current(2, particle) = pos_new(2, particle);
+                        wave_current(particle) = wave_new(particle);
+                        qforce_current(particle) = qforce_new(particle);
+
+                        importance_counter += 1;
+                    }
+
+                    de = local_energy_3d(
+                        pos_current(0, particle),
+                        pos_current(1, particle),
+                        pos_current(2, particle),
+                        alphas(i)
+                    );
+                    e_expectations(i) += de;
+                    e_expectation_squared += de*de;
+                }
+            }
+
+            e_expectations(i) /= n_mc_cycles;
+            e_expectation_squared /= n_mc_cycles;
+            e_variances(i) =
+            e_expectation_squared - e_expectations(i)*e_expectations(i);
+        }
+        std::cout << "\nimportance_sampling: " << importance_counter/n_mc_cycles << std::endl;
     }
 
 
-    void write_to_file()
+    void write_to_file(std::string fpath)
     {
         outfile.open(fpath, std::ios::out);
         outfile << std::setw(20) << "alpha";
@@ -195,15 +334,26 @@ public:
 int main()
 {
     std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
-    
+
     VMC q;
     q.brute_force();
-    q.write_to_file();
+    q.write_to_file("generated_data/output_bruteforce.txt");
 
     std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
     std::chrono::duration<double> comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
 
     std::cout << "\ntotal time: " << comp_time.count() << "s" << std::endl;
+
+    std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
+
+    VMC q1;
+    q1.importance_sampling();
+    q1.write_to_file("generated_data/output_importance.txt");
+
+    std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
+    std::chrono::duration<double> comp_time1 = std::chrono::duration_cast<std::chrono::duration<double> >(t4 - t3);
+
+    std::cout << "\ntotal time: " << comp_time1.count() << "s" << std::endl;
 
     return 0;
 }
