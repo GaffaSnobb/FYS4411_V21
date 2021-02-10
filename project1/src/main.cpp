@@ -21,7 +21,7 @@ private:
     std::string fpath;              // Path to output text file.
     std::ofstream outfile;          // Output file.
     const int n_variations = 100;   // Number of variations.
-    const int n_mc_cycles = 1e4;    // Number of MC cycles.
+    const int n_mc_cycles = 1e3;    // Number of MC cycles.
     const int seed = 1337;          // RNG seed.
     const int n_particles = 100;    // Number of particles.
     const int n_dims = 3;           // Number of spatial dimensions.
@@ -32,19 +32,18 @@ private:
     const double time_step = 0.005;      // time steps in range [0.0001, 0.001] stable?
 
     double e_expectation_squared;   // Square of the energy expectation value.
-    double de;                      // Energy step size.
+    double energy_step;                      // Energy step size.
     double exponential_diff;        // Difference of the exponentials, for Metropolis.
 
-    arma::Mat<double> pos_new;          // Proposed new position.
-    arma::Mat<double> pos_current;      // Current position.
-    arma::Col<double> wave_current;     // Current wave function.
-    arma::Col<double> wave_new;         // Proposed new wave function.
-    arma::Col<double> e_variances;      // Energy variances.
-    arma::Col<double> e_expectations;   // Energy expectation values.
-    arma::Col<double> alphas;           // Variational parameter.
-
-    arma::Mat<double> qforce_current;   // Current quantum force.
-    arma::Mat<double> qforce_new;       // New quantum force.
+    arma::Mat<double> pos_new = arma::Mat<double>(n_dims, n_particles);         // Proposed new position.
+    arma::Mat<double> pos_current = arma::Mat<double>(n_dims, n_particles);     // Current position.
+    arma::Col<double> wave_current = arma::Col<double>(n_particles);            // Current wave function.
+    arma::Col<double> wave_new = arma::Col<double>(n_particles);                // Proposed new wave function.
+    arma::Col<double> e_variances = arma::Col<double>(n_variations);            // Energy variances.
+    arma::Col<double> e_expectations = arma::Col<double>(n_variations);         // Energy expectation values.
+    arma::Col<double> alphas = arma::Col<double>(n_variations);                 // Variational parameter.
+    arma::Mat<double> qforce_current = arma::Mat<double>(n_dims, n_particles);  // Current quantum force.
+    arma::Mat<double> qforce_new = arma::Mat<double>(n_dims, n_particles);      // New quantum force.
 
     std::mt19937 engine;      // Mersenne Twister RNG.
     std::uniform_real_distribution<double> uniform;  // Continuous uniform distribution.
@@ -53,23 +52,11 @@ private:
 public:
     VMC()
     {
-        //fpath = "generated_data/output.txt";                    // Path to output text file.
-        pos_new = arma::Mat<double>(n_dims, n_particles);       // Proposed new position.
-        pos_current = arma::Mat<double>(n_dims, n_particles);   // Current position.
-        wave_current = arma::Col<double>(n_particles);          // Current wave function.
-        wave_new = arma::Col<double>(n_particles);              // Proposed new wave function.
-        e_variances = arma::Col<double>(n_variations);          // Energy variances.
-        e_expectations = arma::Col<double>(n_variations);       // Energy expectation values.
-        e_expectations.zeros();
-
-        qforce_current = arma::Col<double>(n_particles);  // current quantum force
-        qforce_new = arma::Col<double>(n_particles);      // new quantum force
-
         // Pre-filling the alphas vector due to parallelization.
-        alphas = arma::Col<double>(n_variations);   // Variational parameter.
         alphas.fill(alpha_step);
         alphas = arma::cumsum(alphas);
 
+        e_expectations.zeros();
         engine.seed(seed);
     }
 
@@ -150,14 +137,14 @@ public:
                         brute_force_counter += 1;
                     }
 
-                    de = local_energy_3d(
+                    energy_step = local_energy_3d(
                         pos_current(0, particle),
                         pos_current(1, particle),
                         pos_current(2, particle),
                         alphas(i)
                     );
-                    e_expectations(i) += de;
-                    e_expectation_squared += de*de;
+                    e_expectations(i) += energy_step;
+                    e_expectation_squared += energy_step*energy_step;
                 }
             }
 
@@ -203,16 +190,19 @@ public:
                         pos_current(2, particle),   // z.
                         alphas(i),
                         beta
-                      );
+                    );
 
-                qforce_current(particle) =
-                    quantum_force(
-                        pos_current(0, particle),   // x.
-                        pos_current(1, particle),   // y.
-                        pos_current(2, particle),   // z.
-                        alphas(i),
-                        beta
-                      );
+                // qforce_current(particle) =
+                //     quantum_force(
+                //         pos_current(0, particle),   // x.
+                //         pos_current(1, particle),   // y.
+                //         pos_current(2, particle),   // z.
+                //         alphas(i),
+                //         beta
+                //     );
+                qforce_current(0, particle) = -4*alphas(i)*pos_current(0, particle);
+                qforce_current(1, particle) = -4*alphas(i)*pos_current(1, particle);
+                qforce_current(2, particle) = -4*alphas(i)*pos_current(2, particle);
             }
 
             for (_ = 0; _ < n_mc_cycles; _++)
@@ -245,24 +235,29 @@ public:
                             beta
                         );
 
-                    qforce_new(particle) =
-                        quantum_force(
-                            pos_current(0, particle),   // x.
-                            pos_current(1, particle),   // y.
-                            pos_current(2, particle),   // z.
-                            alphas(i),
-                            beta
-                          );
+                    // qforce_new(particle) =
+                    //     quantum_force(
+                    //         pos_current(0, particle),   // x.
+                    //         pos_current(1, particle),   // y.
+                    //         pos_current(2, particle),   // z.
+                    //         alphas(i),
+                    //         beta
+                    //     );
+                    qforce_new(0, particle) = -4*alphas(i)*pos_new(0, particle);
+                    qforce_new(1, particle) = -4*alphas(i)*pos_new(1, particle);
+                    qforce_new(2, particle) = -4*alphas(i)*pos_new(2, particle);
 
                     double greens_ratio = 0.0;
-                    for (int j=0; j < n_dims; j++)
+                    for (int dim = 0; dim < n_dims; dim++)
                     {   /*
                         Calculate greens ratio for the accepance criteria.
                         TODO: hardcode dims to match code convention?
                         */
-                        greens_ratio += 0.5*(qforce_current(particle) + qforce_new(particle))*
-                                    (0.5*diffusion_coeff*time_step*(qforce_current(particle)
-                                    + qforce_new(particle))-pos_new(j, particle) + pos_current(j,particle));
+                        // greens_ratio += 0.5*(qforce_current(dim, particle) + qforce_new(dim, particle))*
+                        //             (0.5*diffusion_coeff*time_step*(qforce_current(dim, particle)
+                        //             + qforce_new(dim, particle)) - pos_new(dim, particle) + pos_current(dim, particle));
+                        greens_ratio += 0.5*(qforce_current(dim, particle) + qforce_new(dim, particle))*(0.5*diffusion_coeff*time_step*(qforce_current(dim, particle) - qforce_new(dim, particle)) - pos_new(dim, particle) + pos_current(dim, particle));
+	                    // greens_ratio += 0.5*(qforce_current(particle, dim) + qforce_new(particle, dim))*(0.5*diffusion_coeff*time_step*(qforce_current(particle, dim) - qforce_new(particle, dim)) - pos_new(particle, dim) + pos_current(particle, dim));
                     }
 
                     greens_ratio = exp(greens_ratio);
@@ -278,19 +273,21 @@ public:
                         pos_current(1, particle) = pos_new(1, particle);
                         pos_current(2, particle) = pos_new(2, particle);
                         wave_current(particle) = wave_new(particle);
-                        qforce_current(particle) = qforce_new(particle);
+                        qforce_current(0, particle) = qforce_new(0, particle);
+                        qforce_current(1, particle) = qforce_new(1, particle);
+                        qforce_current(2, particle) = qforce_new(2, particle);
 
                         importance_counter += 1;
                     }
 
-                    de = local_energy_3d(
+                    energy_step = local_energy_3d(
                         pos_current(0, particle),
                         pos_current(1, particle),
                         pos_current(2, particle),
                         alphas(i)
                     );
-                    e_expectations(i) += de;
-                    e_expectation_squared += de*de;
+                    e_expectations(i) += energy_step;
+                    e_expectation_squared += energy_step*energy_step;
                 }
             }
 
@@ -329,7 +326,6 @@ public:
 
     }
 };
-
 
 int main()
 {
