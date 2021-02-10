@@ -21,7 +21,7 @@ private:
     std::string fpath;              // Path to output text file.
     std::ofstream outfile;          // Output file.
     const int n_variations = 100;   // Number of variations.
-    const int n_mc_cycles = 1e3;    // Number of MC cycles.
+    const int n_mc_cycles = 1e2;    // Number of MC cycles.
     const int seed = 1337;          // RNG seed.
     const int n_particles = 100;    // Number of particles.
     const int n_dims = 3;           // Number of spatial dimensions.
@@ -192,17 +192,17 @@ public:
                         beta
                     );
 
-                qforce_current(0, particle) =
-                    quantum_force(
-                        pos_current(0, particle),   // x.
-                        pos_current(1, particle),   // y.
-                        pos_current(2, particle),   // z.
-                        alphas(i),
-                        beta
-                    );
-                // qforce_current(0, particle) = -4*alphas(i)*pos_current(0, particle);
-                // qforce_current(1, particle) = -4*alphas(i)*pos_current(1, particle);
-                // qforce_current(2, particle) = -4*alphas(i)*pos_current(2, particle);
+                // qforce_current(0, particle) =
+                //     quantum_force(
+                //         pos_current(0, particle),   // x.
+                //         pos_current(1, particle),   // y.
+                //         pos_current(2, particle),   // z.
+                //         alphas(i),
+                //         beta
+                //     );
+                qforce_current(0, particle) = -4*alphas(i)*pos_current(0, particle);
+                qforce_current(1, particle) = -4*alphas(i)*pos_current(1, particle);
+                qforce_current(2, particle) = -4*alphas(i)*pos_current(2, particle);
             }
 
             for (_ = 0; _ < n_mc_cycles; _++)
@@ -231,11 +231,11 @@ public:
                         normal(engine)*sqrt(time_step);
 
                     pos_new(1, particle) = pos_current(1, particle) +
-                        diffusion_coeff*qforce_current(0, particle)*time_step +
+                        diffusion_coeff*qforce_current(1, particle)*time_step +
                         normal(engine)*sqrt(time_step);
 
                     pos_new(2, particle) = pos_current(2, particle) +
-                        diffusion_coeff*qforce_current(0, particle)*time_step +
+                        diffusion_coeff*qforce_current(2, particle)*time_step +
                         normal(engine)*sqrt(time_step);
 
                     wave_new(particle) =
@@ -247,17 +247,17 @@ public:
                             beta
                         );
 
-                    qforce_new(0, particle) =
-                        quantum_force(
-                            pos_current(0, particle),   // x.
-                            pos_current(1, particle),   // y.
-                            pos_current(2, particle),   // z.
-                            alphas(i),
-                            beta
-                        );
-                    // qforce_new(0, particle) = -4*alphas(i)*pos_new(0, particle);
-                    // qforce_new(1, particle) = -4*alphas(i)*pos_new(1, particle);
-                    // qforce_new(2, particle) = -4*alphas(i)*pos_new(2, particle);
+                    // qforce_new(0, particle) =
+                    //     quantum_force(
+                    //         pos_current(0, particle),   // x.
+                    //         pos_current(1, particle),   // y.
+                    //         pos_current(2, particle),   // z.
+                    //         alphas(i),
+                    //         beta
+                    //     );
+                    qforce_new(0, particle) = -4*alphas(i)*pos_new(0, particle);
+                    qforce_new(1, particle) = -4*alphas(i)*pos_new(1, particle);
+                    qforce_new(2, particle) = -4*alphas(i)*pos_new(2, particle);
 
                     double greens_ratio = 0.0;
                     for (int dim = 0; dim < n_dims; dim++)
@@ -268,10 +268,10 @@ public:
                         // greens_ratio += 0.5*(qforce_current(dim, particle) + qforce_new(dim, particle))*
                         //             (0.5*diffusion_coeff*time_step*(qforce_current(dim, particle)
                         //             + qforce_new(dim, particle)) - pos_new(dim, particle) + pos_current(dim, particle));
-                        greens_ratio += 0.5*(qforce_current(0, particle) + qforce_new(0, particle))*
-                                    (0.5*diffusion_coeff*time_step*(qforce_current(0, particle)
-                                    + qforce_new(0, particle)) - pos_new(dim, particle) + pos_current(dim, particle));
-                        // greens_ratio += 0.5*(qforce_current(dim, particle) + qforce_new(dim, particle))*(0.5*diffusion_coeff*time_step*(qforce_current(dim, particle) - qforce_new(dim, particle)) - pos_new(dim, particle) + pos_current(dim, particle));
+                        // greens_ratio += 0.5*(qforce_current(0, particle) + qforce_new(0, particle))*
+                        //             (0.5*diffusion_coeff*time_step*(qforce_current(0, particle)
+                        //             + qforce_new(0, particle)) - pos_new(dim, particle) + pos_current(dim, particle));
+                        greens_ratio += 0.5*(qforce_current(dim, particle) + qforce_new(dim, particle))*(0.5*diffusion_coeff*time_step*(qforce_current(dim, particle) - qforce_new(dim, particle)) - pos_new(dim, particle) + pos_current(dim, particle));
 	                    // greens_ratio += 0.5*(qforce_current(particle, dim) + qforce_new(particle, dim))*(0.5*diffusion_coeff*time_step*(qforce_current(particle, dim) - qforce_new(particle, dim)) - pos_new(particle, dim) + pos_current(particle, dim));
                     }
 
