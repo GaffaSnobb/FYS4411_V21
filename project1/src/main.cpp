@@ -21,7 +21,7 @@ private:
     std::string fpath;              // Path to output text file.
     std::ofstream outfile;          // Output file.
     const int n_variations = 100;   // Number of variations.
-    const int n_mc_cycles = 1e2;    // Number of MC cycles.
+    const int n_mc_cycles = 1e4;    // Number of MC cycles.
     const int seed = 1337;          // RNG seed.
     const int n_particles = 100;    // Number of particles.
     const int n_dims = 3;           // Number of spatial dimensions.
@@ -56,7 +56,7 @@ public:
         alphas.fill(alpha_step);
         alphas = arma::cumsum(alphas);
 
-        e_expectations.zeros();
+        e_expectations.zeros(); // Array must be zeroed since values will be added.
         engine.seed(seed);
     }
 
@@ -64,12 +64,12 @@ public:
     {   /*
         Brute-force Monte Carlo simulation using Metropolis.
         */
-
         // Declared outside loop due to parallelization.
         int particle;   // Index for particle loop.
         int _;          // Index for MC loop.
+        int dim;        // Index for dimension loop.
 
-        int brute_force_counter = 0; // conter for the metropolis algorithm
+        int brute_force_counter = 0; // Debug counter for the Metropolis algorithm.
 
         for (int i = 0; i < n_variations; i++)
         {   /*
@@ -79,14 +79,15 @@ public:
 
             for (particle = 0; particle < n_particles; particle++)
             {   /*
-                Iterate over all particles.  The dim iteration is hard-
-                coded to avoid loop overhead.  In this loop, all current
+                Iterate over all particles.  In this loop, all current
                 positions are calulated along with the current wave
                 functions.
                 */
-                pos_current(0, particle) = step_size*(uniform(engine) - 0.5);
-                pos_current(1, particle) = step_size*(uniform(engine) - 0.5);
-                pos_current(2, particle) = step_size*(uniform(engine) - 0.5);
+
+                for (dim = 0; dim < n_dims; dim++)
+                {
+                    pos_current(dim, particle) = step_size*(uniform(engine) - 0.5);
+                }
                 wave_current(particle) =
                     wave_function_exponent(
                         pos_current(0, particle),   // x.
@@ -103,15 +104,15 @@ public:
                 */
                 for (particle = 0; particle < n_particles; particle++)
                 {   /*
-                    Iterate over all particles.  The dim iteration is
-                    hard-coded to avoid loop overhead.  In this loop,
-                    new proposed positions and wave functions are
+                    Iterate over all particles.  In this loop, new
+                    proposed positions and wave functions are
                     calculated.
                     */
-                    pos_new(0, particle) = pos_current(0, particle) + step_size*(uniform(engine) - 0.5);
-                    pos_new(1, particle) = pos_current(1, particle) + step_size*(uniform(engine) - 0.5);
-                    pos_new(2, particle) = pos_current(2, particle) + step_size*(uniform(engine) - 0.5);
-                    wave_new[particle] =
+                    for (dim = 0; dim < n_dims; dim++)
+                    {
+                        pos_new(dim, particle) = pos_current(dim, particle) + step_size*(uniform(engine) - 0.5);
+                    }
+                    wave_new(particle) =
                         wave_function_exponent(
                             pos_new(0, particle),   // x.
                             pos_new(1, particle),   // y.
@@ -130,11 +131,12 @@ public:
                         of the exponents instead of the ratio of the
                         exponentials. Marginally better...
                         */
-                        pos_current(0, particle) = pos_new(0, particle);
-                        pos_current(1, particle) = pos_new(1, particle);
-                        pos_current(2, particle) = pos_new(2, particle);
+                        for (dim = 0; dim < n_dims; dim++)
+                        {
+                            pos_current(dim, particle) = pos_new(dim, particle);   
+                        }
                         wave_current(particle) = wave_new(particle);
-                        brute_force_counter += 1;
+                        brute_force_counter += 1;   // Debug.
                     }
 
                     energy_step = local_energy_3d(
@@ -165,6 +167,7 @@ public:
         // Declared outside loop due to parallelization.
         int particle;   // Index for particle loop.
         int _;          // Index for MC loop.
+        int dim;        // Index for dimension loop.
 
         int importance_counter = 0;
 
@@ -179,10 +182,10 @@ public:
                 Iterate over all particles. Set the initial current positions
                 calculate the wave function and quantum force.
                 */
-
-                pos_current(0, particle) = normal(engine)*sqrt(time_step);
-                pos_current(1, particle) = normal(engine)*sqrt(time_step);
-                pos_current(2, particle) = normal(engine)*sqrt(time_step);
+                for (dim = 0; dim < n_dims; dim++)
+                {
+                    pos_current(dim, particle) = normal(engine)*sqrt(time_step);
+                }
                 wave_current(particle) =
                     wave_function_exponent(
                         pos_current(0, particle),   // x.
@@ -191,18 +194,11 @@ public:
                         alphas(i),
                         beta
                     );
-
-                // qforce_current(0, particle) =
-                //     quantum_force(
-                //         pos_current(0, particle),   // x.
-                //         pos_current(1, particle),   // y.
-                //         pos_current(2, particle),   // z.
-                //         alphas(i),
-                //         beta
-                //     );
-                qforce_current(0, particle) = -4*alphas(i)*pos_current(0, particle);
-                qforce_current(1, particle) = -4*alphas(i)*pos_current(1, particle);
-                qforce_current(2, particle) = -4*alphas(i)*pos_current(2, particle);
+                for (dim = 0; dim < n_dims; dim++)
+                {
+                    qforce_current(dim, particle) =
+                        -4*alphas(i)*pos_current(dim, particle);
+                }
             }
 
             for (_ = 0; _ < n_mc_cycles; _++)
@@ -214,29 +210,12 @@ public:
                     calculate new wave function and quantum force.
                     TODO: break lines on long expressions.
                     */
-                    // pos_new(0, particle) = pos_current(0, particle) +
-                    //     diffusion_coeff*qforce_current(particle)*time_step +
-                    //     normal(engine)*sqrt(time_step);
-
-                    // pos_new(1, particle) = pos_current(1, particle) +
-                    //     diffusion_coeff*qforce_current(particle)*time_step +
-                    //     normal(engine)*sqrt(time_step);
-
-                    // pos_new(2, particle) = pos_current(2, particle) +
-                    //     diffusion_coeff*qforce_current(particle)*time_step +
-                    //     normal(engine)*sqrt(time_step);
-
-                    pos_new(0, particle) = pos_current(0, particle) +
-                        diffusion_coeff*qforce_current(0, particle)*time_step +
-                        normal(engine)*sqrt(time_step);
-
-                    pos_new(1, particle) = pos_current(1, particle) +
-                        diffusion_coeff*qforce_current(1, particle)*time_step +
-                        normal(engine)*sqrt(time_step);
-
-                    pos_new(2, particle) = pos_current(2, particle) +
-                        diffusion_coeff*qforce_current(2, particle)*time_step +
-                        normal(engine)*sqrt(time_step);
+                    for (dim = 0; dim < n_dims; dim++)
+                    {
+                        pos_new(dim, particle) = pos_current(dim, particle) +
+                            diffusion_coeff*qforce_current(dim, particle)*time_step +
+                            normal(engine)*sqrt(time_step);
+                    }
 
                     wave_new(particle) =
                         wave_function_exponent(
@@ -247,52 +226,41 @@ public:
                             beta
                         );
 
-                    // qforce_new(0, particle) =
-                    //     quantum_force(
-                    //         pos_current(0, particle),   // x.
-                    //         pos_current(1, particle),   // y.
-                    //         pos_current(2, particle),   // z.
-                    //         alphas(i),
-                    //         beta
-                    //     );
-                    qforce_new(0, particle) = -4*alphas(i)*pos_new(0, particle);
-                    qforce_new(1, particle) = -4*alphas(i)*pos_new(1, particle);
-                    qforce_new(2, particle) = -4*alphas(i)*pos_new(2, particle);
+                    for (dim = 0; dim < n_dims; dim++)
+                    {
+                        qforce_new(dim, particle) =
+                            -4*alphas(i)*pos_new(dim, particle);
+                    }
 
                     double greens_ratio = 0.0;
                     for (int dim = 0; dim < n_dims; dim++)
                     {   /*
-                        Calculate greens ratio for the accepance criteria.
-                        TODO: hardcode dims to match code convention?
+                        Calculate greens ratio for the acceptance
+                        criterion.
                         */
-                        // greens_ratio += 0.5*(qforce_current(dim, particle) + qforce_new(dim, particle))*
-                        //             (0.5*diffusion_coeff*time_step*(qforce_current(dim, particle)
-                        //             + qforce_new(dim, particle)) - pos_new(dim, particle) + pos_current(dim, particle));
-                        // greens_ratio += 0.5*(qforce_current(0, particle) + qforce_new(0, particle))*
-                        //             (0.5*diffusion_coeff*time_step*(qforce_current(0, particle)
-                        //             + qforce_new(0, particle)) - pos_new(dim, particle) + pos_current(dim, particle));
-                        greens_ratio += 0.5*(qforce_current(dim, particle) + qforce_new(dim, particle))*(0.5*diffusion_coeff*time_step*(qforce_current(dim, particle) - qforce_new(dim, particle)) - pos_new(dim, particle) + pos_current(dim, particle));
-	                    // greens_ratio += 0.5*(qforce_current(particle, dim) + qforce_new(particle, dim))*(0.5*diffusion_coeff*time_step*(qforce_current(particle, dim) - qforce_new(particle, dim)) - pos_new(particle, dim) + pos_current(particle, dim));
+                        greens_ratio +=
+                            0.5*(qforce_current(dim, particle) + qforce_new(dim, particle))
+                            *(0.5*diffusion_coeff*time_step*
+                            (qforce_current(dim, particle) - qforce_new(dim, particle))
+                            - pos_new(dim, particle) + pos_current(dim, particle));
                     }
 
                     greens_ratio = exp(greens_ratio);
-
                     exponential_diff =
                         2*(wave_new(particle) - wave_current(particle));
 
                     if (uniform(engine) < greens_ratio*std::exp(exponential_diff))
                     {   /*
-                        Metropolis step with new acceptance criteria.
+                        Metropolis step with new acceptance criterion.
                         */
-                        pos_current(0, particle) = pos_new(0, particle);
-                        pos_current(1, particle) = pos_new(1, particle);
-                        pos_current(2, particle) = pos_new(2, particle);
+                        for (dim = 0; dim < n_dims; dim++)
+                        {
+                            pos_current(dim, particle) = pos_new(dim, particle);
+                            qforce_current(dim, particle) = qforce_new(dim, particle);
+                        }
+                        
                         wave_current(particle) = wave_new(particle);
-                        qforce_current(0, particle) = qforce_new(0, particle);
-                        qforce_current(1, particle) = qforce_new(1, particle);
-                        qforce_current(2, particle) = qforce_new(2, particle);
-
-                        importance_counter += 1;
+                        importance_counter += 1;    // Debug.
                     }
 
                     energy_step = local_energy_3d(
@@ -344,27 +312,35 @@ public:
 
 int main()
 {
-    std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+    // std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
-    VMC q;
-    q.brute_force();
-    q.write_to_file("generated_data/output_bruteforce.txt");
+    // VMC q;
+    // q.brute_force();
+    // q.write_to_file("generated_data/output_bruteforce.txt");
 
-    std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
-    std::chrono::duration<double> comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
+    // std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
+    // std::chrono::duration<double> comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
 
-    std::cout << "\ntotal time: " << comp_time.count() << "s" << std::endl;
+    // std::cout << "\ntotal time: " << comp_time.count() << "s" << std::endl;
 
-    std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
+    // std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
 
-    VMC q1;
-    q1.importance_sampling();
-    q1.write_to_file("generated_data/output_importance.txt");
+    // VMC q1;
+    // q1.importance_sampling();
+    // q1.write_to_file("generated_data/output_importance.txt");
 
-    std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
-    std::chrono::duration<double> comp_time1 = std::chrono::duration_cast<std::chrono::duration<double> >(t4 - t3);
+    // std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
+    // std::chrono::duration<double> comp_time1 = std::chrono::duration_cast<std::chrono::duration<double> >(t4 - t3);
 
-    std::cout << "\ntotal time: " << comp_time1.count() << "s" << std::endl;
+    // std::cout << "\ntotal time: " << comp_time1.count() << "s" << std::endl;
+
+    arma::Mat<double> M(2, 5);
+    M.zeros();
+    // M.print();
+
+    M(1, 1) = 1;
+
+    M.print();
 
     return 0;
 }
