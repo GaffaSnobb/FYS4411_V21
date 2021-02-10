@@ -24,7 +24,7 @@ private:
     const int n_mc_cycles = 1e3;    // Number of MC cycles.
     const int seed = 1337;          // RNG seed.
     const int n_particles = 100;    // Number of particles.
-    const int n_dims = 1;           // Number of spatial dimensions.
+    const int n_dims = 3;           // Number of spatial dimensions.
     const double step_size = 1;
     const double alpha_step = 0.02;
 
@@ -49,7 +49,8 @@ private:
     std::uniform_real_distribution<double> uniform;  // Continuous uniform distribution.
     std::normal_distribution<double> normal;         // Gaussian distribution
 
-    double (*local_energy_ptr)(arma::Mat<double>, double, double);
+    double (*local_energy_ptr)(arma::Mat<double>, double, double);  // Function pointer.
+    double (*wave_function_exponent_ptr)(arma::Mat<double>, double, double);
 
 public:
     VMC()
@@ -64,14 +65,17 @@ public:
         if (n_dims == 1)
         {
             local_energy_ptr = &local_energy_1d;
+            wave_function_exponent_ptr = &wave_function_exponent_1d;
         }
         else if (n_dims == 2)
         {
             local_energy_ptr = &local_energy_2d;
+            wave_function_exponent_ptr = &wave_function_exponent_2d;
         }
         else if (n_dims == 3)
         {
             local_energy_ptr = &local_energy_3d;
+            wave_function_exponent_ptr = &wave_function_exponent_3d;
         }
     }
 
@@ -101,13 +105,11 @@ public:
                 {
                     pos_current(dim, particle) = step_size*(uniform(engine) - 0.5);
                 }
-
                 wave_current(particle) =
-                    wave_function_exponent(
+                    wave_function_exponent_ptr(
                         pos_current.col(particle),  // Particle position.
                         alphas(i),
-                        beta,
-                        n_dims
+                        beta
                     );
             }
 
@@ -126,11 +128,10 @@ public:
                         pos_new(dim, particle) = pos_current(dim, particle) + step_size*(uniform(engine) - 0.5);
                     }
                     wave_new(particle) =
-                        wave_function_exponent(
+                        wave_function_exponent_ptr(
                             pos_new.col(particle),  // Particle position.
                             alphas(i),
-                            beta,
-                            n_dims
+                            beta
                         );
 
                     exponential_diff =
@@ -202,11 +203,10 @@ public:
                         -4*alphas(i)*pos_current(dim, particle);
                 }
                 wave_current(particle) =
-                    wave_function_exponent(
+                    wave_function_exponent_ptr(
                         pos_current.col(particle),  // Particle position.
                         alphas(i),
-                        beta,
-                        n_dims
+                        beta
                     );
             }
 
@@ -229,11 +229,10 @@ public:
                             -4*alphas(i)*pos_new(dim, particle);
                     }
                     wave_new(particle) =
-                        wave_function_exponent(
+                        wave_function_exponent_ptr(
                             pos_new.col(particle),  // Particle position.
                             alphas(i),
-                            beta,
-                            n_dims
+                            beta
                         );
 
                     double greens_ratio = 0.0;
@@ -336,25 +335,6 @@ int main()
 
     std::cout << "\ntotal time: " << comp_time1.count() << "s" << std::endl;
 
-    // int rows = 1;
-    // int cols = 6;
-    // int counter = 0;
-    // arma::Mat<double> M(rows, cols);
-
-
-    // for (int i = 0; i < rows; i++)
-    // {
-    //     for (int j = 0; j < cols; j++)
-    //     {
-    //         M(i, j) = counter++;
-    //     }
-    // }
-    
-    // M.print();
-    // arma::Mat<double> N = M.col(1);
-    // N.print();
-    // // N(1) = 99;
-    // // M.print();
 
     return 0;
 }

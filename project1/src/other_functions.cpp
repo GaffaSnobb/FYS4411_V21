@@ -10,6 +10,14 @@ double spherical_harmonic_oscillator(double x, double y, double z, double omega)
     return 0.5*m*omega*(x*x + y*y + z*z);
 }
 
+inline double local_energy_3d(double x, double y, double z, double alpha, double beta)
+{   /*
+    Analytical expression for the local energy for 3 dimensions, no
+    interaction between particles.
+    */
+    return -hbar*hbar*alpha/m*(2*alpha*(x*x + y*y + beta*beta*z*z) - 2 - beta) + 0.5*m*omega*omega*(x*x + y*y + z*z);
+}
+
 inline double local_energy_3d(arma::Mat<double> pos, double alpha, double beta)
 {   /*
     Analytical expression for the local energy for 3 dimensions, no
