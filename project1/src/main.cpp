@@ -68,7 +68,6 @@ public:
         int particle;   // Index for particle loop.
         int _;          // Index for MC loop.
         int dim;        // Index for dimension loop.
-
         int brute_force_counter = 0; // Debug counter for the Metropolis algorithm.
 
         for (int i = 0; i < n_variations; i++)
@@ -83,18 +82,17 @@ public:
                 positions are calulated along with the current wave
                 functions.
                 */
-
                 for (dim = 0; dim < n_dims; dim++)
                 {
                     pos_current(dim, particle) = step_size*(uniform(engine) - 0.5);
                 }
+
                 wave_current(particle) =
                     wave_function_exponent(
-                        pos_current(0, particle),   // x.
-                        pos_current(1, particle),   // y.
-                        pos_current(2, particle),   // z.
+                        pos_current.col(particle),  // Particle position.
                         alphas(i),
-                        beta
+                        beta,
+                        n_dims
                     );
             }
 
@@ -114,11 +112,10 @@ public:
                     }
                     wave_new(particle) =
                         wave_function_exponent(
-                            pos_new(0, particle),   // x.
-                            pos_new(1, particle),   // y.
-                            pos_new(2, particle),   // z.
+                            pos_new.col(particle),  // Particle position.
                             alphas(i),
-                            beta
+                            beta,
+                            n_dims
                         );
 
                     exponential_diff =
@@ -188,12 +185,12 @@ public:
                 }
                 wave_current(particle) =
                     wave_function_exponent(
-                        pos_current(0, particle),   // x.
-                        pos_current(1, particle),   // y.
-                        pos_current(2, particle),   // z.
+                        pos_current.col(particle),  // Particle position.
                         alphas(i),
-                        beta
+                        beta,
+                        n_dims
                     );
+
                 for (dim = 0; dim < n_dims; dim++)
                 {
                     qforce_current(dim, particle) =
@@ -216,14 +213,12 @@ public:
                             diffusion_coeff*qforce_current(dim, particle)*time_step +
                             normal(engine)*sqrt(time_step);
                     }
-
                     wave_new(particle) =
                         wave_function_exponent(
-                            pos_new(0, particle),   // x.
-                            pos_new(1, particle),   // y.
-                            pos_new(2, particle),   // z.
+                            pos_new.col(particle),  // Particle position.
                             alphas(i),
-                            beta
+                            beta,
+                            n_dims
                         );
 
                     for (dim = 0; dim < n_dims; dim++)
@@ -312,35 +307,47 @@ public:
 
 int main()
 {
-    // std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
-    // VMC q;
-    // q.brute_force();
-    // q.write_to_file("generated_data/output_bruteforce.txt");
+    VMC q;
+    q.brute_force();
+    q.write_to_file("generated_data/output_bruteforce.txt");
 
-    // std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
-    // std::chrono::duration<double> comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
+    std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
+    std::chrono::duration<double> comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
 
-    // std::cout << "\ntotal time: " << comp_time.count() << "s" << std::endl;
+    std::cout << "\ntotal time: " << comp_time.count() << "s" << std::endl;
 
-    // std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
 
-    // VMC q1;
-    // q1.importance_sampling();
-    // q1.write_to_file("generated_data/output_importance.txt");
+    VMC q1;
+    q1.importance_sampling();
+    q1.write_to_file("generated_data/output_importance.txt");
 
-    // std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
-    // std::chrono::duration<double> comp_time1 = std::chrono::duration_cast<std::chrono::duration<double> >(t4 - t3);
+    std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
+    std::chrono::duration<double> comp_time1 = std::chrono::duration_cast<std::chrono::duration<double> >(t4 - t3);
 
-    // std::cout << "\ntotal time: " << comp_time1.count() << "s" << std::endl;
+    std::cout << "\ntotal time: " << comp_time1.count() << "s" << std::endl;
 
-    arma::Mat<double> M(2, 5);
-    M.zeros();
+    // int rows = 1;
+    // int cols = 6;
+    // int counter = 0;
+    // arma::Mat<double> M(rows, cols);
+
+
+    // for (int i = 0; i < rows; i++)
+    // {
+    //     for (int j = 0; j < cols; j++)
+    //     {
+    //         M(i, j) = counter++;
+    //     }
+    // }
+    
     // M.print();
-
-    M(1, 1) = 1;
-
-    M.print();
+    // arma::Mat<double> N = M.col(1);
+    // N.print();
+    // // N(1) = 99;
+    // // M.print();
 
     return 0;
 }
