@@ -37,7 +37,9 @@ double wave_function_exponent(arma::Col<double> pos, double alpha, double beta, 
     for (int dim = 0; dim < n_dims; dim++)
     {   
         if (dim == 2)
-        {
+        {   /*
+            z dimension has an additional beta factor.
+            */
             result += pos(dim)*pos(dim)*beta;
         }
         else
@@ -46,36 +48,8 @@ double wave_function_exponent(arma::Col<double> pos, double alpha, double beta, 
         }
     }
     return -alpha*result;
-
-    // double result = pos(0)*pos(0);  // At least one spatial dimension.
-    // if (n_dims == 1)
-    // {
-    //     return -alpha*result;
-    // }
-    // else if (n_dims == 2)
-    // {   
-    //     result += pos(1)*pos(1);
-    //     return -alpha*result;
-    // }
-    // else
-    // {   
-    //     result += pos(1)*pos(1) + pos(2)*pos(2);
-    //     return -alpha*result;
-    // }
-
-    // switch (n_dims)
-    // {
-    //     case 1:
-    //         return -alpha*result;
-        
-    //     case 2:
-    //         result += pos(1)*pos(1);
-    //         return -alpha*result;
-        
-    //     default:
-    //         result += pos(1)*pos(1) + pos(2)*pos(2);
-    //         return -alpha*result;
-    // }
 }
+
+
 
 #endif

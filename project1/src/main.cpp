@@ -13,7 +13,7 @@
 // const double hbar = 1;
 // const double m = 1;
 // const double omega = 1;
-// const double beta = 1;
+const double beta = 1;
 
 class VMC
 {
@@ -21,7 +21,7 @@ private:
     std::string fpath;              // Path to output text file.
     std::ofstream outfile;          // Output file.
     const int n_variations = 100;   // Number of variations.
-    const int n_mc_cycles = 1e4;    // Number of MC cycles.
+    const int n_mc_cycles = 1e3;    // Number of MC cycles.
     const int seed = 1337;          // RNG seed.
     const int n_particles = 100;    // Number of particles.
     const int n_dims = 3;           // Number of spatial dimensions.
@@ -136,12 +136,13 @@ public:
                         brute_force_counter += 1;   // Debug.
                     }
 
-                    energy_step = local_energy_3d(
-                        pos_current(0, particle),
-                        pos_current(1, particle),
-                        pos_current(2, particle),
-                        alphas(i)
+                    energy_step = local_energy(
+                        pos_current.col(particle),
+                        alphas(i),
+                        beta,
+                        n_dims
                     );
+
                     e_expectations(i) += energy_step;
                     e_expectation_squared += energy_step*energy_step;
                 }
@@ -182,6 +183,9 @@ public:
                 for (dim = 0; dim < n_dims; dim++)
                 {
                     pos_current(dim, particle) = normal(engine)*sqrt(time_step);
+                    
+                    qforce_current(dim, particle) =
+                        -4*alphas(i)*pos_current(dim, particle);
                 }
                 wave_current(particle) =
                     wave_function_exponent(
@@ -190,12 +194,6 @@ public:
                         beta,
                         n_dims
                     );
-
-                for (dim = 0; dim < n_dims; dim++)
-                {
-                    qforce_current(dim, particle) =
-                        -4*alphas(i)*pos_current(dim, particle);
-                }
             }
 
             for (_ = 0; _ < n_mc_cycles; _++)
@@ -212,6 +210,9 @@ public:
                         pos_new(dim, particle) = pos_current(dim, particle) +
                             diffusion_coeff*qforce_current(dim, particle)*time_step +
                             normal(engine)*sqrt(time_step);
+                        
+                        qforce_new(dim, particle) =
+                            -4*alphas(i)*pos_new(dim, particle);
                     }
                     wave_new(particle) =
                         wave_function_exponent(
@@ -220,12 +221,6 @@ public:
                             beta,
                             n_dims
                         );
-
-                    for (dim = 0; dim < n_dims; dim++)
-                    {
-                        qforce_new(dim, particle) =
-                            -4*alphas(i)*pos_new(dim, particle);
-                    }
 
                     double greens_ratio = 0.0;
                     for (int dim = 0; dim < n_dims; dim++)
@@ -257,12 +252,11 @@ public:
                         wave_current(particle) = wave_new(particle);
                         importance_counter += 1;    // Debug.
                     }
-
-                    energy_step = local_energy_3d(
-                        pos_current(0, particle),
-                        pos_current(1, particle),
-                        pos_current(2, particle),
-                        alphas(i)
+                    energy_step = local_energy(
+                        pos_current.col(particle),
+                        alphas(i),
+                        beta,
+                        n_dims
                     );
                     e_expectations(i) += energy_step;
                     e_expectation_squared += energy_step*energy_step;
