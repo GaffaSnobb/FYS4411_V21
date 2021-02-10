@@ -24,7 +24,7 @@ private:
     const int n_mc_cycles = 1e3;    // Number of MC cycles.
     const int seed = 1337;          // RNG seed.
     const int n_particles = 100;    // Number of particles.
-    const int n_dims = 3;           // Number of spatial dimensions.
+    const int n_dims = 1;           // Number of spatial dimensions.
     const double step_size = 1;
     const double alpha_step = 0.02;
 
@@ -49,6 +49,8 @@ private:
     std::uniform_real_distribution<double> uniform;  // Continuous uniform distribution.
     std::normal_distribution<double> normal;         // Gaussian distribution
 
+    double (*local_energy_ptr)(arma::Mat<double>, double, double);
+
 public:
     VMC()
     {
@@ -58,6 +60,19 @@ public:
 
         e_expectations.zeros(); // Array must be zeroed since values will be added.
         engine.seed(seed);
+
+        if (n_dims == 1)
+        {
+            local_energy_ptr = &local_energy_1d;
+        }
+        else if (n_dims == 2)
+        {
+            local_energy_ptr = &local_energy_2d;
+        }
+        else if (n_dims == 3)
+        {
+            local_energy_ptr = &local_energy_3d;
+        }
     }
 
     void brute_force()
@@ -136,11 +151,10 @@ public:
                         brute_force_counter += 1;   // Debug.
                     }
 
-                    energy_step = local_energy(
+                    energy_step = local_energy_ptr(
                         pos_current.col(particle),
                         alphas(i),
-                        beta,
-                        n_dims
+                        beta
                     );
 
                     e_expectations(i) += energy_step;
@@ -252,11 +266,10 @@ public:
                         wave_current(particle) = wave_new(particle);
                         importance_counter += 1;    // Debug.
                     }
-                    energy_step = local_energy(
+                    energy_step = local_energy_ptr(
                         pos_current.col(particle),
                         alphas(i),
-                        beta,
-                        n_dims
+                        beta
                     );
                     e_expectations(i) += energy_step;
                     e_expectation_squared += energy_step*energy_step;

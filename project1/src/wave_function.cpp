@@ -51,5 +51,9 @@ double wave_function_exponent(arma::Col<double> pos, double alpha, double beta, 
 }
 
 
+// double wave_function_exponent_1d(double x, double alpha)
+// {
+//     return -alpha*x*x;
+// }
 
 #endif
