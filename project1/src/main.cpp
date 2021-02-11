@@ -21,7 +21,7 @@ private:
     std::string fpath;              // Path to output text file.
     std::ofstream outfile;          // Output file.
     const int n_variations = 100;   // Number of variations.
-    const int n_mc_cycles = 1e3;    // Number of MC cycles.
+    const int n_mc_cycles = 70;    // Number of MC cycles.
     const int seed = 1337;          // RNG seed.
     const int n_particles = 100;    // Number of particles.
     const int n_dims = 3;           // Number of spatial dimensions.
@@ -29,7 +29,8 @@ private:
     const double alpha_step = 0.02;
 
     const double diffusion_coeff = 0.5;
-    const double time_step = 0.005; // time steps in range [0.0001, 0.001] stable?
+    // const double time_step = 0.005; // time steps in range [0.0001, 0.001] stable?
+    const double time_step = 0.4;
 
     double e_expectation_squared;   // Square of the energy expectation value.
     double energy_step;             // Energy step size.
@@ -62,6 +63,7 @@ public:
         e_expectations.zeros(); // Array must be zeroed since values will be added.
         engine.seed(seed);
 
+        // Determine the dimensionality once instead of checks inside the loops.
         if (n_dims == 1)
         {
             local_energy_ptr = &local_energy_1d;

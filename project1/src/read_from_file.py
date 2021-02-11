@@ -20,11 +20,11 @@ def read_from_file_v2():
     plt.legend()
     plt.show()
 
-    plt.figure()
-    plt.plot(alpha_impor, exp_impor-exp_brute, label="difference")
-    plt.xlabel("alpha")
-    plt.ylabel("energy")
-    plt.show()
+    # plt.figure()
+    # plt.plot(alpha_impor, exp_impor-exp_brute, label="difference")
+    # plt.xlabel("alpha")
+    # plt.ylabel("energy")
+    # plt.show()
 
 
 
