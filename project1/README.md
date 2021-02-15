@@ -1,10 +1,10 @@
 
-##Dependencies
+## Dependencies
 
 Install armadillo: https://www.uio.no/studier/emner/matnat/fys/FYS4411/v13/guides/installing-armadillo/
 
-##How to use
-###1. Compile the main program
+## How to use
+### 1. Compile the main program
 The program is compiled using the `makefile`. To compile from command line use,
 ```
 $ make
@@ -22,7 +22,7 @@ Be sure to shorten the program run time by decreasing the number of MC cycles or
 ## Credit
 If we borrow code etc.
 
-##Overview of files
+## Overview of files
 | Files | Description |
 | ------ | ------ |
 | makefile | description |
