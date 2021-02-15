@@ -9,6 +9,9 @@
 #include "wave_function.cpp"
 #include "other_functions.cpp"
 
+#include <sstream>
+#include <string>
+
 // These are currently defined in 'other_functions.cpp'.
 // const double hbar = 1;
 // const double m = 1;
@@ -30,7 +33,8 @@ private:
 
     const double diffusion_coeff = 0.5;
     // const double time_step = 0.005; // time steps in range [0.0001, 0.001] stable?
-    const double time_step = 0.4;
+    // const double time_step = 0.4;
+    double time_step;
 
     double e_expectation_squared;   // Square of the energy expectation value.
     double energy_step;             // Energy step size.
@@ -148,7 +152,7 @@ public:
                         */
                         for (dim = 0; dim < n_dims; dim++)
                         {
-                            pos_current(dim, particle) = pos_new(dim, particle);   
+                            pos_current(dim, particle) = pos_new(dim, particle);
                         }
                         wave_current(particle) = wave_new(particle);
                         brute_force_counter += 1;   // Debug.
@@ -174,10 +178,13 @@ public:
     }
 
 
-    void importance_sampling()
+    void importance_sampling(double t)
     {   /*
         Task 1c importance sampling is implemented here.
         */
+        time_step = t;
+
+        //std::cout<<time_step<<std::endl;
 
         // Declared outside loop due to parallelization.
         int particle;   // Index for particle loop.
@@ -200,7 +207,7 @@ public:
                 for (dim = 0; dim < n_dims; dim++)
                 {
                     pos_current(dim, particle) = normal(engine)*sqrt(time_step);
-                    
+
                     qforce_current(dim, particle) =
                         -4*alphas(i)*pos_current(dim, particle);
                 }
@@ -226,7 +233,7 @@ public:
                         pos_new(dim, particle) = pos_current(dim, particle) +
                             diffusion_coeff*qforce_current(dim, particle)*time_step +
                             normal(engine)*sqrt(time_step);
-                        
+
                         qforce_new(dim, particle) =
                             -4*alphas(i)*pos_new(dim, particle);
                     }
@@ -263,7 +270,7 @@ public:
                             pos_current(dim, particle) = pos_new(dim, particle);
                             qforce_current(dim, particle) = qforce_new(dim, particle);
                         }
-                        
+
                         wave_current(particle) = wave_new(particle);
                         importance_counter += 1;    // Debug.
                     }
@@ -313,6 +320,15 @@ public:
     }
 };
 
+
+template < typename Type > std::string to_str (const Type & t)
+{// formats floating point number
+  std::ostringstream os;
+  os << t;
+  return os.str ();
+}
+
+
 int main()
 {
     std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
@@ -328,15 +344,19 @@ int main()
 
     std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
 
+    // -------------------------------
+    // Importance sampling starts here
+
+    double dt = 0.4;  // Set the time step 0.4 is good
+
     VMC q1;
-    q1.importance_sampling();
-    q1.write_to_file("generated_data/output_importance.txt");
+    q1.importance_sampling(dt);
+    q1.write_to_file("generated_data/output_importance_"+to_str(dt)+".txt");
 
     std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
     std::chrono::duration<double> comp_time1 = std::chrono::duration_cast<std::chrono::duration<double> >(t4 - t3);
 
     std::cout << "\ntotal time: " << comp_time1.count() << "s" << std::endl;
-
 
     return 0;
 }
