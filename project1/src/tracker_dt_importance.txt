@@ -1,0 +1,31 @@
+
+Tracking the timing of importance sampling as function of dt values
+-------------------------------------------------------------------------------
+std::string fpath;              // Path to output text file.
+std::ofstream outfile;          // Output file.
+const int n_variations = 100;   // Number of variations.
+const int n_mc_cycles = 70;    // Number of MC cycles.
+const int seed = 1337;          // RNG seed.
+const int n_particles = 100;    // Number of particles.
+const int n_dims = 3;           // Number of spatial dimensions.
+const double step_size = 1;
+const double alpha_step = 0.02;
+
+const double diffusion_coeff = 0.5;
+
+-------------------------------------------------------------------------------
+
+dt       | t_import | t_brute    | n_i  | n_b
+-----------------------------------------------
+0.7      | 0.194622 |0.0895311   | 4553 | 6592
+0.6      | 0.194689 | 0.0894945  | 5183 | 6592
+0.5      | 0.197129 | 0.0899761 | 5923 | 6592
+0.4      | 0.197462 | 0.0930223  | 6786 | 6592
+0.3      | 0.253939| 0.0955932  | 7764 | 6592
+0.2      | 0.197312 | 0.0950536  | 8724 | 6592
+0.1      | 0.19878 | 0.0943007 | 9541 | 6592
+0.01     | 0.263899| 0.129633  | 9986 | 6592
+0.001    | 0.200598| 0.0917125 | 9999 | 6529
+0.0001   | 0.198192| 0.0895006 | 10000| 6592
+0.00001  | 0.196831| 0.0890554 | 10000| 6592
+0.000001 | 0.198982| 0.0889752 | 10000| 6592
