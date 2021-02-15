@@ -5,6 +5,11 @@ def read_from_file(filename=""):
     alpha, var, exp = np.loadtxt(fname=filename, skiprows=1, unpack=True)
     return alpha, var, exp
 
+def read_tracker_dt_file(filename=""):
+    dt, t_i, t_b, n_i, n_b  = np.loadtxt(fname=filename, skiprows=19, unpack=True,  delimiter="|")
+    return dt, t_i, t_b, n_i, n_b
+
+
 def read_from_file_v2():
     """
     Not in use
@@ -20,9 +25,6 @@ def read_from_file_v2():
     plt.legend()
     plt.show()
 
-def read_tracker_dt_file(filename=""):
-    dt, t_i, t_b, n_i, n_b  = np.loadtxt(fname=filename, skiprows=19, unpack=True,  delimiter="|")
-    return dt, t_i, t_b, n_i, n_b
 
 if __name__ == "__main__":
     #read_from_file()
