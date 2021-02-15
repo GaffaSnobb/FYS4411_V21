@@ -8,7 +8,7 @@ valgrind : main.out
 
 make plot : main.out
 	./run.out
-	python read_from_file.py
+	python visualize.py
 
 clean :
 	rm *.out
