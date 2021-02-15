@@ -16,7 +16,7 @@ def brute_and_importance(fname_brute, fname_impor):
     plt.show()
 
 
-    
+
 def importance_time_step(path):
     dt, t_i, t_b, n_i, n_b  = read_tracker_dt_file("tracker_dt_importance.txt")
 
