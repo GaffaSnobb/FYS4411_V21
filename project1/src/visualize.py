@@ -13,7 +13,10 @@ def brute_and_importance(fname_brute, fname_impor):
     plt.ylabel("energy")
     plt.legend()
     fig.savefig("../fig/compare_brute_importance.png")
+    plt.show()
 
+
+    
 def importance_time_step(path):
     dt, t_i, t_b, n_i, n_b  = read_tracker_dt_file("tracker_dt_importance.txt")
 
@@ -39,8 +42,8 @@ def importance_time_step(path):
 
 if __name__ == "__main__":
     path = "generated_data"
-    importance_time_step(path)
+    fname_bruteforce = f"{path}/output_bruteforce.txt"
+    fname_importance = f"{path}/output_importance_0.4.txt"
+    brute_and_importance(fname_brute=fname_bruteforce, fname_impor=fname_importance)
 
-    #fname_bruteforce = f"{path}/output_bruteforce.txt"
-    #fname_importance = f"{path}/output_importance.txt"
-    #brute_and_importance(fname_brute=fname_bruteforce, fname_impor=fname_importance)
+    #importance_time_step(path)
