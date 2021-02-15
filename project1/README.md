@@ -30,3 +30,6 @@ If we borrow code etc.
 | other_functions.cpp | description |
 | wave_function.cpp | description |
 | read_from_file.py | description |
+
+## Edits(tmp)
+change time step on line 348 in main.cpp for now. 
