@@ -1,5 +1,5 @@
 
-Tracking the timing of importance sampling as function of dt values
+Tracking the timing of importance sampling as function of dt values. The variables were set to: 
 -------------------------------------------------------------------------------
 std::string fpath;              // Path to output text file.
 std::ofstream outfile;          // Output file.
