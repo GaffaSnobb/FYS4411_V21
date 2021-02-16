@@ -191,7 +191,11 @@ public:
         int _;          // Index for MC loop.
         int dim;        // Index for dimension loop.
 
-        int importance_counter = 0;
+        int importance_counter = 0; // Debug.
+
+        // TODO: Consider better naming for the following variables.
+        double wave_derivative; // Derivative of wave function wrt. alpha.
+        double delta_wave;
 
         for (int i = 0; i < n_variations; i++)
         {   /*
@@ -279,6 +283,13 @@ public:
                         alphas(i),
                         beta
                     );
+                    wave_derivative = wave_function_3d_diff_wrt_alpha(
+                        pos_current.col(particle),
+                        alphas(i),
+                        beta
+                    );
+                    delta_wave += wave_derivative;
+                    wave_derivative*energy_step;
                     e_expectations(i) += energy_step;
                     e_expectation_squared += energy_step*energy_step;
                 }
@@ -288,8 +299,15 @@ public:
             e_expectation_squared /= n_mc_cycles;
             e_variances(i) =
             e_expectation_squared - e_expectations(i)*e_expectations(i);
+
         }
         std::cout << "\nimportance_sampling: " << importance_counter/n_mc_cycles << std::endl;
+    }
+
+
+    void gradient_descent()
+    {
+
     }
 
 

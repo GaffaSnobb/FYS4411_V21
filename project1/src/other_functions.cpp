@@ -50,4 +50,30 @@ double quantum_force(double x, double y, double z, double alpha, double beta)
     return -4.0 * alpha * (x + y + z);
 }
 
+double local_energy_3d_diff_wrt_alpha(arma::Mat<double> pos, double beta)
+{   /*
+    UNSURE IF NEEDED
+    Local energy in 3D differentiated with respect to the variational
+    parameter alpha.
+
+    Parameters
+    ----------
+    pos : arma::Mat<double>
+        x, y, z position of a particle.
+
+    beta : double
+        ??? parameter. (interaction parameter maybe?)
+
+    Returns
+    -------
+    : double
+        The local energy differentiated with respect to alpha evaluated
+        at pos with parameter beta.
+
+    */
+
+    return -2*hbar*hbar/m*(pos(0)*pos(0) + pos(1)*pos(1) + beta*pos(2)*pos(2));
+
+}
+
 #endif
