@@ -37,13 +37,15 @@ private:
     double time_step;
 
     double e_expectation_squared;   // Square of the energy expectation value.
-    double local_energy;             // Energy step size.
+    double local_energy;            // Local energy.
     double exponential_diff;        // Difference of the exponentials, for Metropolis.
+    double wave_current;            // Current wave function.
+    double wave_new;                // Proposed new wave function.
 
     arma::Mat<double> pos_new = arma::Mat<double>(n_dims, n_particles);         // Proposed new position.
     arma::Mat<double> pos_current = arma::Mat<double>(n_dims, n_particles);     // Current position.
-    arma::Col<double> wave_current = arma::Col<double>(n_particles);            // Current wave function.
-    arma::Col<double> wave_new = arma::Col<double>(n_particles);                // Proposed new wave function.
+    // arma::Col<double> wave_current = arma::Col<double>(n_particles);            // Current wave function.
+    // arma::Col<double> wave_new = arma::Col<double>(n_particles);                // Proposed new wave function.
     arma::Col<double> e_variances = arma::Col<double>(n_variations);            // Energy variances.
     arma::Col<double> e_expectations = arma::Col<double>(n_variations);         // Energy expectation values.
     arma::Col<double> alphas = arma::Col<double>(n_variations);                 // Variational parameter.
@@ -95,15 +97,13 @@ public:
         int _;              // Index for MC loop.
         int dim;            // Index for dimension loops.
         int brute_force_counter = 0; // Debug counter for the Metropolis algorithm.
-        double wave_current_tmp = 0;    // Temporary fix before changing 'wave_function' matrix to a double.
-        double wave_new_tmp = 0;        // Temporary fix before changing 'wave_function' matrix to a double.
 
         for (int variation = 0; variation < n_variations; variation++)
         {   /*
             Run over all variations.
             */
             e_expectation_squared = 0;
-
+            wave_current = 0;
             for (particle = 0; particle < n_particles; particle++)
             {   /*
                 Iterate over all particles.  In this loop, all current
@@ -114,18 +114,12 @@ public:
                 {
                     pos_current(dim, particle) = step_size*(uniform(engine) - 0.5);
                 }
-                for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
-                {   /*
-                    After moving one particle, the wave function is
-                    calculated based on all particle positions.
-                    */
-                    wave_current_tmp +=
-                        wave_function_exponent_ptr(
-                            pos_current.col(particle_inner),  // Particle position.
-                            alphas(variation),
-                            beta
-                        );
-                }
+                wave_current +=
+                    wave_function_exponent_ptr(
+                        pos_current.col(particle),  // Particle position.
+                        alphas(variation),
+                        beta
+                    );
             }
 
             for (_ = 0; _ < n_mc_cycles; _++)
@@ -144,13 +138,13 @@ public:
                             pos_current(dim, particle) + step_size*(uniform(engine) - 0.5);
                     }
                     
-                    wave_new_tmp = 0;   // Overwrite the new wave func from previous particle step.
+                    wave_new = 0;   // Overwrite the new wave func from previous particle step.
                     for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
                     {   /*
                         After moving one particle, the wave function is
                         calculated based on all particle positions.
                         */
-                        wave_new_tmp +=
+                        wave_new +=
                             wave_function_exponent_ptr(
                                 pos_new.col(particle_inner),  // Particle position.
                                 alphas(variation),
@@ -159,7 +153,7 @@ public:
                     }
 
                     exponential_diff =
-                        2*(wave_new_tmp - wave_current_tmp);
+                        2*(wave_new - wave_current);
 
                     if (uniform(engine) < std::exp(exponential_diff))
                     {   /*
@@ -172,7 +166,7 @@ public:
                         {
                             pos_current(dim, particle) = pos_new(dim, particle);
                         }
-                        wave_current_tmp = wave_new_tmp;
+                        wave_current = wave_new;
                         brute_force_counter += 1;   // Debug.
                     }
 
@@ -212,17 +206,17 @@ public:
         //std::cout<<time_step<<std::endl;
 
         // Declared outside loop due to parallelization.
-        int particle;   // Index for particle loop.
-        int _;          // Index for MC loop.
-        int dim;        // Index for dimension loop.
+        int particle;       // Index for particle loop.
+        int particle_inner; // Index for inner particle loops.
+        int _;              // Index for MC loop.
+        int dim;            // Index for dimension loop.
 
         int importance_counter = 0; // Debug.
 
-        // TODO: Consider better naming for the following variables.
         double wave_derivative; // Derivative of wave function wrt. alpha.
         double wave_expectation;
 
-        for (int i = 0; i < n_variations; i++)
+        for (int variation = 0; variation < n_variations; variation++)
         {   /*
             Run over all variations.
             */
@@ -238,14 +232,18 @@ public:
                     pos_current(dim, particle) = normal(engine)*sqrt(time_step);
 
                     qforce_current(dim, particle) =
-                        -4*alphas(i)*pos_current(dim, particle);
+                        -4*alphas(variation)*pos_current(dim, particle);
                 }
-                wave_current(particle) =
-                    wave_function_exponent_ptr(
-                        pos_current.col(particle),  // Particle position.
-                        alphas(i),
-                        beta
-                    );
+                wave_current = 0;   // NB HERE
+                for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
+                {
+                    wave_current +=
+                        wave_function_exponent_ptr(
+                            pos_current.col(particle_inner),  // Particle position.
+                            alphas(variation),
+                            beta
+                        );
+                }
             }
 
             for (_ = 0; _ < n_mc_cycles; _++)
@@ -264,14 +262,17 @@ public:
                             normal(engine)*sqrt(time_step);
 
                         qforce_new(dim, particle) =
-                            -4*alphas(i)*pos_new(dim, particle);
+                            -4*alphas(variation)*pos_new(dim, particle);
                     }
-                    wave_new(particle) =
-                        wave_function_exponent_ptr(
-                            pos_new.col(particle),  // Particle position.
-                            alphas(i),
-                            beta
-                        );
+                    wave_new = 0;   // Overwrite the new wave func from previous particle step.
+                    for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
+                    {
+                        wave_new += wave_function_exponent_ptr(
+                                pos_new.col(particle_inner),  // Particle position.
+                                alphas(variation),
+                                beta
+                                );
+                    }
 
                     double greens_ratio = 0.0;
                     for (int dim = 0; dim < n_dims; dim++)
@@ -288,7 +289,7 @@ public:
 
                     greens_ratio = exp(greens_ratio);
                     exponential_diff =
-                        2*(wave_new(particle) - wave_current(particle));
+                        2*(wave_new - wave_current);
 
                     if (uniform(engine) < greens_ratio*std::exp(exponential_diff))
                     {   /*
@@ -300,32 +301,37 @@ public:
                             qforce_current(dim, particle) = qforce_new(dim, particle);
                         }
 
-                        wave_current(particle) = wave_new(particle);
+                        wave_current = wave_new;
                         importance_counter += 1;    // Debug.
                     }
-                    local_energy = local_energy_ptr(
-                        pos_current.col(particle),
-                        alphas(i),
-                        beta
-                    );
-                    wave_derivative = wave_function_3d_diff_wrt_alpha(
-                        pos_current.col(particle),
-                        alphas(i),
-                        beta
-                    );
+                    local_energy = 0;   // Overwrite local energy from previous particle step.
+                    wave_derivative = 0;
+                    for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
+                    {
+                        local_energy += local_energy_ptr(
+                            pos_current.col(particle_inner),
+                            alphas(variation),
+                            beta
+                        );
+                        wave_derivative += wave_function_3d_diff_wrt_alpha(
+                            pos_current.col(particle_inner),
+                            alphas(variation),
+                            beta
+                        );
+                    }
                     wave_expectation += wave_derivative;
                     wave_derivative*local_energy;
-                    e_expectations(i) += local_energy;
+                    e_expectations(variation) += local_energy;
                     e_expectation_squared += local_energy*local_energy;
                 }
             }
 
-            e_expectations(i) /= n_mc_cycles;
+            e_expectations(variation) /= n_mc_cycles;
             e_expectation_squared /= n_mc_cycles;
-            e_variances(i) =
-            e_expectation_squared - e_expectations(i)*e_expectations(i);
+            e_variances(variation) =
+            e_expectation_squared - e_expectations(variation)*e_expectations(variation);
 
-            std::cout << "energy_expectation: " << e_expectations(i) << std::endl;
+            std::cout << "energy_expectation: " << e_expectations(variation) << std::endl;
             std::cout << "\n";
 
         }
@@ -333,139 +339,139 @@ public:
     }
 
 
-    void importance_sampling_with_gradient_descent(double time_step_input, double alpha, double &energy_expectation, double &energy_derivative)
-    {   /*
-        Task 1d gradient descent.
+    // void importance_sampling_with_gradient_descent(double time_step_input, double alpha, double &energy_expectation, double &energy_derivative)
+    // {   /*
+    //     Task 1d gradient descent.
 
-        Parameters
-        ----------
-        time_step_input : double
-            Input time step for Greens function (Greens ratio).
+    //     Parameters
+    //     ----------
+    //     time_step_input : double
+    //         Input time step for Greens function (Greens ratio).
 
-        alpha : double
-            Variational parameter.
+    //     alpha : double
+    //         Variational parameter.
 
-        energy_expectation : double reference
-            Reference to energy expectation value.
+    //     energy_expectation : double reference
+    //         Reference to energy expectation value.
 
-        energy_derivative : double reference
-            Reference to storage for the energy derivative value.
-        */
-        time_step = time_step_input;
+    //     energy_derivative : double reference
+    //         Reference to storage for the energy derivative value.
+    //     */
+    //     time_step = time_step_input;
 
-        // Declared outside loop due to parallelization.
-        int particle;   // Index for particle loop.
-        int _;          // Index for MC loop.
-        int dim;        // Index for dimension loop.
+    //     // Declared outside loop due to parallelization.
+    //     int particle;   // Index for particle loop.
+    //     int _;          // Index for MC loop.
+    //     int dim;        // Index for dimension loop.
 
-        int importance_counter = 0; // Debug.
+    //     int importance_counter = 0; // Debug.
 
-        double wave_derivative = 0;     // Derivative of wave function wrt. alpha.
-        double wave_expectation = 0;    // Expectation value of the wave function derivative.
-        double wave_times_energy_expectation = 0;
+    //     double wave_derivative = 0;     // Derivative of wave function wrt. alpha.
+    //     double wave_expectation = 0;    // Expectation value of the wave function derivative.
+    //     double wave_times_energy_expectation = 0;
 
 
-        for (particle = 0; particle < n_particles; particle++)
-        {   /*
-            Iterate over all particles. Set the initial current positions
-            calculate the wave function and quantum force.
-            */
-            for (dim = 0; dim < n_dims; dim++)
-            {
-                pos_current(dim, particle) = normal(engine)*sqrt(time_step);
+    //     for (particle = 0; particle < n_particles; particle++)
+    //     {   /*
+    //         Iterate over all particles. Set the initial current positions
+    //         calculate the wave function and quantum force.
+    //         */
+    //         for (dim = 0; dim < n_dims; dim++)
+    //         {
+    //             pos_current(dim, particle) = normal(engine)*sqrt(time_step);
 
-                qforce_current(dim, particle) =
-                    -4*alpha*pos_current(dim, particle);
-            }
-            wave_current(particle) = // FIX for all particles.
-                wave_function_exponent_ptr(
-                    pos_current.col(particle),  // Particle position.
-                    alpha,
-                    beta
-                );
-        }
+    //             qforce_current(dim, particle) =
+    //                 -4*alpha*pos_current(dim, particle);
+    //         }
+    //         wave_current(particle) = // FIX for all particles.
+    //             wave_function_exponent_ptr(
+    //                 pos_current.col(particle),  // Particle position.
+    //                 alpha,
+    //                 beta
+    //             );
+    //     }
 
-        for (_ = 0; _ < n_mc_cycles; _++)
-        {   /* Run over all Monte Carlo cycles. */
+    //     for (_ = 0; _ < n_mc_cycles; _++)
+    //     {   /* Run over all Monte Carlo cycles. */
 
-            for (particle = 0; particle < n_particles; particle++)
-            {   /*
-                Iterate over all particles. Suggest new positions,
-                calculate new wave function and quantum force.
-                TODO: break lines on long expressions.
-                */
-                for (dim = 0; dim < n_dims; dim++)
-                {
-                    pos_new(dim, particle) = pos_current(dim, particle) +
-                        diffusion_coeff*qforce_current(dim, particle)*time_step +
-                        normal(engine)*sqrt(time_step);
+    //         for (particle = 0; particle < n_particles; particle++)
+    //         {   /*
+    //             Iterate over all particles. Suggest new positions,
+    //             calculate new wave function and quantum force.
+    //             TODO: break lines on long expressions.
+    //             */
+    //             for (dim = 0; dim < n_dims; dim++)
+    //             {
+    //                 pos_new(dim, particle) = pos_current(dim, particle) +
+    //                     diffusion_coeff*qforce_current(dim, particle)*time_step +
+    //                     normal(engine)*sqrt(time_step);
 
-                    qforce_new(dim, particle) =
-                        -4*alpha*pos_new(dim, particle);
-                }
-                wave_new(particle) = // FIX for all particles.
-                    wave_function_exponent_ptr(
-                        pos_new.col(particle),  // Particle position.
-                        alpha,
-                        beta
-                    );
+    //                 qforce_new(dim, particle) =
+    //                     -4*alpha*pos_new(dim, particle);
+    //             }
+    //             wave_new(particle) = // FIX for all particles.
+    //                 wave_function_exponent_ptr(
+    //                     pos_new.col(particle),  // Particle position.
+    //                     alpha,
+    //                     beta
+    //                 );
 
-                double greens_ratio = 0.0;
-                for (int dim = 0; dim < n_dims; dim++)
-                {   /*
-                    Calculate greens ratio for the acceptance
-                    criterion.
-                    */
-                    greens_ratio +=
-                        0.5*(qforce_current(dim, particle) + qforce_new(dim, particle))
-                        *(0.5*diffusion_coeff*time_step*
-                        (qforce_current(dim, particle) - qforce_new(dim, particle))
-                        - pos_new(dim, particle) + pos_current(dim, particle));
-                }
+    //             double greens_ratio = 0.0;
+    //             for (int dim = 0; dim < n_dims; dim++)
+    //             {   /*
+    //                 Calculate greens ratio for the acceptance
+    //                 criterion.
+    //                 */
+    //                 greens_ratio +=
+    //                     0.5*(qforce_current(dim, particle) + qforce_new(dim, particle))
+    //                     *(0.5*diffusion_coeff*time_step*
+    //                     (qforce_current(dim, particle) - qforce_new(dim, particle))
+    //                     - pos_new(dim, particle) + pos_current(dim, particle));
+    //             }
 
-                greens_ratio = exp(greens_ratio);
-                exponential_diff =
-                    2*(wave_new(particle) - wave_current(particle));
+    //             greens_ratio = exp(greens_ratio);
+    //             exponential_diff =
+    //                 2*(wave_new(particle) - wave_current(particle));
 
-                if (uniform(engine) < greens_ratio*std::exp(exponential_diff))
-                {   /*
-                    Metropolis step with new acceptance criterion.
-                    */
-                    for (dim = 0; dim < n_dims; dim++)
-                    {
-                        pos_current(dim, particle) = pos_new(dim, particle);
-                        qforce_current(dim, particle) = qforce_new(dim, particle);
-                    }
+    //             if (uniform(engine) < greens_ratio*std::exp(exponential_diff))
+    //             {   /*
+    //                 Metropolis step with new acceptance criterion.
+    //                 */
+    //                 for (dim = 0; dim < n_dims; dim++)
+    //                 {
+    //                     pos_current(dim, particle) = pos_new(dim, particle);
+    //                     qforce_current(dim, particle) = qforce_new(dim, particle);
+    //                 }
 
-                    wave_current(particle) = wave_new(particle);
-                    importance_counter += 1;    // Debug.
-                }
+    //                 wave_current(particle) = wave_new(particle);
+    //                 importance_counter += 1;    // Debug.
+    //             }
 
-                local_energy = local_energy_ptr(    // FIX for all particles.
-                    pos_current.col(particle),
-                    alpha,
-                    beta
-                );
-                wave_derivative = wave_function_3d_diff_wrt_alpha(  // FIX for all particles.
-                    pos_current.col(particle),
-                    alpha,
-                    beta
-                );
-                wave_expectation += wave_derivative;
-                wave_times_energy_expectation += wave_derivative*local_energy;
-                energy_expectation += local_energy;
-            }
-        }
-        wave_times_energy_expectation /= n_mc_cycles;
-        wave_expectation /= n_mc_cycles;
-        energy_expectation /= n_mc_cycles;
-        energy_derivative = 2*(wave_times_energy_expectation - wave_expectation*energy_expectation);
-        std::cout << "energy_expectation: " << energy_expectation << std::endl;
-        std::cout << "wave_expectation: " << wave_expectation << std::endl;
-        std::cout << "wave_times_energy_expectation: " << wave_times_energy_expectation << std::endl;
-        std::cout << "energy_derivative: " << energy_derivative << std::endl;
-        // std::cout << "\n";
-    }
+    //             local_energy = local_energy_ptr(    // FIX for all particles.
+    //                 pos_current.col(particle),
+    //                 alpha,
+    //                 beta
+    //             );
+    //             wave_derivative = wave_function_3d_diff_wrt_alpha(  // FIX for all particles.
+    //                 pos_current.col(particle),
+    //                 alpha,
+    //                 beta
+    //             );
+    //             wave_expectation += wave_derivative;
+    //             wave_times_energy_expectation += wave_derivative*local_energy;
+    //             energy_expectation += local_energy;
+    //         }
+    //     }
+    //     wave_times_energy_expectation /= n_mc_cycles;
+    //     wave_expectation /= n_mc_cycles;
+    //     energy_expectation /= n_mc_cycles;
+    //     energy_derivative = 2*(wave_times_energy_expectation - wave_expectation*energy_expectation);
+    //     std::cout << "energy_expectation: " << energy_expectation << std::endl;
+    //     std::cout << "wave_expectation: " << wave_expectation << std::endl;
+    //     std::cout << "wave_times_energy_expectation: " << wave_times_energy_expectation << std::endl;
+    //     std::cout << "energy_derivative: " << energy_derivative << std::endl;
+    //     // std::cout << "\n";
+    // }
 
 
     void write_to_file(std::string fpath)
@@ -508,24 +514,24 @@ int main()
 {
     std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
-    VMC q;
-    q.brute_force();
-    q.write_to_file("generated_data/output_bruteforce.txt");
+    VMC q_1;
+    q_1.brute_force();
+    q_1.write_to_file("generated_data/output_bruteforce.txt");
 
     std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
-    std::chrono::duration<double> comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
+    std::chrono::duration<double> comp_time_1 = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
 
-    std::cout << "\ntotal time: " << comp_time.count() << "s" << std::endl;
+    std::cout << "\ntotal time: " << comp_time_1.count() << "s" << std::endl;
 
-    // std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
-    // VMC q;
-    // q.importance_sampling(0.4);
-    // // q.write_to_file("generated_data/output_importance.txt");
+    std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
+    VMC q_2;
+    q_2.importance_sampling(0.4);
+    q_2.write_to_file("generated_data/output_importance.txt");
 
-    // std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
-    // std::chrono::duration<double> comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
+    std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
+    std::chrono::duration<double> comp_time_2 = std::chrono::duration_cast<std::chrono::duration<double> >(t4 - t3);
 
-    // std::cout << "\ntotal time: " << comp_time.count() << "s" << std::endl;
+    std::cout << "\ntotal time: " << comp_time_2.count() << "s" << std::endl;
 
 
     // std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
