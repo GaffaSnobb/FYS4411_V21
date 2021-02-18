@@ -3,6 +3,7 @@
 
 void VMC::set_local_energy()
 {   /* */
+  std::cout << "VMC.cpp: set_local_energy()" << std::endl;
   if (n_dims == 1)
   {
       local_energy_ptr = &local_energy_1d;
@@ -19,6 +20,7 @@ void VMC::set_local_energy()
 
 void VMC::set_wave_function()
 {   /* */
+  std::cout << "VMC.cpp: set_wave_function()" << std::endl;
   if (n_dims == 1)
   {
       wave_function_exponent_ptr = &wave_function_exponent_1d;
@@ -33,8 +35,10 @@ void VMC::set_wave_function()
   }
 }
 
-void VMC::set_initial_positions(int dim, int particle, int method)
+void VMC::set_initial_positions(int dim, int particle)
 {   /* set the initial positions */
+
+    //std::cout << "VMC.cpp: set_initial_positions()" << std::endl;
 
     if (method == 0){
       pos_current(dim, particle) = step_size*(uniform(engine) - 0.5);
@@ -47,13 +51,16 @@ void VMC::set_initial_positions(int dim, int particle, int method)
     }
 }
 
-void VMC::set_new_positions(int dim, int particle, int method)
+void VMC::set_new_positions(int dim, int particle)
 {   /* fubar */
+    //std::cout << "VMC.cpp: set_new_positions()" << std::endl;
 
-    if (method == 0){
+    if (method == 0)
+    {
       pos_new(dim, particle) = pos_current(dim, particle) + step_size*(uniform(engine) - 0.5);
     }
-    else if (method == 1){
+    else if (method == 1)
+    {
       pos_new(dim, particle) = pos_current(dim, particle) +
           diffusion_coeff*qforce_current(dim, particle)*time_step +
           normal(engine)*sqrt(time_step);
@@ -73,7 +80,6 @@ void VMC::brute_force()
     int _;          // Index for MC loop.
     int dim;        // Index for dimension loop.
     int brute_force_counter = 0; // Debug counter for the Metropolis algorithm.
-    int method = 0;
 
     for (int i = 0; i < n_variations; i++)
     {   /*
@@ -89,7 +95,7 @@ void VMC::brute_force()
             */
             for (dim = 0; dim < n_dims; dim++)
             {
-                set_initial_positions(dim, particle, method);
+                set_initial_positions(dim, particle);
             }
             wave_current(particle) =
                 wave_function_exponent_ptr(
@@ -111,7 +117,7 @@ void VMC::brute_force()
                 */
                 for (dim = 0; dim < n_dims; dim++)
                 {
-                    set_new_positions(dim, particle, method);
+                    set_new_positions(dim, particle);
                 }
                 wave_new(particle) =
                     wave_function_exponent_ptr(
@@ -164,14 +170,11 @@ void VMC::importance_sampling(double t)
     */
     time_step = t;
 
-    //std::cout<<time_step<<std::endl;
-
     // Declared outside loop due to parallelization.
     int particle;   // Index for particle loop.
     int _;          // Index for MC loop.
     int dim;        // Index for dimension loop.
     int importance_counter = 0;
-    int method = 1;
 
     for (int i = 0; i < n_variations; i++)
     {   /*
@@ -186,7 +189,7 @@ void VMC::importance_sampling(double t)
             */
             for (dim = 0; dim < n_dims; dim++)
             {
-                set_initial_positions(dim, particle, method);
+                set_initial_positions(dim, particle);
 
                 qforce_current(dim, particle) =
                     -4*alphas(i)*pos_current(dim, particle);
@@ -210,7 +213,7 @@ void VMC::importance_sampling(double t)
                 */
                 for (dim = 0; dim < n_dims; dim++)
                 {
-                    set_new_positions(dim, particle, method);
+                    set_new_positions(dim, particle);
 
                     qforce_new(dim, particle) =
                         -4*alphas(i)*pos_new(dim, particle);
