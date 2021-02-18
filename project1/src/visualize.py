@@ -15,6 +15,24 @@ def brute_and_importance(fname_brute, fname_impor):
     fig.savefig("../fig/compare_brute_importance.png")
     plt.show()
 
+def show_energy(fname):
+    """
+    Temporary: Work in progress
+    ----------
+        fname: name of input file
+    ----------
+    """
+    alpha, var, exp = read_from_file(fname)
+    #label_name = fname.split("/")[1]
+    #print(label_name)
+
+    fig = plt.figure()
+    plt.plot(alpha_impor, exp_impor, color="k", label="importance")
+    plt.xlabel("alpha")
+    plt.ylabel("energy")
+    plt.legend()
+    plt.show()
+
 
 def importance_time_step(path):
     dt, t_i, t_b, n_i, n_b  = read_tracker_dt_file("tracker_dt_importance.txt")
@@ -28,16 +46,6 @@ def importance_time_step(path):
     plt.ylabel(r"$\langle E \rangle $")
     plt.legend()
     plt.show()
-
-    """
-    fig = plt.figure()
-    plt.plot(dt, n_i, label="accepted importance")
-    plt.plot(dt, n_b, label="accepted brute force")
-    plt.xlabel(r"$\Delta t$")
-    plt.ylabel("number")
-    plt.legend()
-    plt.show()
-    """
 
 if __name__ == "__main__":
     path = "generated_data"
