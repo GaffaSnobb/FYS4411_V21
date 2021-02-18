@@ -74,6 +74,9 @@ double wave_function_3d_diff_wrt_alpha(arma::Mat<double> pos, double alpha, doub
     The wavefunction in 3D differentiated with respect to the
     variational parameter alpha.
 
+    CORRECTION: This is only the factor in front of the wave function
+    after differentiation.
+
     Parameters
     ----------
     pos : arma::Col<double>
