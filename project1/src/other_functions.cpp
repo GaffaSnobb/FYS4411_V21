@@ -42,13 +42,13 @@ inline double local_energy_1d(arma::Mat<double> pos, double alpha, double beta)
     return -hbar*hbar*alpha/m*(2*alpha*pos(0)*pos(0) - 1) + 0.5*m*omega*omega*pos(0)*pos(0);
 }
 
-double quantum_force(double x, double y, double z, double alpha, double beta)
-{   /*
-    Analytical expression for quantum force with beta=1 and a=0.
-    MAY BE REMOVED
-    */
-    return -4.0 * alpha * (x + y + z);
-}
+// double quantum_force(double x, double y, double z, double alpha, double beta)
+// {   /*
+//     Analytical expression for quantum force with beta=1 and a=0.
+//     MAY BE REMOVED
+//     */
+//     return -4.0 * alpha * (x + y + z);
+// }
 
 double local_energy_3d_diff_wrt_alpha(arma::Mat<double> pos, double beta)
 {   /*

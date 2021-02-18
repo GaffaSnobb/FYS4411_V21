@@ -12,3 +12,4 @@ make plot : main.out
 
 clean :
 	rm *.out
+	rm -r __pycache__/
