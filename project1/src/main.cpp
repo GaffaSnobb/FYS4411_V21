@@ -44,8 +44,6 @@ private:
 
     arma::Mat<double> pos_new = arma::Mat<double>(n_dims, n_particles);         // Proposed new position.
     arma::Mat<double> pos_current = arma::Mat<double>(n_dims, n_particles);     // Current position.
-    // arma::Col<double> wave_current = arma::Col<double>(n_particles);            // Current wave function.
-    // arma::Col<double> wave_new = arma::Col<double>(n_particles);                // Proposed new wave function.
     arma::Col<double> e_variances = arma::Col<double>(n_variations);            // Energy variances.
     arma::Col<double> e_expectations = arma::Col<double>(n_variations);         // Energy expectation values.
     arma::Col<double> alphas = arma::Col<double>(n_variations);                 // Variational parameter.
@@ -114,8 +112,7 @@ public:
                 {
                     pos_current(dim, particle) = step_size*(uniform(engine) - 0.5);
                 }
-                wave_current +=
-                    wave_function_exponent_ptr(
+                wave_current += wave_function_exponent_ptr(
                         pos_current.col(particle),  // Particle position.
                         alphas(variation),
                         beta
@@ -144,8 +141,7 @@ public:
                         After moving one particle, the wave function is
                         calculated based on all particle positions.
                         */
-                        wave_new +=
-                            wave_function_exponent_ptr(
+                        wave_new += wave_function_exponent_ptr(
                                 pos_new.col(particle_inner),  // Particle position.
                                 alphas(variation),
                                 beta
@@ -214,14 +210,14 @@ public:
         int importance_counter = 0; // Debug.
 
         double wave_derivative; // Derivative of wave function wrt. alpha.
-        double wave_expectation;
+        double wave_expectation;    // Wave func expectation value.
 
         for (int variation = 0; variation < n_variations; variation++)
         {   /*
             Run over all variations.
             */
             e_expectation_squared = 0;
-
+            wave_current = 0;
             for (particle = 0; particle < n_particles; particle++)
             {   /*
                 Iterate over all particles. Set the initial current positions
@@ -229,21 +225,17 @@ public:
                 */
                 for (dim = 0; dim < n_dims; dim++)
                 {
-                    pos_current(dim, particle) = normal(engine)*sqrt(time_step);
+                    pos_current(dim, particle) =
+                        normal(engine)*sqrt(time_step);
 
                     qforce_current(dim, particle) =
                         -4*alphas(variation)*pos_current(dim, particle);
                 }
-                wave_current = 0;   // NB HERE
-                for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
-                {
-                    wave_current +=
-                        wave_function_exponent_ptr(
-                            pos_current.col(particle_inner),  // Particle position.
-                            alphas(variation),
-                            beta
-                        );
-                }
+                wave_current += wave_function_exponent_ptr(
+                        pos_current.col(particle),  // Particle position.
+                        alphas(variation),
+                        beta
+                    );
             }
 
             for (_ = 0; _ < n_mc_cycles; _++)
@@ -253,7 +245,6 @@ public:
                 {   /*
                     Iterate over all particles. Suggest new positions,
                     calculate new wave function and quantum force.
-                    TODO: break lines on long expressions.
                     */
                     for (dim = 0; dim < n_dims; dim++)
                     {
@@ -264,6 +255,7 @@ public:
                         qforce_new(dim, particle) =
                             -4*alphas(variation)*pos_new(dim, particle);
                     }
+                    
                     wave_new = 0;   // Overwrite the new wave func from previous particle step.
                     for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
                     {
@@ -271,7 +263,7 @@ public:
                                 pos_new.col(particle_inner),  // Particle position.
                                 alphas(variation),
                                 beta
-                                );
+                            );
                     }
 
                     double greens_ratio = 0.0;
@@ -288,8 +280,7 @@ public:
                     }
 
                     greens_ratio = exp(greens_ratio);
-                    exponential_diff =
-                        2*(wave_new - wave_current);
+                    exponential_diff = 2*(wave_new - wave_current);
 
                     if (uniform(engine) < greens_ratio*std::exp(exponential_diff))
                     {   /*
@@ -297,13 +288,16 @@ public:
                         */
                         for (dim = 0; dim < n_dims; dim++)
                         {
-                            pos_current(dim, particle) = pos_new(dim, particle);
-                            qforce_current(dim, particle) = qforce_new(dim, particle);
+                            pos_current(dim, particle) =
+                                pos_new(dim, particle);
+                            qforce_current(dim, particle) =
+                                qforce_new(dim, particle);
                         }
 
                         wave_current = wave_new;
                         importance_counter += 1;    // Debug.
                     }
+                    
                     local_energy = 0;   // Overwrite local energy from previous particle step.
                     wave_derivative = 0;
                     for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
@@ -330,9 +324,6 @@ public:
             e_expectation_squared /= n_mc_cycles;
             e_variances(variation) =
             e_expectation_squared - e_expectations(variation)*e_expectations(variation);
-
-            std::cout << "energy_expectation: " << e_expectations(variation) << std::endl;
-            std::cout << "\n";
 
         }
         std::cout << "\nimportance_sampling: " << importance_counter/n_mc_cycles << std::endl;
@@ -525,7 +516,7 @@ int main()
 
     std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
     VMC q_2;
-    q_2.importance_sampling(0.4);
+    q_2.importance_sampling(0.05);
     q_2.write_to_file("generated_data/output_importance.txt");
 
     std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
