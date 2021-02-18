@@ -42,7 +42,7 @@ def importance_time_step(path):
 if __name__ == "__main__":
     path = "generated_data"
     fname_bruteforce = f"{path}/output_bruteforce.txt"
-    fname_importance = f"{path}/output_importance_0.4.txt"
+    fname_importance = f"{path}/output_importance.txt"
     brute_and_importance(fname_brute=fname_bruteforce, fname_impor=fname_importance)
 
     #importance_time_step(path)
