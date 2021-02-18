@@ -21,10 +21,12 @@ private:
     std::string fpath;              // Path to output text file.
     std::ofstream outfile;          // Output file.
     const int n_variations = 100;   // Number of variations.
-    const int n_mc_cycles = 70;    // Number of MC cycles.
+    const int n_mc_cycles = 70;     // Number of MC cycles.
     const int seed = 1337;          // RNG seed.
     const int n_particles = 100;    // Number of particles.
-    const int n_dims = 3;           // Number of spatial dimensions.
+    const int n_dims;           // Number of spatial dimensions.
+    //const int method = 1;
+
     const double step_size = 1;
     const double alpha_step = 0.02;
     const double beta = 1;
@@ -55,7 +57,7 @@ private:
     double (*wave_function_exponent_ptr)(arma::Mat<double>, double, double);
 
 public:
-    VMC()
+    VMC(int foo) : n_dims(foo)  // just
     {
         // Pre-filling the alphas vector due to parallelization.
         alphas.fill(alpha_step);
@@ -63,25 +65,10 @@ public:
 
         e_expectations.zeros(); // Array must be zeroed since values will be added.
         engine.seed(seed);
-        //std::cout << "VMC() in VMC.h" << std::endl;
-
-        if (n_dims == 1)
-        {
-            local_energy_ptr = &local_energy_1d;
-            wave_function_exponent_ptr = &wave_function_exponent_1d;
-        }
-        else if (n_dims == 2)
-        {
-            local_energy_ptr = &local_energy_2d;
-            wave_function_exponent_ptr = &wave_function_exponent_2d;
-        }
-        else if (n_dims == 3)
-        {
-            local_energy_ptr = &local_energy_3d;
-            wave_function_exponent_ptr = &wave_function_exponent_3d;
-        }
+        std::cout << "VMC() in VMC.h  n_dims = " << n_dims << std::endl;
     }
 
+    void set_local_energy();
     void set_initial_positions(int dim, int particle, int method);
     void set_new_positions(int dim, int particle, int method);
     void brute_force();

@@ -1,5 +1,25 @@
 #include "VMC.h"
 
+
+void VMC::set_local_energy()
+{   /* */
+  if (n_dims == 1)
+  {
+      local_energy_ptr = &local_energy_1d;
+      wave_function_exponent_ptr = &wave_function_exponent_1d;
+  }
+  else if (n_dims == 2)
+  {
+      local_energy_ptr = &local_energy_2d;
+      wave_function_exponent_ptr = &wave_function_exponent_2d;
+  }
+  else if (n_dims == 3)
+  {
+      local_energy_ptr = &local_energy_3d;
+      wave_function_exponent_ptr = &wave_function_exponent_3d;
+  }
+}
+
 void VMC::set_initial_positions(int dim, int particle, int method)
 {   /* set the initial positions */
 
@@ -29,7 +49,6 @@ void VMC::set_new_positions(int dim, int particle, int method)
       std::cout << "No method chosen"<< std::endl;
     }
 }
-
 
 void VMC::brute_force()
 {   /*
