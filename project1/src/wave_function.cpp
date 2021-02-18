@@ -1,5 +1,4 @@
-#ifndef WAVE
-#define WAVE
+#include "wave_function.h"
 
 double wave_function(double x, double y, double z, double alpha, double beta)
 {
@@ -68,5 +67,3 @@ double wave_function_exponent_3d(arma::Mat<double> pos, double alpha, double bet
     */
     return -alpha*(pos(0)*pos(0) + pos(1)*pos(1) + beta*pos(2)*pos(2));
 }
-
-#endif
