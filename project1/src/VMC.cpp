@@ -6,16 +6,29 @@ void VMC::set_local_energy()
   if (n_dims == 1)
   {
       local_energy_ptr = &local_energy_1d;
-      wave_function_exponent_ptr = &wave_function_exponent_1d;
   }
   else if (n_dims == 2)
   {
       local_energy_ptr = &local_energy_2d;
-      wave_function_exponent_ptr = &wave_function_exponent_2d;
   }
   else if (n_dims == 3)
   {
       local_energy_ptr = &local_energy_3d;
+  }
+}
+
+void VMC::set_wave_function()
+{   /* */
+  if (n_dims == 1)
+  {
+      wave_function_exponent_ptr = &wave_function_exponent_1d;
+  }
+  else if (n_dims == 2)
+  {
+      wave_function_exponent_ptr = &wave_function_exponent_2d;
+  }
+  else if (n_dims == 3)
+  {
       wave_function_exponent_ptr = &wave_function_exponent_3d;
   }
 }

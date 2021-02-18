@@ -57,7 +57,7 @@ private:
     double (*wave_function_exponent_ptr)(arma::Mat<double>, double, double);
 
 public:
-    VMC(int foo) : n_dims(foo)  // just
+    VMC(const int n_dims_input) : n_dims(n_dims_input)  // tmp fix
     {
         // Pre-filling the alphas vector due to parallelization.
         alphas.fill(alpha_step);
@@ -65,10 +65,13 @@ public:
 
         e_expectations.zeros(); // Array must be zeroed since values will be added.
         engine.seed(seed);
+
+        //n_dims = n_dims_input;
         std::cout << "VMC() in VMC.h  n_dims = " << n_dims << std::endl;
     }
 
     void set_local_energy();
+    void set_wave_function();
     void set_initial_positions(int dim, int particle, int method);
     void set_new_positions(int dim, int particle, int method);
     void brute_force();

@@ -4,10 +4,13 @@
 int main()
 {
     std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+    const int n_dims = 3;
 
-    VMC q;
-    q.brute_force();
-    q.write_to_file("generated_data/output_bruteforce.txt");
+    VMC system(n_dims);
+    system.set_local_energy();
+    system.set_wave_function();
+    system.brute_force();
+    system.write_to_file("generated_data/output_bruteforce.txt");
 
     std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
     std::chrono::duration<double> comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
@@ -21,9 +24,11 @@ int main()
 
     double dt = 0.4;  // Set the time step 0.4 is good
 
-    VMC q1;
-    q1.importance_sampling(dt);
-    q1.write_to_file("generated_data/output_importance.txt");
+    VMC system2(n_dims);
+    system2.set_local_energy();
+    system2.set_wave_function();
+    system2.importance_sampling(dt);
+    system2.write_to_file("generated_data/output_importance.txt");
 
     std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
     std::chrono::duration<double> comp_time1 = std::chrono::duration_cast<std::chrono::duration<double> >(t4 - t3);
