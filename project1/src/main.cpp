@@ -23,13 +23,13 @@ class VMC
 private:
     std::string fpath;              // Path to output text file.
     std::ofstream outfile;          // Output file.
-    const int n_variations = 10;   // Number of variations.
+    const int n_variations = 100;   // Number of variations.
     const int n_mc_cycles = 1e3;    // Number of MC cycles.
     const int seed = 1337;          // RNG seed.
     const int n_particles = 10;    // Number of particles.
     const int n_dims = 3;           // Number of spatial dimensions.
     const double step_size = 1;
-    const double alpha_step = 0.02;
+    const double alpha_step = 0.03;
 
     const double diffusion_coeff = 0.5;
     // const double time_step = 0.005; // time steps in range [0.0001, 0.001] stable?
@@ -90,12 +90,15 @@ public:
         Brute-force Monte Carlo simulation using Metropolis.
         */
         // Declared outside loop due to parallelization.
-        int particle;   // Index for particle loop.
-        int _;          // Index for MC loop.
-        int dim;        // Index for dimension loop.
+        int particle;       // Index for particle loop.
+        int particle_inner; // Index for inner particle loops.
+        int _;              // Index for MC loop.
+        int dim;            // Index for dimension loops.
         int brute_force_counter = 0; // Debug counter for the Metropolis algorithm.
+        double wave_current_tmp = 0;    // Temporary fix before changing 'wave_function' matrix to a double.
+        double wave_new_tmp = 0;        // Temporary fix before changing 'wave_function' matrix to a double.
 
-        for (int i = 0; i < n_variations; i++)
+        for (int variation = 0; variation < n_variations; variation++)
         {   /*
             Run over all variations.
             */
@@ -111,12 +114,18 @@ public:
                 {
                     pos_current(dim, particle) = step_size*(uniform(engine) - 0.5);
                 }
-                wave_current(particle) =
-                    wave_function_exponent_ptr(
-                        pos_current.col(particle),  // Particle position.
-                        alphas(i),
-                        beta
-                    );
+                for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
+                {   /*
+                    After moving one particle, the wave function is
+                    calculated based on all particle positions.
+                    */
+                    wave_current_tmp +=
+                        wave_function_exponent_ptr(
+                            pos_current.col(particle_inner),  // Particle position.
+                            alphas(variation),
+                            beta
+                        );
+                }
             }
 
             for (_ = 0; _ < n_mc_cycles; _++)
@@ -131,17 +140,26 @@ public:
                     */
                     for (dim = 0; dim < n_dims; dim++)
                     {
-                        pos_new(dim, particle) = pos_current(dim, particle) + step_size*(uniform(engine) - 0.5);
+                        pos_new(dim, particle) =
+                            pos_current(dim, particle) + step_size*(uniform(engine) - 0.5);
                     }
-                    wave_new(particle) =
-                        wave_function_exponent_ptr(
-                            pos_new.col(particle),  // Particle position.
-                            alphas(i),
-                            beta
-                        );
+                    
+                    wave_new_tmp = 0;   // Overwrite the new wave func from previous particle step.
+                    for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
+                    {   /*
+                        After moving one particle, the wave function is
+                        calculated based on all particle positions.
+                        */
+                        wave_new_tmp +=
+                            wave_function_exponent_ptr(
+                                pos_new.col(particle_inner),  // Particle position.
+                                alphas(variation),
+                                beta
+                            );
+                    }
 
                     exponential_diff =
-                        2*(wave_new(particle) - wave_current(particle));
+                        2*(wave_new_tmp - wave_current_tmp);
 
                     if (uniform(engine) < std::exp(exponential_diff))
                     {   /*
@@ -154,25 +172,32 @@ public:
                         {
                             pos_current(dim, particle) = pos_new(dim, particle);
                         }
-                        wave_current(particle) = wave_new(particle);
+                        wave_current_tmp = wave_new_tmp;
                         brute_force_counter += 1;   // Debug.
                     }
 
-                    local_energy = local_energy_ptr(
-                        pos_current.col(particle),
-                        alphas(i),
-                        beta
-                    );
+                    local_energy = 0;   // Overwrite local energy from previous particle step.
+                    for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
+                    {   /*
+                        After moving one particle, the local energy is
+                        calculated based on all particle positions.
+                        */
+                        local_energy += local_energy_ptr(
+                            pos_current.col(particle_inner),
+                            alphas(variation),
+                            beta
+                        );
+                    }
 
-                    e_expectations(i) += local_energy;
+                    e_expectations(variation) += local_energy;
                     e_expectation_squared += local_energy*local_energy;
                 }
             }
 
-            e_expectations(i) /= n_mc_cycles;
+            e_expectations(variation) /= n_mc_cycles;
             e_expectation_squared /= n_mc_cycles;
-            e_variances(i) =
-                e_expectation_squared - e_expectations(i)*e_expectations(i);
+            e_variances(variation) =
+                e_expectation_squared - e_expectations(variation)*e_expectations(variation);
         }
     std::cout << "\nbrute_force: " << brute_force_counter/n_mc_cycles << std::endl;
     }
@@ -481,16 +506,16 @@ template < typename Type > std::string to_str (const Type & t)
 
 int main()
 {
-    // std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
-    // VMC q;
-    // q.brute_force();
-    // q.write_to_file("generated_data/output_bruteforce.txt");
+    VMC q;
+    q.brute_force();
+    q.write_to_file("generated_data/output_bruteforce.txt");
 
-    // std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
-    // std::chrono::duration<double> comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
+    std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
+    std::chrono::duration<double> comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
 
-    // std::cout << "\ntotal time: " << comp_time.count() << "s" << std::endl;
+    std::cout << "\ntotal time: " << comp_time.count() << "s" << std::endl;
 
     // std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
     // VMC q;
@@ -503,51 +528,51 @@ int main()
     // std::cout << "\ntotal time: " << comp_time.count() << "s" << std::endl;
 
 
-    std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
-    double dt = 0.4;  // Set the time step 0.4 is good
-    double energy_expectation = 0;
-    const int gd_iterations = 100; // Max gradient descent iterations.
-    double energy_derivative = 0;
-    const double learning_rate = 0.001;
-    std::ofstream outfile;
-    VMC q1;
+    // std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
+    // double dt = 0.4;  // Set the time step 0.4 is good
+    // double energy_expectation = 0;
+    // const int gd_iterations = 100; // Max gradient descent iterations.
+    // double energy_derivative = 0;
+    // const double learning_rate = 0.001;
+    // std::ofstream outfile;
+    // VMC q1;
 
-    arma::Col<double> alphas(gd_iterations);
-    arma::Col<double> energy_expectations(gd_iterations);
-    energy_expectations.zeros();
-    alphas(0) = 0.45;    // Initial variational parameter.
+    // arma::Col<double> alphas(gd_iterations);
+    // arma::Col<double> energy_expectations(gd_iterations);
+    // energy_expectations.zeros();
+    // alphas(0) = 0.45;    // Initial variational parameter.
 
 
-    for (int i = 0; i < gd_iterations - 1; i++)
-    {   
-        q1.importance_sampling_with_gradient_descent(dt, alphas(i), energy_expectations(i), energy_derivative);
-        alphas(i + 1) = alphas(i) - learning_rate*energy_derivative;
-        // alphas(i + 1) = alphas(i) + 0.1;
-        std::cout << "alphas(i): " << alphas(i) << "\n" << std::endl;
+    // for (int i = 0; i < gd_iterations - 1; i++)
+    // {   
+    //     q1.importance_sampling_with_gradient_descent(dt, alphas(i), energy_expectations(i), energy_derivative);
+    //     alphas(i + 1) = alphas(i) - learning_rate*energy_derivative;
+    //     // alphas(i + 1) = alphas(i) + 0.1;
+    //     std::cout << "alphas(i): " << alphas(i) << "\n" << std::endl;
 
-    }
+    // }
 
-    outfile.open("generated_data/gradient_descent_test.txt", std::ios::out);
-    outfile << std::setw(20) << "alpha";
-    outfile << std::setw(21) << "expected_energy\n";
+    // outfile.open("generated_data/gradient_descent_test.txt", std::ios::out);
+    // outfile << std::setw(20) << "alpha";
+    // outfile << std::setw(21) << "expected_energy\n";
 
-    for (int i = 0; i < gd_iterations; i++)
-    {   /*
-        Write data to file.
-        */
-        outfile << std::setw(20) << std::setprecision(10);
-        outfile << alphas(i);
-        outfile << std::setw(20) << std::setprecision(10);
-        outfile << energy_expectations(i) << "\n";
-    }
-    outfile.close();
+    // for (int i = 0; i < gd_iterations; i++)
+    // {   /*
+    //     Write data to file.
+    //     */
+    //     outfile << std::setw(20) << std::setprecision(10);
+    //     outfile << alphas(i);
+    //     outfile << std::setw(20) << std::setprecision(10);
+    //     outfile << energy_expectations(i) << "\n";
+    // }
+    // outfile.close();
 
-    // q1.write_to_file("generated_data/output_importance_"+to_str(dt)+".txt");
+    // // q1.write_to_file("generated_data/output_importance_"+to_str(dt)+".txt");
 
-    std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
-    std::chrono::duration<double> comp_time1 = std::chrono::duration_cast<std::chrono::duration<double> >(t4 - t3);
+    // std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
+    // std::chrono::duration<double> comp_time1 = std::chrono::duration_cast<std::chrono::duration<double> >(t4 - t3);
 
-    std::cout << "\ntotal time: " << comp_time1.count() << "s" << std::endl;
+    // std::cout << "\ntotal time: " << comp_time1.count() << "s" << std::endl;
 
     return 0;
 }
