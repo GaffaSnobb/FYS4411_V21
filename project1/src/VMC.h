@@ -13,7 +13,7 @@
 #include "other_functions.h"
 
 #include <sstream>
-#include <string>
+#include <string>   // String type, string maipulation.
 
 class VMC
 {
@@ -25,7 +25,7 @@ private:
     const int seed = 1337;          // RNG seed.
     const int n_particles = 10;    // Number of particles.
     const int n_dims;               // Number of spatial dimensions.
-    const int method;
+    const std::string method;
 
     const double step_size = 1;
     const double alpha_step = 0.03;
@@ -57,8 +57,11 @@ private:
     double (*wave_function_exponent_ptr)(arma::Mat<double>, double, double);
 
 public:
-    VMC(const int n_dims_input, const int method_input) : n_dims(n_dims_input),
-                                                          method(method_input)
+    VMC(
+        const int n_dims_input,
+        const std::string method_input):
+        n_dims(n_dims_input),
+        method(method_input)
     {
         // Pre-filling the alphas vector due to parallelization.
         alphas.fill(alpha_step);
@@ -84,6 +87,7 @@ public:
         double &energy_expectation,
         double &energy_derivative
     );
+    void generalization();
 };
 
 #endif
