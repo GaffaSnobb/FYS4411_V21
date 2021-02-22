@@ -1,5 +1,4 @@
-#ifndef WAVE
-#define WAVE
+#include "wave_function.h"
 
 double wave_function(double x, double y, double z, double alpha, double beta)
 {
@@ -53,7 +52,7 @@ double wave_function_exponent_3d(arma::Mat<double> pos, double alpha, double bet
     Parameters
     ----------
     pos : arma::Col<double>
-        x, y, z position of a particle.
+        Vector of position of a particle.
 
     alpha : double
         Variational parameter.
@@ -71,16 +70,13 @@ double wave_function_exponent_3d(arma::Mat<double> pos, double alpha, double bet
 
 double wave_function_3d_diff_wrt_alpha(arma::Mat<double> pos, double alpha, double beta)
 {   /*
-    The wavefunction in 3D differentiated with respect to the
-    variational parameter alpha.
-
     CORRECTION: This is only the factor in front of the wave function
-    after differentiation.
+    after differentiation. 
 
     Parameters
     ----------
     pos : arma::Col<double>
-        x, y, z position of a particle.
+        Vector of position of a particle.
 
     alpha : double
         Variational parameter.
@@ -92,8 +88,7 @@ double wave_function_3d_diff_wrt_alpha(arma::Mat<double> pos, double alpha, doub
     -------
     : double
         The wave function differentiated with respect to alpha evaluated
-        at pos.
+        at pos divided by the wavefunction.
     */
     return -(pos(0)*pos(0) + pos(1)*pos(1) + beta*pos(2)*pos(2));
 }
-#endif
