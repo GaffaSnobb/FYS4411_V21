@@ -540,24 +540,21 @@ int main()
     double dt = 0.05;  // Set the time step 0.4 is good
     double energy_expectation = 0;
     const int gd_iterations = 620; // Max gradient descent iterations.
-    // double energy_derivative = 0;
+    double energy_derivative = 0;
     const double learning_rate = 0.001;
     std::ofstream outfile;
     VMC q1;
 
     arma::Col<double> alphas(gd_iterations);
-    arma::Col<double> energy_derivative(gd_iterations);
     arma::Col<double> energy_expectations(gd_iterations);
     energy_expectations.zeros();
-    energy_derivative.zeros();   // Just in case.
-    alphas(0) = 0.4;    // Initial variational parameter.
+    alphas(0) = 0.1;    // Initial variational parameter.
 
 
     for (int i = 0; i < gd_iterations - 1; i++)
     {   
-        q1.importance_sampling_with_gradient_descent(dt, alphas(i), energy_expectations(i), energy_derivative(i));
-        alphas(i + 1) = alphas(i) - learning_rate*energy_derivative(i);
-        // alphas(i + 1) = alphas(i) + 0.01;
+        q1.importance_sampling_with_gradient_descent(dt, alphas(i), energy_expectations(i), energy_derivative);
+        alphas(i + 1) = alphas(i) - learning_rate*energy_derivative;
         std::cout << "alphas(i): " << alphas(i) << "\n" << std::endl;
 
     }
@@ -575,8 +572,6 @@ int main()
         outfile << alphas(i);
         outfile << std::setw(20) << std::setprecision(10);
         outfile << energy_expectations(i);
-        outfile << std::setw(20) << std::setprecision(10);
-        outfile << energy_derivative(i) << "\n";
     }
     outfile.close();
 
