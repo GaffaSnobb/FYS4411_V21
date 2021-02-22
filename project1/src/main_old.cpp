@@ -6,8 +6,8 @@
 #include <chrono>           // Timing.
 #include <armadillo>        // Linear algebra.
 #include "omp.h"            // Parallelization.
-#include "wave_function.cpp"
-#include "other_functions.cpp"
+#include "wave_function.h"
+#include "other_functions.h"
 
 #include <sstream>
 #include <string>
@@ -514,73 +514,73 @@ template < typename Type > std::string to_str (const Type & t)
 
 int main()
 {
-    // std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
-    // VMC q_1;
-    // q_1.brute_force();
-    // q_1.write_to_file("generated_data/output_bruteforce.txt");
+    VMC q_1;
+    q_1.brute_force();
+    q_1.write_to_file("generated_data/output_bruteforce.txt");
 
-    // std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
-    // std::chrono::duration<double> comp_time_1 = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
+    std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
+    std::chrono::duration<double> comp_time_1 = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
 
-    // std::cout << "\ntotal time: " << comp_time_1.count() << "s" << std::endl;
-
-    // std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
-    // VMC q_2;
-    // q_2.importance_sampling(0.05);
-    // q_2.write_to_file("generated_data/output_importance.txt");
-
-    // std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
-    // std::chrono::duration<double> comp_time_2 = std::chrono::duration_cast<std::chrono::duration<double> >(t4 - t3);
-
-    // std::cout << "\ntotal time: " << comp_time_2.count() << "s" << std::endl;
-
+    std::cout << "\ntotal time: " << comp_time_1.count() << "s" << std::endl;
 
     std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
-    double dt = 0.05;  // Set the time step 0.4 is good
-    double energy_expectation = 0;
-    const int gd_iterations = 620; // Max gradient descent iterations.
-    double energy_derivative = 0;
-    const double learning_rate = 0.001;
-    std::ofstream outfile;
-    VMC q1;
-
-    arma::Col<double> alphas(gd_iterations);
-    arma::Col<double> energy_expectations(gd_iterations);
-    energy_expectations.zeros();
-    alphas(0) = 0.1;    // Initial variational parameter.
-
-
-    for (int i = 0; i < gd_iterations - 1; i++)
-    {   
-        q1.importance_sampling_with_gradient_descent(dt, alphas(i), energy_expectations(i), energy_derivative);
-        alphas(i + 1) = alphas(i) - learning_rate*energy_derivative;
-        std::cout << "alphas(i): " << alphas(i) << "\n" << std::endl;
-
-    }
-
-    outfile.open("generated_data/gradient_descent_test.txt", std::ios::out);
-    outfile << std::setw(20) << "alpha";
-    outfile << std::setw(21) << "expected_energy";
-    outfile << std::setw(21) << "energy_derivative\n";
-
-    for (int i = 0; i < gd_iterations; i++)
-    {   /*
-        Write data to file.
-        */
-        outfile << std::setw(20) << std::setprecision(10);
-        outfile << alphas(i);
-        outfile << std::setw(20) << std::setprecision(10);
-        outfile << energy_expectations(i);
-    }
-    outfile.close();
-
-    // q1.write_to_file("generated_data/output_importance_"+to_str(dt)+".txt");
+    VMC q_2;
+    q_2.importance_sampling(0.05);
+    q_2.write_to_file("generated_data/output_importance.txt");
 
     std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
-    std::chrono::duration<double> comp_time1 = std::chrono::duration_cast<std::chrono::duration<double> >(t4 - t3);
+    std::chrono::duration<double> comp_time_2 = std::chrono::duration_cast<std::chrono::duration<double> >(t4 - t3);
 
-    std::cout << "\ntotal time: " << comp_time1.count() << "s" << std::endl;
+    std::cout << "\ntotal time: " << comp_time_2.count() << "s" << std::endl;
+
+
+    // std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
+    // double dt = 0.05;  // Set the time step 0.4 is good
+    // double energy_expectation = 0;
+    // const int gd_iterations = 620; // Max gradient descent iterations.
+    // double energy_derivative = 0;
+    // const double learning_rate = 0.001;
+    // std::ofstream outfile;
+    // VMC q1;
+
+    // arma::Col<double> alphas(gd_iterations);
+    // arma::Col<double> energy_expectations(gd_iterations);
+    // energy_expectations.zeros();
+    // alphas(0) = 0.1;    // Initial variational parameter.
+
+
+    // for (int i = 0; i < gd_iterations - 1; i++)
+    // {   
+    //     q1.importance_sampling_with_gradient_descent(dt, alphas(i), energy_expectations(i), energy_derivative);
+    //     alphas(i + 1) = alphas(i) - learning_rate*energy_derivative;
+    //     std::cout << "alphas(i): " << alphas(i) << "\n" << std::endl;
+
+    // }
+
+    // outfile.open("generated_data/gradient_descent_test.txt", std::ios::out);
+    // outfile << std::setw(20) << "alpha";
+    // outfile << std::setw(21) << "expected_energy";
+    // outfile << std::setw(21) << "energy_derivative\n";
+
+    // for (int i = 0; i < gd_iterations; i++)
+    // {   /*
+    //     Write data to file.
+    //     */
+    //     outfile << std::setw(20) << std::setprecision(10);
+    //     outfile << alphas(i);
+    //     outfile << std::setw(20) << std::setprecision(10);
+    //     outfile << energy_expectations(i);
+    // }
+    // outfile.close();
+
+    // // q1.write_to_file("generated_data/output_importance_"+to_str(dt)+".txt");
+
+    // std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
+    // std::chrono::duration<double> comp_time1 = std::chrono::duration_cast<std::chrono::duration<double> >(t4 - t3);
+
+    // std::cout << "\ntotal time: " << comp_time1.count() << "s" << std::endl;
 
     return 0;
 }
