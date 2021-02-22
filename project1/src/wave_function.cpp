@@ -94,8 +94,6 @@ double wave_function_3d_diff_wrt_alpha(arma::Mat<double> pos, double alpha, doub
         The wave function differentiated with respect to alpha evaluated
         at pos.
     */
-    double r_beta = pos(0)*pos(0) + pos(1)*pos(1) + beta*pos(2)*pos(2);
-    // return -(r_beta)*std::exp(-alpha*r_beta);
-    return -r_beta;
+    return -(pos(0)*pos(0) + pos(1)*pos(1) + beta*pos(2)*pos(2));
 }
 #endif
