@@ -6,7 +6,8 @@ int main()
     std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
     const int n_dims = 3;
-    const int method = 0;
+    // const int method = 0;
+    const std::string method = "brute_force";
     const double dt = 0.4;
 
     VMC system(n_dims, method);
@@ -14,12 +15,12 @@ int main()
     system.set_local_energy();
     system.set_wave_function();
 
-    if (method == 0)
+    if (method == "brute_force")
     {
       system.brute_force();
       system.write_to_file("generated_data/output_bruteforce.txt");
     }
-    else if (method == 1)
+    else if (method == "importance_sampling")
     {
       system.importance_sampling(dt);
       system.write_to_file("generated_data/output_importance.txt");
@@ -34,6 +35,14 @@ int main()
     std::cout << "\ntotal time: " << comp_time.count() << "s" << std::endl;
 
     std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
+
+    // std::string str1 = "lol";
+    // std::string str2 = "lol";
+    
+    // if (str1 == "lol")
+    // {
+    //     std::cout << "lolz" << std::endl;
+    // }
 
 
 
