@@ -38,52 +38,26 @@ void VMC::set_wave_function()
     }
 }
 
-// void VMC::set_initial_positions(int dim, int particle)
-// {   /* set the initial positions */
-
-//     // std::cout << "VMC.cpp: set_initial_positions()" << std::endl;
-//     std::cout << "LOOOL" << std::endl;
-
-//     if (method == "brute_force"){
-//         pos_current(dim, particle) = step_size*(uniform(engine) - 0.5);
-//     }
-//     else if (method == "importance_sampling"){
-//         pos_current(dim, particle) = normal(engine)*sqrt(time_step);
-//     }
-//     else {
-//         std::cout << "No method chosen"<< std::endl;
-//     }
-// }
-
-void VMC::set_initial_positions(int dim, int particle)
-{
+void VMC::set_initial_positions(int dim, int particle, int variation)
+{   /*
+    This function will be overwritten by child class method.
+    */
     std::cout << "NotImplementedError" << std::endl;
 }
 
-void VMC::set_new_positions(int dim, int particle)
-{
+void VMC::set_new_positions(int dim, int particle, int variation)
+{   /*
+    This function will be overwritten by child class method.
+    */
     std::cout << "NotImplementedError" << std::endl;
 }
 
-// void VMC::set_new_positions(int dim, int particle)
-// {   /* fubar */
-//     //std::cout << "VMC.cpp: set_new_positions()" << std::endl;
-
-//     if (method == "brute_force")
-//     {
-//         pos_new(dim, particle) = pos_current(dim, particle) + step_size*(uniform(engine) - 0.5);
-//     }
-//     else if (method == "importance_sampling")
-//     {
-//         pos_new(dim, particle) = pos_current(dim, particle) +
-//             diffusion_coeff*qforce_current(dim, particle)*time_step +
-//             normal(engine)*sqrt(time_step);
-//     }
-//     else
-//     {
-//         std::cout << "No method chosen"<< std::endl;
-//     }
-// }
+void VMC::metropolis(int dim, int particle)
+{   /*
+    This function will be overwritten by child class method.
+    */
+    std::cout << "NotImplementedError" << std::endl;
+}
 
 void VMC::solve()
 {   /*
@@ -94,7 +68,9 @@ void VMC::solve()
     int particle_inner; // Index for inner particle loops.
     int _;              // Index for MC loop.
     int dim;            // Index for dimension loops.
-    // int brute_force_counter = 0; // Debug counter for the Metropolis algorithm.
+
+    double wave_derivative; // Derivative of wave function wrt. alpha.
+    double wave_derivative_expectation;    // Wave func expectation value.
 
     for (int variation = 0; variation < n_variations; variation++)
     {   /*
@@ -110,8 +86,7 @@ void VMC::solve()
             */
             for (dim = 0; dim < n_dims; dim++)
             {
-                // pos_current(dim, particle) = step_size*(uniform(engine) - 0.5);
-                set_initial_positions(dim, particle);
+                set_initial_positions(dim, particle, variation);
             }
             wave_current += wave_function_exponent_ptr(
                     pos_current.col(particle),  // Particle position.
@@ -132,9 +107,7 @@ void VMC::solve()
                 */
                 for (dim = 0; dim < n_dims; dim++)
                 {
-                    // pos_new(dim, particle) =
-                    //     pos_current(dim, particle) + step_size*(uniform(engine) - 0.5);
-                    set_new_positions(dim, particle);
+                    set_new_positions(dim, particle, variation);
                 }
                 
                 wave_new = 0;   // Overwrite the new wave func from previous particle step.
@@ -150,25 +123,10 @@ void VMC::solve()
                         );
                 }
 
-                exponential_diff =
-                    2*(wave_new - wave_current);
-
-                if (uniform(engine) < std::exp(exponential_diff))
-                {   /*
-                    Perform the Metropolis algorithm.  To save one
-                    exponential calculation, the difference is taken
-                    of the exponents instead of the ratio of the
-                    exponentials. Marginally better...
-                    */
-                    for (dim = 0; dim < n_dims; dim++)
-                    {
-                        pos_current(dim, particle) = pos_new(dim, particle);
-                    }
-                    wave_current = wave_new;
-                    // brute_force_counter += 1;   // Debug.
-                }
+                metropolis(dim, particle);
 
                 local_energy = 0;   // Overwrite local energy from previous particle step.
+                wave_derivative = 0;
                 for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
                 {   /*
                     After moving one particle, the local energy is
@@ -188,10 +146,9 @@ void VMC::solve()
 
         e_expectations(variation) /= n_mc_cycles;
         e_expectation_squared /= n_mc_cycles;
-        e_variances(variation) =
-            e_expectation_squared - e_expectations(variation)*e_expectations(variation);
+        e_variances(variation) = e_expectation_squared
+            - e_expectations(variation)*e_expectations(variation);
     }
-// std::cout << "\nbrute_force: " << brute_force_counter/n_mc_cycles << std::endl;
 }
 
 void VMC::generalization()
@@ -222,7 +179,7 @@ void VMC::generalization()
             for (dim = 0; dim < n_dims; dim++)
             {
                 // pos_current(dim, particle) = step_size*(uniform(engine) - 0.5);
-                set_initial_positions(n_dims, particle);
+                set_initial_positions(n_dims, particle, variation);
             }
             wave_current += wave_function_exponent_ptr(
                     pos_current.col(particle),  // Particle position.
@@ -245,7 +202,7 @@ void VMC::generalization()
                 {
                     // pos_new(dim, particle) =
                     //     pos_current(dim, particle) + step_size*(uniform(engine) - 0.5);
-                    set_new_positions(n_dims, particle);
+                    set_new_positions(n_dims, particle, variation);
                 }
                 
                 wave_new = 0;   // Overwrite the new wave func from previous particle step.

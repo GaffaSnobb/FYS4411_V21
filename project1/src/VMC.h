@@ -58,10 +58,8 @@ class VMC
 
     public:
         VMC(
-            const int n_dims_input,
-            const std::string method_input):
-            n_dims(n_dims_input),
-            method(method_input)
+            const int n_dims_input):
+            n_dims(n_dims_input)
         {
             // Pre-filling the alphas vector due to parallelization.
             alphas.fill(alpha_step);
@@ -71,15 +69,16 @@ class VMC
             engine.seed(seed);
 
             //n_dims = n_dims_input;
-            std::cout << "VMC() in VMC.h  n_dims = " << n_dims << "  method = "<< method << std::endl;
+            // std::cout << "VMC() in VMC.h  n_dims = " << n_dims << "  method = "<< method << std::endl;
         }
 
         void set_local_energy();
         void set_wave_function();
         // void set_initial_positions(int dim, int particle);
         // void set_new_positions(int dim, int particle);
-        virtual void set_initial_positions(int dim, int particle);
-        virtual void set_new_positions(int dim, int particle);
+        virtual void set_initial_positions(int dim, int particle, int variation);
+        virtual void set_new_positions(int dim, int particle, int variation);
+        virtual void metropolis(int dim, int particle);
         // void brute_force();
         void solve();
         void importance_sampling(double t);

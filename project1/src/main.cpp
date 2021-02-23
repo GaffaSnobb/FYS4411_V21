@@ -1,44 +1,41 @@
 #include "VMC.h"
 #include "methods.h"
 
-
-
-
 int main(int argc, char *argv[])
 {
 
     const int n_dims = 3;
     const double dt = 0.4;
     // const int method = 0;
-    const std::string method = "brute_force";
+    // const std::string method = "brute_force";
     // const std::string method = "importance_sampling";
 
     std::chrono::steady_clock::time_point t1;
     t1 = std::chrono::steady_clock::now();
-    // VMC system(n_dims, method);
-    BruteForce system(n_dims, method);
-    // ImportanceSampling system(n_dims, method);
+    // VMC system(n_dims);
     
+    // BruteForce system(n_dims);
+    ImportanceSampling system(n_dims);
+
+    // if (method == "brute_force")
+    // {
+    //     BruteForce system(n_dims);
+    // }
+    // else if (method == "importance_sampling")
+    // {
+    //     ImportanceSampling system(n_dims);
+    // }
+    // else
+    // {
+    //     VMC system(n_dims);
+    // }
 
     system.set_local_energy();
     system.set_wave_function();
     system.solve();
-    system.write_to_file("generated_data/output_bruteforce.txt");
-    // if (method == "brute_force")
-    // {
-    //     system.solve();
-    //     // system.generalization();
-    //     system.write_to_file("generated_data/output_bruteforce.txt");
-    // }
-    // else if (method == "importance_sampling")
-    // {
-    //     system.importance_sampling(dt);
-    //     system.write_to_file("generated_data/output_importance.txt");
-    // }
-    // else
-    // {
-    //     std::cout << "no method chosen, brute_force:0 or importance:1"<<std::endl;
-    // }
+    // system.write_to_file("generated_data/output_brute_force.txt");
+    system.write_to_file("generated_data/output_importance.txt");
+
     std::chrono::steady_clock::time_point t2;
     t2 = std::chrono::steady_clock::now();
     std::chrono::duration<double> comp_time;
@@ -47,16 +44,6 @@ int main(int argc, char *argv[])
     std::cout << "\ntotal time: " << comp_time.count() << "s" << std::endl;
 
     std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
-
-    // std::string str1 = "lol";
-    // std::string str2 = "lol";
-
-    // if (str1 == "lol")
-    // {
-    //     std::cout << "lolz" << std::endl;
-    // }
-
-
 
 
     // -------------------------------
