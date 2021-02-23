@@ -1,5 +1,14 @@
 #include "VMC.h"
 
+VMC::VMC(const int n_dims_input) : n_dims(n_dims_input)
+{
+    // Pre-filling the alphas vector due to parallelization.
+    alphas.fill(alpha_step);
+    alphas = arma::cumsum(alphas);
+    e_expectations.zeros(); // Array must be zeroed since values will be added.
+    engine.seed(seed);
+}
+
 void VMC::set_local_energy()
 {   /*
     Set pointers to the correct local energy function.
@@ -38,14 +47,14 @@ void VMC::set_wave_function()
     }
 }
 
-void VMC::set_initial_positions(int dim, int particle, int variation)
+void VMC::set_initial_positions(int dim, int particle, double alpha)
 {   /*
     This function will be overwritten by child class method.
     */
     std::cout << "NotImplementedError" << std::endl;
 }
 
-void VMC::set_new_positions(int dim, int particle, int variation)
+void VMC::set_new_positions(int dim, int particle, double alpha)
 {   /*
     This function will be overwritten by child class method.
     */
@@ -59,207 +68,108 @@ void VMC::metropolis(int dim, int particle)
     std::cout << "NotImplementedError" << std::endl;
 }
 
-void VMC::solve()
+void VMC::extra(double alpha)
 {   /*
-    
+    This function may be overwritten by child class method.
     */
-    // Declared outside loop due to parallelization.
-    int particle;       // Index for particle loop.
-    int particle_inner; // Index for inner particle loops.
-    int _;              // Index for MC loop.
-    int dim;            // Index for dimension loops.
+    // std::cout << "NotImplementedError" << std::endl;
 
-    double wave_derivative; // Derivative of wave function wrt. alpha.
-    double wave_derivative_expectation;    // Wave func expectation value.
-
-    for (int variation = 0; variation < n_variations; variation++)
-    {   /*
-        Run over all variations.
-        */
-        e_expectation_squared = 0;
-        wave_current = 0;
-        for (particle = 0; particle < n_particles; particle++)
-        {   /*
-            Iterate over all particles.  In this loop, all current
-            positions are calulated along with the current wave
-            functions.
-            */
-            for (dim = 0; dim < n_dims; dim++)
-            {
-                set_initial_positions(dim, particle, variation);
-            }
-            wave_current += wave_function_exponent_ptr(
-                    pos_current.col(particle),  // Particle position.
-                    alphas(variation),
-                    beta
-                );
-        }
-
-        for (_ = 0; _ < n_mc_cycles; _++)
-        {   /*
-            Run over all Monte Carlo cycles.
-            */
-            for (particle = 0; particle < n_particles; particle++)
-            {   /*
-                Iterate over all particles.  In this loop, new
-                proposed positions and wave functions are
-                calculated.
-                */
-                for (dim = 0; dim < n_dims; dim++)
-                {
-                    set_new_positions(dim, particle, variation);
-                }
-                
-                wave_new = 0;   // Overwrite the new wave func from previous particle step.
-                for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
-                {   /*
-                    After moving one particle, the wave function is
-                    calculated based on all particle positions.
-                    */
-                    wave_new += wave_function_exponent_ptr(
-                            pos_new.col(particle_inner),  // Particle position.
-                            alphas(variation),
-                            beta
-                        );
-                }
-
-                metropolis(dim, particle);
-
-                local_energy = 0;   // Overwrite local energy from previous particle step.
-                wave_derivative = 0;
-                for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
-                {   /*
-                    After moving one particle, the local energy is
-                    calculated based on all particle positions.
-                    */
-                    local_energy += local_energy_ptr(
-                        pos_current.col(particle_inner),
-                        alphas(variation),
-                        beta
-                    );
-                }
-
-                e_expectations(variation) += local_energy;
-                e_expectation_squared += local_energy*local_energy;
-            }
-        }
-
-        e_expectations(variation) /= n_mc_cycles;
-        e_expectation_squared /= n_mc_cycles;
-        e_variances(variation) = e_expectation_squared
-            - e_expectations(variation)*e_expectations(variation);
-    }
 }
 
-void VMC::generalization()
+void VMC::solve()
 {   /*
-    Generalization.
+    This function will be overwritten by child class method.
     */
-    // Declared outside loop due to parallelization.
-    int particle;       // Index for particle loop.
-    int particle_inner; // Index for inner particle loops.
-    int _;              // Index for MC loop.
-    int dim;            // Index for dimension loops.
-    // int brute_force_counter = 0; // Debug counter for the Metropolis algorithm.
-    double wave_derivative; // Derivative of wave function wrt. alpha.
-    double wave_derivative_expectation;    // Wave func expectation value.
+    std::cout << "NotImplementedError" << std::endl;
+}
 
-    for (int variation = 0; variation < n_variations; variation++)
+void VMC::one_variation(double alpha)
+{   /*
+    Perform calculations for a single variational parameter.
+
+    Parameters
+    ----------
+    alpha : double
+        Variational parameter.
+    */
+    time_step = 0.1;
+    wave_current = 0;   // Reset wave function for each variation.
+    energy_expectation = 0; // Reset for each variation.
+    energy_variance = 0; // Reset for each variation.
+
+    e_expectation_squared = 0;
+    wave_current = 0;
+    for (particle = 0; particle < n_particles; particle++)
     {   /*
-        Run over all variations.
+        Iterate over all particles.  In this loop, all current
+        positions are calulated along with the current wave
+        functions.
         */
-        e_expectation_squared = 0;
-        wave_current = 0;
+        for (dim = 0; dim < n_dims; dim++)
+        {
+            set_initial_positions(dim, particle, alpha);
+        }
+        wave_current += wave_function_exponent_ptr(
+            pos_current.col(particle),  // Particle position.
+            alpha,
+            beta
+        );
+    }
+
+    for (_ = 0; _ < n_mc_cycles; _++)
+    {   /*
+        Run over all Monte Carlo cycles.
+        */
         for (particle = 0; particle < n_particles; particle++)
         {   /*
-            Iterate over all particles.  In this loop, all current
-            positions are calulated along with the current wave
-            functions.
+            Iterate over all particles.  In this loop, new
+            proposed positions and wave functions are
+            calculated.
             */
             for (dim = 0; dim < n_dims; dim++)
             {
-                // pos_current(dim, particle) = step_size*(uniform(engine) - 0.5);
-                set_initial_positions(n_dims, particle, variation);
+                set_new_positions(dim, particle, alpha);
             }
-            wave_current += wave_function_exponent_ptr(
-                    pos_current.col(particle),  // Particle position.
-                    alphas(variation),
-                    beta
-                );
-        }
-
-        for (_ = 0; _ < n_mc_cycles; _++)
-        {   /*
-            Run over all Monte Carlo cycles.
-            */
-            for (particle = 0; particle < n_particles; particle++)
+            
+            wave_new = 0;   // Overwrite the new wave func from previous particle step.
+            for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
             {   /*
-                Iterate over all particles.  In this loop, new
-                proposed positions and wave functions are
-                calculated.
+                After moving one particle, the wave function is
+                calculated based on all particle positions.
                 */
-                for (dim = 0; dim < n_dims; dim++)
-                {
-                    // pos_new(dim, particle) =
-                    //     pos_current(dim, particle) + step_size*(uniform(engine) - 0.5);
-                    set_new_positions(n_dims, particle, variation);
-                }
-                
-                wave_new = 0;   // Overwrite the new wave func from previous particle step.
-                for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
-                {   /*
-                    After moving one particle, the wave function is
-                    calculated based on all particle positions.
-                    */
-                    wave_new += wave_function_exponent_ptr(
-                            pos_new.col(particle_inner),  // Particle position.
-                            alphas(variation),
-                            beta
-                        );
-                }
-
-                exponential_diff =
-                    2*(wave_new - wave_current);
-
-                if (uniform(engine) < std::exp(exponential_diff))
-                {   /*
-                    Perform the Metropolis algorithm.  To save one
-                    exponential calculation, the difference is taken
-                    of the exponents instead of the ratio of the
-                    exponentials. Marginally better...
-                    */
-                    for (dim = 0; dim < n_dims; dim++)
-                    {
-                        pos_current(dim, particle) = pos_new(dim, particle);
-                    }
-                    wave_current = wave_new;
-                    // brute_force_counter += 1;   // Debug.
-                }
-
-                local_energy = 0;   // Overwrite local energy from previous particle step.
-                for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
-                {   /*
-                    After moving one particle, the local energy is
-                    calculated based on all particle positions.
-                    */
-                    local_energy += local_energy_ptr(
-                        pos_current.col(particle_inner),
-                        alphas(variation),
+                wave_new += wave_function_exponent_ptr(
+                        pos_new.col(particle_inner),  // Particle position.
+                        alpha,
                         beta
                     );
-                }
-
-                e_expectations(variation) += local_energy;
-                e_expectation_squared += local_energy*local_energy;
             }
-        }
 
-        e_expectations(variation) /= n_mc_cycles;
-        e_expectation_squared /= n_mc_cycles;
-        e_variances(variation) =
-            e_expectation_squared - e_expectations(variation)*e_expectations(variation);
+            metropolis(dim, particle);
+
+            local_energy = 0;   // Overwrite local energy from previous particle step.
+            for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
+            {   /*
+                After moving one particle, the local energy is
+                calculated based on all particle positions.
+                */
+                local_energy += local_energy_ptr(
+                    pos_current.col(particle_inner),
+                    alpha,
+                    beta
+                );
+            }
+
+            energy_expectation += local_energy;
+            e_expectation_squared += local_energy*local_energy;
+
+            extra(alpha);
+        }
     }
-// std::cout << "\nbrute_force: " << brute_force_counter/n_mc_cycles << std::endl;
+
+    energy_expectation /= n_mc_cycles;
+    e_expectation_squared /= n_mc_cycles;
+    energy_variance = e_expectation_squared
+        - energy_expectation*energy_expectation;
 }
 
 void VMC::importance_sampling(double t)
@@ -531,22 +441,15 @@ void VMC::importance_sampling_with_gradient_descent(
                     beta
                 );
             }
-            wave_derivative_expectation += wave_derivative;
             energy_expectation += local_energy;
+            wave_derivative_expectation += wave_derivative;
             wave_times_energy_expectation += wave_derivative*local_energy;
         }
     }
     wave_times_energy_expectation /= n_mc_cycles;
     wave_derivative_expectation /= n_mc_cycles;
     energy_expectation /= n_mc_cycles;
-    energy_derivative = 2*(wave_times_energy_expectation - wave_derivative_expectation*energy_expectation/10);
-    std::cout << "energy_expectation: " << energy_expectation << std::endl;
-    std::cout << "wave_derivative_expectation: " << wave_derivative_expectation << std::endl;
-    std::cout << "wave_derivative_expectation*energy_expectation: " << wave_derivative_expectation*energy_expectation << std::endl;
-    std::cout << "wave_times_energy_expectation: " << wave_times_energy_expectation << std::endl;
-    std::cout << "energy_derivative: " << energy_derivative << std::endl;
-    std::cout << "wave_derivative: " << wave_derivative << std::endl;
-    // std::cout << "\n";
+    energy_derivative = 2*(wave_times_energy_expectation - wave_derivative_expectation*energy_expectation/n_particles);
 }
 
 

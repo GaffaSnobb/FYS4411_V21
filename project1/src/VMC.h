@@ -25,21 +25,25 @@ class VMC
         const int seed = 1337;          // RNG seed.
         const int n_particles = 10;    // Number of particles.
         const int n_dims;               // Number of spatial dimensions.
-        const std::string method;
 
         const double step_size = 1;
         const double alpha_step = 0.03;
         const double beta = 1;
         const double diffusion_coeff = 0.5;
 
-        // const double time_step = 0.4;
-        double time_step;
-
         double e_expectation_squared;   // Square of the energy expectation value.
         double local_energy;            // Local energy.
         double exponential_diff;        // Difference of the exponentials, for Metropolis.
         double wave_current;            // Current wave function.
         double wave_new;                // Proposed new wave function.
+        double time_step;
+        double energy_expectation = 0;
+        double energy_variance = 0;
+
+        int particle;       // Index for particle loop.
+        int particle_inner; // Index for inner particle loops.
+        int _;              // Index for MC loop.
+        int dim;            // Index for dimension loops.
 
         arma::Mat<double> pos_new = arma::Mat<double>(n_dims, n_particles);         // Proposed new position.
         arma::Mat<double> pos_current = arma::Mat<double>(n_dims, n_particles);     // Current position.
@@ -57,30 +61,15 @@ class VMC
         double (*wave_function_exponent_ptr)(arma::Mat<double>, double, double);
 
     public:
-        VMC(
-            const int n_dims_input):
-            n_dims(n_dims_input)
-        {
-            // Pre-filling the alphas vector due to parallelization.
-            alphas.fill(alpha_step);
-            alphas = arma::cumsum(alphas);
-
-            e_expectations.zeros(); // Array must be zeroed since values will be added.
-            engine.seed(seed);
-
-            //n_dims = n_dims_input;
-            // std::cout << "VMC() in VMC.h  n_dims = " << n_dims << "  method = "<< method << std::endl;
-        }
-
+        VMC(const int n_dims);
         void set_local_energy();
         void set_wave_function();
-        // void set_initial_positions(int dim, int particle);
-        // void set_new_positions(int dim, int particle);
-        virtual void set_initial_positions(int dim, int particle, int variation);
-        virtual void set_new_positions(int dim, int particle, int variation);
+        virtual void set_initial_positions(int dim, int particle, double alpha);
+        virtual void set_new_positions(int dim, int particle, double alpha);
         virtual void metropolis(int dim, int particle);
-        // void brute_force();
-        void solve();
+        virtual void solve();
+        virtual void extra(double alpha);   // TODO: Consider ditching alpha as func arg.
+        void one_variation(double alpha);
         void importance_sampling(double t);
         void write_to_file(std::string fname);
         void importance_sampling_with_gradient_descent(
@@ -89,7 +78,6 @@ class VMC
             double &energy_expectation,
             double &energy_derivative
         );
-        void generalization();
 };
 
 #endif
