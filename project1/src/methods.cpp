@@ -13,9 +13,6 @@ void BruteForce::set_initial_positions(int dim, int particle, double alpha)
     particle : integer
         Current particle index.
 
-    variation : integer
-        Current variation index.
-
     alpha : double
         Variational parameter. Unused here.
     */
@@ -42,7 +39,10 @@ void BruteForce::set_new_positions(int dim, int particle, double alpha)
 }
 
 void BruteForce::solve()
-{
+{   /*
+    Iterate over variational parameters. Extract energy variances and
+    expectation values.
+    */
     for (int variation = 0; variation < n_variations; variation++)
     {
         one_variation(alphas(variation));
@@ -51,8 +51,10 @@ void BruteForce::solve()
     }
 }
 
-void BruteForce::metropolis(int dim, int particle)
-{
+void BruteForce::metropolis(int dim, int particle, double alpha)
+{   /*
+    Metropolis specifics for brute force.
+    */
     exponential_diff =
         2*(wave_new - wave_current);
 
@@ -68,6 +70,19 @@ void BruteForce::metropolis(int dim, int particle)
             pos_current(dim, particle) = pos_new(dim, particle);
         }
         wave_current = wave_new;
+        
+        local_energy = 0;   // Overwrite local energy from previous particle step.
+        for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
+        {   /*
+            After moving one particle, the local energy is
+            calculated based on all particle positions.
+            */
+            local_energy += local_energy_ptr(
+                pos_current.col(particle_inner),
+                alpha,
+                beta
+            );
+        }
     }
 }
 
@@ -75,9 +90,6 @@ void ImportanceSampling::set_initial_positions(int dim, int particle, double alp
 {   /*
     Set the initial positions according to the importance sampling
     approach, drawing random numbers normally distributed.
-
-    TODO: Consider removing dim, particle, variation as function
-    arguments since they are class variables.
 
     Parameters
     ----------
@@ -119,7 +131,10 @@ void ImportanceSampling::set_new_positions(int dim, int particle, double alpha)
 }
 
 void ImportanceSampling::solve()
-{
+{   /*
+    Iterate over variational parameters. Extract energy variances and
+    expectation values.
+    */
     for (int variation = 0; variation < n_variations; variation++)
     {
         one_variation(alphas(variation));
@@ -128,9 +143,22 @@ void ImportanceSampling::solve()
     }
 }
 
-void ImportanceSampling::metropolis(int dim, int particle)
-{
-    double greens_ratio = 0.0;
+void ImportanceSampling::metropolis(int dim, int particle, double alpha)
+{   /*
+    Metropolis specifics for importance sampling.
+
+    Parameters
+    ----------
+    dim : integer
+        Current dimension index.
+
+    particle : integer
+        Current particle index.
+
+    alpha : double
+        Variational parameter.
+    */
+    double greens_ratio = 0;
     for (int dim = 0; dim < n_dims; dim++)
     {   /*
         Calculate greens ratio for the acceptance
@@ -156,27 +184,84 @@ void ImportanceSampling::metropolis(int dim, int particle)
             qforce_current(dim, particle) = qforce_new(dim, particle);
         }
         wave_current = wave_new;
+
+        local_energy = 0;   // Overwrite local energy from previous particle step.
+        for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
+        {   /*
+            After moving one particle, the local energy is
+            calculated based on all particle positions.
+            */
+            local_energy += local_energy_ptr(
+                pos_current.col(particle_inner),
+                alpha,
+                beta
+            );
+        }
     }
 }
 
 void GradientDescent::solve()
-{   
+{   /*
+    Iterate over variational parameters.  Use gradient descent to
+    efficiently calculate alphas.
+
+    TODO: Add a cut-off for when the proposed new alpha is adequately
+    close to the desired value.
+    */
     wave_derivative_expectation = 0;
     wave_times_energy_expectation = 0;
-    for (int variation = 0; variation < n_variations; variation++)
+    alphas(0) = 0.1; // Initial value.
+    double learning_rate = 0.001;
+    time_step = 0.05;
+    double energy_derivative = 0;
+    
+    for (int variation = 0; variation < n_variations - 1; variation++)
     {
         one_variation(alphas(variation));
+        e_expectations(variation) = energy_expectation;
+        e_variances(variation) = energy_variance;
+        
+        wave_derivative_expectation /= n_mc_cycles;
+        wave_times_energy_expectation /= n_mc_cycles;
+        energy_derivative = 2*(wave_times_energy_expectation - wave_derivative_expectation*energy_expectation/n_particles);
+        
+        alphas(variation + 1) = alphas(variation) - learning_rate*energy_derivative;
+        
+        // std::cout << "energy_expectation: " << energy_expectation << std::endl;
+        // std::cout << "wave_derivative_expectation: " << wave_derivative_expectation << std::endl;
+        // std::cout << "wave_derivative_expectation*energy_expectation: " << wave_derivative_expectation*energy_expectation << std::endl;
+        // std::cout << "wave_times_energy_expectation: " << wave_times_energy_expectation << std::endl;
+        // std::cout << "energy_derivative: " << energy_derivative << std::endl;
+        // std::cout << "wave_derivative: " << wave_derivative << std::endl;
+        // std::cout << "alpha: " << alphas(variation) << std::endl;
+        // std::cout << "\n";
     }
-    wave_derivative_expectation /= n_mc_cycles;
-    wave_times_energy_expectation /= n_mc_cycles;
-    energy_derivative = 2*(wave_times_energy_expectation - wave_derivative_expectation*energy_expectation/n_particles); // GD specific.
 }
 
-void GradientDescent::extra(double alpha)
-{
+void GradientDescent::metropolis(int dim, int particle, double alpha)
+{   /*
+    Metropolis specifics for gradient descent.  In here you find both
+    the Metropolis criterion calculations and additional values needed
+    to perform gradient descent.
+
+    Parameters
+    ----------
+    dim : integer
+        Current dimension index.
+
+    particle : integer
+        Current particle index.
+
+    alpha : double
+        Variational parameter.
+    */
+    ImportanceSampling::metropolis(dim, particle, alpha);
+    
     wave_derivative = 0;
     for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
-    {
+    {   /*
+        Calculations needed for gradient descent.
+        */
         wave_derivative += wave_function_3d_diff_wrt_alpha(
             pos_current.col(particle_inner),
             alpha,
