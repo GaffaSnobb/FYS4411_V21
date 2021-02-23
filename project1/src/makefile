@@ -2,7 +2,7 @@ COMPILER = g++
 # COMPILER = g++-10
 FLAGS = -std=c++17 -O1
 LIBRARIES = -larmadillo# -fopenmp 
-OBJECTS = VMC.o wave_function.o other_functions.o
+OBJECTS = VMC.o wave_function.o other_functions.o methods.o
 
 all : main.out
 
@@ -11,6 +11,9 @@ main.out : $(OBJECTS)
 
 VMC.o : VMC.h VMC.cpp
 	$(COMPILER) $(FLAGS) -c VMC.cpp
+
+methods.o : methods.cpp methods.h
+	$(COMPILER) $(FLAGS) -c methods.cpp
 
 wave_function.o : wave_function.h wave_function.cpp
 	$(COMPILER) $(FLAGS) -c wave_function.cpp

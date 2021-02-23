@@ -1,8 +1,9 @@
 #include "VMC.h"
 
-
 void VMC::set_local_energy()
-{   /* */
+{   /*
+    Set pointers to the correct local energy function.
+    */
     std::cout << "VMC.cpp: set_local_energy()" << std::endl;
     if (n_dims == 1)
     {
@@ -19,7 +20,9 @@ void VMC::set_local_energy()
 }
 
 void VMC::set_wave_function()
-{   /* */
+{   /*
+    Set pointers to the correct wave function exponent.
+    */
     std::cout << "VMC.cpp: set_wave_function()" << std::endl;
     if (n_dims == 1)
     {
@@ -35,45 +38,56 @@ void VMC::set_wave_function()
     }
 }
 
+// void VMC::set_initial_positions(int dim, int particle)
+// {   /* set the initial positions */
+
+//     // std::cout << "VMC.cpp: set_initial_positions()" << std::endl;
+//     std::cout << "LOOOL" << std::endl;
+
+//     if (method == "brute_force"){
+//         pos_current(dim, particle) = step_size*(uniform(engine) - 0.5);
+//     }
+//     else if (method == "importance_sampling"){
+//         pos_current(dim, particle) = normal(engine)*sqrt(time_step);
+//     }
+//     else {
+//         std::cout << "No method chosen"<< std::endl;
+//     }
+// }
+
 void VMC::set_initial_positions(int dim, int particle)
-{   /* set the initial positions */
-
-    //std::cout << "VMC.cpp: set_initial_positions()" << std::endl;
-
-    if (method == "brute_force"){
-        pos_current(dim, particle) = step_size*(uniform(engine) - 0.5);
-    }
-    else if (method == "importance_sampling"){
-        pos_current(dim, particle) = normal(engine)*sqrt(time_step);
-    }
-    else {
-        std::cout << "No method chosen"<< std::endl;
-    }
+{
+    std::cout << "NotImplementedError" << std::endl;
 }
 
 void VMC::set_new_positions(int dim, int particle)
-{   /* fubar */
-    //std::cout << "VMC.cpp: set_new_positions()" << std::endl;
-
-    if (method == "brute_force")
-    {
-        pos_new(dim, particle) = pos_current(dim, particle) + step_size*(uniform(engine) - 0.5);
-    }
-    else if (method == "importance_sampling")
-    {
-        pos_new(dim, particle) = pos_current(dim, particle) +
-            diffusion_coeff*qforce_current(dim, particle)*time_step +
-            normal(engine)*sqrt(time_step);
-    }
-    else
-    {
-        std::cout << "No method chosen"<< std::endl;
-    }
+{
+    std::cout << "NotImplementedError" << std::endl;
 }
 
-void VMC::brute_force()
+// void VMC::set_new_positions(int dim, int particle)
+// {   /* fubar */
+//     //std::cout << "VMC.cpp: set_new_positions()" << std::endl;
+
+//     if (method == "brute_force")
+//     {
+//         pos_new(dim, particle) = pos_current(dim, particle) + step_size*(uniform(engine) - 0.5);
+//     }
+//     else if (method == "importance_sampling")
+//     {
+//         pos_new(dim, particle) = pos_current(dim, particle) +
+//             diffusion_coeff*qforce_current(dim, particle)*time_step +
+//             normal(engine)*sqrt(time_step);
+//     }
+//     else
+//     {
+//         std::cout << "No method chosen"<< std::endl;
+//     }
+// }
+
+void VMC::solve()
 {   /*
-    Brute-force Monte Carlo simulation using Metropolis.
+    
     */
     // Declared outside loop due to parallelization.
     int particle;       // Index for particle loop.
@@ -96,7 +110,8 @@ void VMC::brute_force()
             */
             for (dim = 0; dim < n_dims; dim++)
             {
-                pos_current(dim, particle) = step_size*(uniform(engine) - 0.5);
+                // pos_current(dim, particle) = step_size*(uniform(engine) - 0.5);
+                set_initial_positions(dim, particle);
             }
             wave_current += wave_function_exponent_ptr(
                     pos_current.col(particle),  // Particle position.
@@ -117,8 +132,9 @@ void VMC::brute_force()
                 */
                 for (dim = 0; dim < n_dims; dim++)
                 {
-                    pos_new(dim, particle) =
-                        pos_current(dim, particle) + step_size*(uniform(engine) - 0.5);
+                    // pos_new(dim, particle) =
+                    //     pos_current(dim, particle) + step_size*(uniform(engine) - 0.5);
+                    set_new_positions(dim, particle);
                 }
                 
                 wave_new = 0;   // Overwrite the new wave func from previous particle step.
@@ -205,7 +221,8 @@ void VMC::generalization()
             */
             for (dim = 0; dim < n_dims; dim++)
             {
-                pos_current(dim, particle) = step_size*(uniform(engine) - 0.5);
+                // pos_current(dim, particle) = step_size*(uniform(engine) - 0.5);
+                set_initial_positions(n_dims, particle);
             }
             wave_current += wave_function_exponent_ptr(
                     pos_current.col(particle),  // Particle position.
@@ -226,8 +243,9 @@ void VMC::generalization()
                 */
                 for (dim = 0; dim < n_dims; dim++)
                 {
-                    pos_new(dim, particle) =
-                        pos_current(dim, particle) + step_size*(uniform(engine) - 0.5);
+                    // pos_new(dim, particle) =
+                    //     pos_current(dim, particle) + step_size*(uniform(engine) - 0.5);
+                    set_new_positions(n_dims, particle);
                 }
                 
                 wave_new = 0;   // Overwrite the new wave func from previous particle step.

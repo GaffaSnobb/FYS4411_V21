@@ -1,36 +1,48 @@
 #include "VMC.h"
+#include "methods.h"
 
 
-int main()
+
+
+int main(int argc, char *argv[])
 {
-    std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
     const int n_dims = 3;
+    const double dt = 0.4;
     // const int method = 0;
     const std::string method = "brute_force";
-    const double dt = 0.4;
+    // const std::string method = "importance_sampling";
 
-    VMC system(n_dims, method);
+    std::chrono::steady_clock::time_point t1;
+    t1 = std::chrono::steady_clock::now();
+    // VMC system(n_dims, method);
+    BruteForce system(n_dims, method);
+    // ImportanceSampling system(n_dims, method);
+    
 
     system.set_local_energy();
     system.set_wave_function();
-
-    if (method == "brute_force")
-    {
-      system.brute_force();
-      system.write_to_file("generated_data/output_bruteforce.txt");
-    }
-    else if (method == "importance_sampling")
-    {
-      system.importance_sampling(dt);
-      system.write_to_file("generated_data/output_importance.txt");
-    }
-    else
-    {
-      std::cout << "no method chosen, brute_force:0 or importance:1"<<std::endl;
-    }
-    std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
-    std::chrono::duration<double> comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
+    system.solve();
+    system.write_to_file("generated_data/output_bruteforce.txt");
+    // if (method == "brute_force")
+    // {
+    //     system.solve();
+    //     // system.generalization();
+    //     system.write_to_file("generated_data/output_bruteforce.txt");
+    // }
+    // else if (method == "importance_sampling")
+    // {
+    //     system.importance_sampling(dt);
+    //     system.write_to_file("generated_data/output_importance.txt");
+    // }
+    // else
+    // {
+    //     std::cout << "no method chosen, brute_force:0 or importance:1"<<std::endl;
+    // }
+    std::chrono::steady_clock::time_point t2;
+    t2 = std::chrono::steady_clock::now();
+    std::chrono::duration<double> comp_time;
+    comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
 
     std::cout << "\ntotal time: " << comp_time.count() << "s" << std::endl;
 
@@ -38,7 +50,7 @@ int main()
 
     // std::string str1 = "lol";
     // std::string str2 = "lol";
-    
+
     // if (str1 == "lol")
     // {
     //     std::cout << "lolz" << std::endl;
