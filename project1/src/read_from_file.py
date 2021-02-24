@@ -1,13 +1,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def read_from_file(filename=""):
+def read_from_file(filename):
     alpha, var, exp = np.loadtxt(fname=filename, skiprows=1, unpack=True)
     return alpha, var, exp
 
-def read_tracker_dt_file(filename=""):
-    dt, t_i, t_b, n_i, n_b  = np.loadtxt(fname=filename, skiprows=19, unpack=True,  delimiter="|")
-    return dt, t_i, t_b, n_i, n_b
+def read_energy_from_file(filename):
+    """
+    for files with names: output_energy_*.txt
+    """
+    data = np.loadtxt(filename)
+    alpha = data[0,:]
+    energy = data[1:,:]
+    return alpha, energy
 
 
 def read_from_file_v2():
@@ -28,5 +33,4 @@ def read_from_file_v2():
 
 if __name__ == "__main__":
     #read_from_file()
-    #read_from_file_v2()
-    read_tracker_dt_file("tracker_dt_importance.txt")
+    data = read_energy_from_file("generated_data/output_energy_importance.txt")
