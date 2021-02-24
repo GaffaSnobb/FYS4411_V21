@@ -1,7 +1,26 @@
+
+## Dependencies
+
 Install armadillo: https://www.uio.no/studier/emner/matnat/fys/FYS4411/v13/guides/installing-armadillo/
 
-```make``` to compile main program.
+## How to use
+### 1. Compile the main program
+The program is compiled using the `makefile`. To compile from command line use,
+```
+$ make
+```
+To compile, run binary, and plot the results use the command,
+```
+$ make plot
+```
+You can also run memcheck with valgrind.
+```
+$ make valgrind
+```
+Be sure to shorten the program run time by decreasing the number of MC cycles or other parameters. This is done by modifying the `n_mc_cycles` variable on line xx of `VCM.h`. Else, valgrind will use a very long time.
 
-```make plot``` to compile, run binary, and run plotting in Python.
+## Credit
+If we borrow code etc.
 
-```make valgrind``` to run memcheck with valgrind. Be sure to shorten the program run time by decreasing the number of MC cycles or other parameters. Else, valgrind will use a very long time.
+## Edits(tmp)
+change time step on line 348 in main.cpp for now.

@@ -8,6 +8,7 @@
 #include <iomanip>          // Data formatting when writing to file.
 #include <chrono>           // Timing.
 #include <armadillo>        // Linear algebra.
+
 // #include "omp.h"            // Parallelization.
 #include "wave_function.h"
 #include "other_functions.h"
