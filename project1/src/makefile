@@ -28,6 +28,10 @@ make plot : main.out
 	./run.out
 	python visualize.py
 
+blocking : main.out
+	./run.out
+	python blocking.py
+
 .PHONY : clean
 clean :
 	-rm *.out
