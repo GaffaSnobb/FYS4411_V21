@@ -5,10 +5,11 @@ Install armadillo: https://www.uio.no/studier/emner/matnat/fys/FYS4411/v13/guide
 
 ## How to use
 ### 1. Compile the main program
-The program is compiled using the `makefile`. To compile from command line use,
+The program is compiled using make. In a terminal write,
 ```
 $ make
 ```
+
 To compile, run binary, and plot the results use the command,
 ```
 $ make plot
