@@ -7,7 +7,7 @@ Below you will find an overview of the source files contained in this project.
 | makefile | description |
 | main.cpp | description |
 
-# Definitions
+### Definitions
 
 | Name | Description |
 | ------ | ------ |
@@ -17,7 +17,7 @@ Below you will find an overview of the source files contained in this project.
 | wave_function.cpp | description |
 | methods.cpp | description |
 
-# Header files
+### Header files
 
 | Name | Description |
 | ------ | ------ |
@@ -26,7 +26,7 @@ Below you will find an overview of the source files contained in this project.
 | wave_function.h | description |
 | methods.h | description |
 
-# Analysis files
+### Analysis files
 
 | Name | Description |
 | ------ | ------ |
