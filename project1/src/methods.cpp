@@ -45,7 +45,7 @@ void BruteForce::solve()
     */
     for (int variation = 0; variation < n_variations; variation++)
     {
-        one_variation(alphas(variation));
+        one_variation(variation);
         e_expectations(variation) = energy_expectation;
         e_variances(variation) = energy_variance;
     }
@@ -70,7 +70,7 @@ void BruteForce::metropolis(int dim, int particle, double alpha)
             pos_current(dim, particle) = pos_new(dim, particle);
         }
         wave_current = wave_new;
-        
+
         local_energy = 0;   // Overwrite local energy from previous particle step.
         for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
         {   /*
@@ -103,7 +103,7 @@ void ImportanceSampling::set_initial_positions(int dim, int particle, double alp
         Variational parameter.
     */
     pos_current(dim, particle) = normal(engine)*sqrt(time_step);
-    
+
     qforce_current(dim, particle) = -4*alpha*pos_current(dim, particle);
 }
 
@@ -126,7 +126,7 @@ void ImportanceSampling::set_new_positions(int dim, int particle, double alpha)
     pos_new(dim, particle) = pos_current(dim, particle) +
         diffusion_coeff*qforce_current(dim, particle)*time_step +
         normal(engine)*sqrt(time_step);
-    
+
     qforce_new(dim, particle) = -4*alpha*pos_new(dim, particle);
 }
 
@@ -137,7 +137,7 @@ void ImportanceSampling::solve()
     */
     for (int variation = 0; variation < n_variations; variation++)
     {
-        one_variation(alphas(variation));
+        one_variation(variation);
         e_expectations(variation) = energy_expectation;
         e_variances(variation) = energy_variance;
     }
@@ -214,19 +214,19 @@ void GradientDescent::solve()
     double learning_rate = 0.001;
     time_step = 0.05;
     double energy_derivative = 0;
-    
+
     for (int variation = 0; variation < n_variations - 1; variation++)
     {
-        one_variation(alphas(variation));
+        one_variation(variation);
         e_expectations(variation) = energy_expectation;
         e_variances(variation) = energy_variance;
-        
+
         wave_derivative_expectation /= n_mc_cycles;
         wave_times_energy_expectation /= n_mc_cycles;
         energy_derivative = 2*(wave_times_energy_expectation - wave_derivative_expectation*energy_expectation/n_particles);
-        
+
         alphas(variation + 1) = alphas(variation) - learning_rate*energy_derivative;
-        
+
         // std::cout << "energy_expectation: " << energy_expectation << std::endl;
         // std::cout << "wave_derivative_expectation: " << wave_derivative_expectation << std::endl;
         // std::cout << "wave_derivative_expectation*energy_expectation: " << wave_derivative_expectation*energy_expectation << std::endl;
@@ -256,7 +256,7 @@ void GradientDescent::metropolis(int dim, int particle, double alpha)
         Variational parameter.
     */
     ImportanceSampling::metropolis(dim, particle, alpha);
-    
+
     wave_derivative = 0;
     for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
     {   /*
@@ -268,7 +268,7 @@ void GradientDescent::metropolis(int dim, int particle, double alpha)
             beta
         );
     }
-    
+
     wave_derivative_expectation += wave_derivative;
     wave_times_energy_expectation += wave_derivative*local_energy;
 }
