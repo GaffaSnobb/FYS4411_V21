@@ -2,9 +2,14 @@
 
 VMC::VMC(
     const int n_dims_input,
-    const int n_variations_input
+    const int n_variations_input,
+    const int n_mc_cycles_input,
+    const int n_particles_input
 ) : n_dims(n_dims_input),
-    n_variations(n_variations_input)
+    n_variations(n_variations_input),
+    n_mc_cycles(n_mc_cycles_input),
+    n_particles(n_particles_input)
+
 {   /*
     Class constructor.
 
@@ -13,7 +18,7 @@ VMC::VMC(
     n_dims_input : constant integer
         The number of spatial dimensions.
     */
-    
+
     // Pre-filling the alphas vector due to parallelization.
     alphas.fill(alpha_step);
     alphas = arma::cumsum(alphas);
@@ -137,7 +142,7 @@ void VMC::one_variation(double alpha)
             {
                 set_new_positions(dim, particle, alpha);
             }
-            
+
             wave_new = 0;   // Overwrite the new wave func from previous particle step.
             for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
             {   /*

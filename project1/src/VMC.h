@@ -22,10 +22,10 @@ class VMC
         // TODO: Some of these values may not be needed by all classes. Move them appropriately.
         std::string fpath;              // Path to output text file. TODO: Set fpath according to what sub class is used. No input needed.
         std::ofstream outfile;          // Output file.
-        const int n_variations;   // Number of variations.
-        const int n_mc_cycles = 1e3;     // Number of MC cycles. TODO: Add as input parameter.
+        const int n_variations;         // Number of variations.
+        const int n_mc_cycles;          // Number of MC cycles.
         const int seed = 1337;          // RNG seed.
-        const int n_particles = 10;    // Number of particles.  TODO: Add as input parameter.
+        const int n_particles;          // Number of particles.
         const int n_dims;               // Number of spatial dimensions.
 
         const double step_size = 1;
@@ -62,7 +62,7 @@ class VMC
         double (*wave_function_exponent_ptr)(arma::Mat<double>, double, double);
 
     public:
-        VMC(const int n_dims_input, const int n_variations_input);
+        VMC(const int n_dims_input, const int n_variations_input, const int n_mc_cycles_input, const int n_particles_input);
         void set_local_energy();
         void set_wave_function();
         virtual void set_initial_positions(int dim, int particle, double alpha);
