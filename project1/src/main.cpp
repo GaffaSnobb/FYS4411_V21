@@ -17,6 +17,7 @@ int main(int argc, char *argv[])
 
     // Importance:
     t1 = std::chrono::steady_clock::now();
+    std::cout << "Importance sampling" << std::endl;
 
     ImportanceSampling system_1(n_dims, n_variations, n_mc_cycles, n_particles);
     system_1.solve();
@@ -26,10 +27,11 @@ int main(int argc, char *argv[])
 
     t2 = std::chrono::steady_clock::now();
     comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
-    std::cout << "\ntotal time: " << comp_time.count() << "s" << std::endl;
+    std::cout << "total time: " << comp_time.count() << "s\n" << std::endl;
 
     // Brute:
     t1 = std::chrono::steady_clock::now();
+    std::cout << "Brute force metropolis" << std::endl;
 
     BruteForce system_2(n_dims, n_variations, n_mc_cycles, n_particles);
     system_2.solve();
@@ -39,10 +41,11 @@ int main(int argc, char *argv[])
 
     t2 = std::chrono::steady_clock::now();
     comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
-    std::cout << "\ntotal time: " << comp_time.count() << "s" << std::endl;
+    std::cout << "total time: " << comp_time.count() << "s\n" << std::endl;
 
     // GD:
     t1 = std::chrono::steady_clock::now();
+    std::cout << "Gradient decent" << std::endl;
 
     GradientDescent system_3(n_dims, gd_iterations, n_mc_cycles, n_particles);
     system_3.solve();
@@ -52,7 +55,7 @@ int main(int argc, char *argv[])
 
     t2 = std::chrono::steady_clock::now();
     comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
-    std::cout << "\ntotal time: " << comp_time.count() << "s" << std::endl;
+    std::cout << "total time: " << comp_time.count() << "s\n" << std::endl;
 
     return 0;
 }
