@@ -29,7 +29,7 @@ class VMC
         const int n_dims;               // Number of spatial dimensions.
 
         const double step_size = 1;
-        const double alpha_step = 0.03; // TODO: Not used by gradient descent.
+        const double alpha_step = 1.0/n_variations; // TODO: Not used by gradient descent.
         const double beta = 1;
         const double diffusion_coeff = 0.5;
 
@@ -54,6 +54,9 @@ class VMC
         arma::Mat<double> qforce_current = arma::Mat<double>(n_dims, n_particles);  // Current quantum force.
         arma::Mat<double> qforce_new = arma::Mat<double>(n_dims, n_particles);      // New quantum force.
 
+        arma::Row<double> test_local = arma::Row<double>(n_mc_cycles);              // Temporary
+        arma::Mat<double> energies = arma::Mat<double>(n_mc_cycles, n_variations);
+
         std::mt19937 engine;      // Mersenne Twister RNG.
         std::uniform_real_distribution<double> uniform;  // Continuous uniform distribution.
         std::normal_distribution<double> normal;         // Gaussian distribution
@@ -69,8 +72,11 @@ class VMC
         virtual void set_new_positions(int dim, int particle, double alpha);
         virtual void metropolis(int dim, int particle, double alpha);
         virtual void solve();
-        void one_variation(double alpha);
+        void one_variation(int variation);
+
         void write_to_file(std::string fname);
+        void write_to_file_particles(std::string fpath);
+        void write_energies_to_file(std::string fpath);
 };
 
 #endif
