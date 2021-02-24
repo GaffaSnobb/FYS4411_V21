@@ -12,5 +12,7 @@ Below you will find an overview of the source files contained in this project.
 | other_functions.h | description |
 | wave_function.cpp | description |
 | wave_function.h | description |
+| methods.cpp | description |
+| methods.h | description |
 | read_from_file.py | description |
 | visualize.py | description |
