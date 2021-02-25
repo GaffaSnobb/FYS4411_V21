@@ -43,11 +43,21 @@ void BruteForce::solve()
     Iterate over variational parameters. Extract energy variances and
     expectation values.
     */
+
+    std::chrono::steady_clock::time_point t1;
+    std::chrono::steady_clock::time_point t2;
+    std::chrono::duration<double> comp_time;
+    
     for (int variation = 0; variation < n_variations; variation++)
     {
+        t1 = std::chrono::steady_clock::now();
         one_variation(variation);
         e_expectations(variation) = energy_expectation;
         e_variances(variation) = energy_variance;
+
+        t2 = std::chrono::steady_clock::now();
+        comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
+        std::cout << "variation : " << variation << ",  time : " << comp_time.count() << "s" << std::endl;
     }
 }
 
@@ -135,11 +145,21 @@ void ImportanceSampling::solve()
     Iterate over variational parameters. Extract energy variances and
     expectation values.
     */
+    std::chrono::steady_clock::time_point t1;
+    std::chrono::steady_clock::time_point t2;
+    std::chrono::duration<double> comp_time;
     for (int variation = 0; variation < n_variations; variation++)
     {
+        t1 = std::chrono::steady_clock::now();
+
         one_variation(variation);
         e_expectations(variation) = energy_expectation;
         e_variances(variation) = energy_variance;
+
+        t2 = std::chrono::steady_clock::now();
+        comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
+
+        std::cout << "variation : " << variation << ",  time : " << comp_time.count() << "s" << std::endl;
     }
 }
 
