@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
     const int n_dims = 3;                 // Number of dimentions
     const int n_variations = 10;          // Number of variational parameters.
     const int gd_iterations = 100;        // Max. gradient descent iterations.
-    const int n_mc_cycles = pow(2, 10);   // Number of MC cycles, must be a power of 2
+    const int n_mc_cycles = 100;//pow(2, 20);   // Number of MC cycles, must be a power of 2
     const int n_particles = 10;           // Number of particles
     // const double time_step = 0.4;      // Time step for importance. TODO: Make this an input to ImportanceSampling.
 
@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
     t2 = std::chrono::steady_clock::now();
     comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
     std::cout << "total time: " << comp_time.count() << "s\n" << std::endl;
-
+    /*
     // GD:
     t1 = std::chrono::steady_clock::now();
     std::cout << "Gradient decent" << std::endl;
@@ -56,6 +56,6 @@ int main(int argc, char *argv[])
     t2 = std::chrono::steady_clock::now();
     comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
     std::cout << "total time: " << comp_time.count() << "s\n" << std::endl;
-
+    */
     return 0;
 }

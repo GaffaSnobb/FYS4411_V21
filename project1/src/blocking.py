@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from read_from_file import read_energy_from_file
+from read_from_file import read_energy_from_file, read_from_file
 from time import time
 
 def block(x):
@@ -47,8 +47,8 @@ def block(x):
         print ("Warning: Use more data")
 
     ans = s[k]/2**(d-k)
-    print(f"avg: {mu:.3f}, iterations: {k}, std. {ans**.5:.3f}\n")
-    return ans
+    print(f"avg: {mu:.3f}, std.: {ans**.5:.3f}, iterations: {k}\n")
+    return ans, iter, s, gamma
 
 
 
@@ -64,24 +64,47 @@ loop over alpha values and do blocking
 for this alpha value:
     call block function with x = energies[this alpha, :]
 
+    std::chrono::steady_clock::time_point t1;
+    std::chrono::steady_clock::time_point t2;
+    std::chrono::duration<double> comp_time;
+
+    // Importance:
+    t1 = std::chrono::steady_clock::now();
+
+    t2 = std::chrono::steady_clock::now();
+    comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
+    std::cout << "total time: " << comp_time.count() << "s\n" << std::endl;
+
+
 """
 
-file = "generated_data/output_energy_importance.txt"
-alpha, energy = read_energy_from_file(file)
 print(45*"_", "\n")
 print("Importance")
 print(45*"_", "\n")
 
+f = "generated_data/output_importance_particles.txt"
+alpha_, var_energy, exp_energy = read_from_file(f)
+
+file = "generated_data/output_energy_importance.txt"
+alpha, energy = read_energy_from_file(file)
+
 for i in range(len(alpha)):
     print(f"alpha: {alpha[i]:.2f}")
-    ans = block(energy[:,i])
+    print(f"E:   {exp_energy[i]:.2f}, std.: {np.sqrt(var_energy[i]):.2f}")
+    ans, iter, s, gamma = block(energy[:,i])
 
-file = "generated_data/output_energy_brute_force.txt"
-alpha, energy = read_energy_from_file(file)
+
 print(45*"_", "\n")
 print("Brute force")
 print(45*"_", "\n")
 
+f = "generated_data/output_brute_force_particles.txt"
+alpha_, var_energy, exp_energy = read_from_file(f)
+
+file = "generated_data/output_energy_brute_force.txt"
+alpha, energy = read_energy_from_file(file)
+
 for i in range(len(alpha)):
     print(f"alpha: {alpha[i]:.2f}")
-    ans = block(energy[:,i])
+    print(f"E:   {exp_energy[i]:.3f}, std.: {np.sqrt(var_energy[i]):.3f}")
+    ans, iter, s, gamma = block(energy[:,i])

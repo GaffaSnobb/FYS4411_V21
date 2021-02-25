@@ -173,7 +173,13 @@ void VMC::one_variation(int variation)
     energy_expectation /= n_mc_cycles;
     e_expectation_squared /= n_mc_cycles;
     energy_variance = e_expectation_squared
-        - energy_expectation*energy_expectation;
+        - energy_expectation*energy_expectation/n_particles;
+
+    //std::cout << "alpha:    " << alpha  << std::endl;
+    //std::cout << "<E^2>:    " << e_expectation_squared <<std::endl;
+    //std::cout << "<E>^2:    " << energy_expectation*energy_expectation << std::endl;
+    //std::cout << "sigma^2:  " << energy_variance << std::endl;
+    //std::cout << "" << std::endl;
 
 }
 
