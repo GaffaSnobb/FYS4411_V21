@@ -46,6 +46,8 @@ class VMC
         int _;              // Index for MC loop.
         int dim;            // Index for dimension loops.
 
+        int gradient_stop = n_variations;  // Last variation in gradient descent.
+
         arma::Mat<double> pos_new = arma::Mat<double>(n_dims, n_particles);         // Proposed new position.
         arma::Mat<double> pos_current = arma::Mat<double>(n_dims, n_particles);     // Current position.
         arma::Col<double> e_variances = arma::Col<double>(n_variations);            // Energy variances.
@@ -75,7 +77,6 @@ class VMC
         void one_variation(int variation);
 
         void write_to_file(std::string fname);
-        void write_to_file_particles(std::string fpath);
         void write_energies_to_file(std::string fpath);
 };
 

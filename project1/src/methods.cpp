@@ -47,7 +47,7 @@ void BruteForce::solve()
     std::chrono::steady_clock::time_point t1;
     std::chrono::steady_clock::time_point t2;
     std::chrono::duration<double> comp_time;
-    
+
     for (int variation = 0; variation < n_variations; variation++)
     {
         t1 = std::chrono::steady_clock::now();
@@ -228,6 +228,7 @@ void GradientDescent::solve()
     TODO: Add a cut-off for when the proposed new alpha is adequately
     close to the desired value.
     */
+
     wave_derivative_expectation = 0;
     wave_times_energy_expectation = 0;
     alphas(0) = 0.1; // Initial value.
@@ -246,6 +247,12 @@ void GradientDescent::solve()
         energy_derivative = 2*(wave_times_energy_expectation - wave_derivative_expectation*energy_expectation/n_particles);
 
         alphas(variation + 1) = alphas(variation) - learning_rate*energy_derivative;
+
+        if ( std::abs(alphas(variation + 1) - alphas(variation) ) < 1e-4){
+            break;
+        }
+        //std::cout << variation << std::endl;
+        gradient_stop = variation;
 
         // std::cout << "energy_expectation: " << energy_expectation << std::endl;
         // std::cout << "wave_derivative_expectation: " << wave_derivative_expectation << std::endl;

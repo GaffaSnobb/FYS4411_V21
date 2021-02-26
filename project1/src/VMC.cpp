@@ -186,11 +186,16 @@ void VMC::one_variation(int variation)
 void VMC::write_to_file(std::string fpath)
 {
     outfile.open(fpath, std::ios::out);
+    outfile << "n_particles " << n_particles << "\n";
     outfile << std::setw(20) << "alpha";
     outfile << std::setw(20) << "variance_energy";
     outfile << std::setw(21) << "expected_energy\n";
 
-    for (int i = 0; i < n_variations; i++)
+    int end_iter = n_variations;
+
+    if ( !(gradient_stop == n_variations)){end_iter = gradient_stop;}
+
+    for (int i = 0; i < end_iter; i++)
     {   /*
         Write data to file.
         */
@@ -205,32 +210,11 @@ void VMC::write_to_file(std::string fpath)
 }
 
 
-void VMC::write_to_file_particles(std::string fpath)
-{
-    outfile.open(fpath, std::ios::out);
-    outfile << std::setw(20) << "alpha";
-    outfile << std::setw(20) << "variance_energy";
-    outfile << std::setw(21) << "expected_energy\n";
-
-    for (int i = 0; i < n_variations; i++)
-    {   /*
-        Write data to file.
-        */
-        outfile << std::setw(20) << std::setprecision(10);
-        outfile << alphas(i);
-        outfile << std::setw(20) << std::setprecision(10);
-        outfile << e_variances(i)/n_particles;
-        outfile << std::setw(20) << std::setprecision(10);
-        outfile << e_expectations(i)/n_particles << "\n";
-    }
-    outfile.close();
-}
-
-
 void VMC::write_energies_to_file(std::string fpath)
 {
     outfile.open(fpath, std::ios::out);
 
+    outfile << "n_particles " << n_particles << "\n";
     for (int i = 0; i < n_variations; i++){
       outfile << std::setw(20) << std::setprecision(10);
       outfile << alphas(i);
