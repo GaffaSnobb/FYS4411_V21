@@ -68,16 +68,9 @@ class VMC
 
     public:
         arma::Col<double> acceptances;   // Debug.
-        // double acceptance = 0;  // Debug.
         VMC(const int n_dims_input, const int n_variations_input, const int n_mc_cycles_input, const int n_particles_input);
         void set_local_energy();
         void set_wave_function();
-        virtual void set_initial_positions(int dim, int particle, double alpha);
-        virtual void set_new_positions(int dim, int particle, double alpha);
-        virtual void metropolis(int dim, int particle, double alpha, int &acceptance);
-        virtual void solve();
-        void one_variation(int variation);
-
         void write_to_file(std::string fname);
         void write_to_file_particles(std::string fpath);
         void write_energies_to_file(std::string fpath);

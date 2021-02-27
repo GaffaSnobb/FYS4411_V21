@@ -1,7 +1,7 @@
 # COMPILER = g++
 COMPILER = g++-10
 FLAGS = -std=c++17 -O1
-LIBRARIES = -larmadillo -fopenmp
+LIBRARIES = -larmadillo# -fopenmp
 OBJECTS = VMC.o wave_function.o other_functions.o methods.o
 
 all : main.out

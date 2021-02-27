@@ -10,6 +10,7 @@ int main(int argc, char *argv[])
     const int n_particles = 50;           // Number of particles
     // const double time_step = 0.4;      // Time step for importance. TODO: Make this an input to ImportanceSampling.
 
+    
     #ifdef _OPENMP
         double t1 = omp_get_wtime();
         double t2;
@@ -21,6 +22,7 @@ int main(int argc, char *argv[])
         t1 = std::chrono::steady_clock::now();
     #endif
 
+    
     // Importance:
     std::cout << "Importance sampling" << std::endl;
 
@@ -39,17 +41,28 @@ int main(int argc, char *argv[])
     #endif
 
 
-    // // Brute:
-    // t1 = std::chrono::steady_clock::now();
-    // std::cout << "Brute force metropolis" << std::endl;
+    // Brute:
+    #ifdef _OPENMP
+        t1 = omp_get_wtime();
+    #else
+        t1 = std::chrono::steady_clock::now();
+    #endif
 
-    // BruteForce system_2(n_dims, n_variations, n_mc_cycles, n_particles);
-    // system_2.solve();
-    // system_2.write_to_file_particles("generated_data/output_brute_force_particles.txt");
+    std::cout << "Brute force metropolis" << std::endl;
 
-    // t2 = std::chrono::steady_clock::now();
-    // comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
-    // std::cout << "total time: " << comp_time.count() << "s\n" << std::endl;
+    BruteForce system_2(n_dims, n_variations, n_mc_cycles, n_particles);
+    system_2.solve();
+    system_2.write_to_file_particles("generated_data/output_brute_force_particles.txt");
+    
+    #ifdef _OPENMP
+        t2 = omp_get_wtime();
+        comp_time = t2 - t1;
+        std::cout << "total time: " << comp_time << "s\n" << std::endl;
+    #else
+        t2 = std::chrono::steady_clock::now();
+        comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
+        std::cout << "total time: " << comp_time.count() << "s\n" << std::endl;
+    #endif
     /*
     // GD:
     t1 = std::chrono::steady_clock::now();

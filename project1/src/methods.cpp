@@ -1,42 +1,5 @@
 #include "methods.h"
 
-void BruteForce::set_initial_positions(int dim, int particle, double alpha)
-{   /*
-    Set the initial positions according to the brute force approach,
-    drawing random numbers uniformly in the interval [-1/2, 1/2].
-
-    Parameters
-    ----------
-    dim : integer
-        Current dimension index.
-
-    particle : integer
-        Current particle index.
-
-    alpha : double
-        Variational parameter. Unused here.
-    */
-    pos_current(dim, particle) = step_size*(uniform(engine) - 0.5);
-}
-
-void BruteForce::set_new_positions(int dim, int particle, double alpha)
-{   /*
-    Set new positions according to the brute force approach, drawing
-    random numbers uniformly in the interval [-1/2, 1/2].
-
-    Parameters
-    ----------
-    dim : integer
-        Current dimension index.
-
-    particle : integer
-        Current particle index.
-
-    alpha : double
-        Variational parameter. Unused here.
-    */
-    pos_new(dim, particle) = pos_current(dim, particle) + step_size*(uniform(engine) - 0.5);
-}
 
 void BruteForce::solve()
 {   /*
@@ -65,97 +28,128 @@ void BruteForce::solve()
     }
 }
 
-void BruteForce::metropolis(int dim, int particle, double alpha, int &acceptance)
+void BruteForce::one_variation(int variation)
 {   /*
-    Metropolis specifics for brute force.
+    Perform calculations for a single variational parameter.
 
     Parameters
     ----------
-    dim : integer
-        Current dimension index.
-
-    particle : integer
-        Current particle index.
-
-    alpha : double
-        Variational parameter.
-
-    acceptance : integer reference
-        Debug counter for the acceptance rate.
+    variation : int
+        Which iteration of variational parameter alpha.
     */
-    exponential_diff = 2*(wave_new - wave_current);
 
-    if (uniform(engine) < std::exp(exponential_diff))
+    double alpha = alphas(variation);
+    int acceptance = 0;  // Debug.
+
+    wave_current = 0;   // Reset wave function for each variation.
+    energy_expectation = 0; // Reset for each variation.
+    energy_variance = 0; // Reset for each variation.
+    double time_step = 0.01;
+
+    energy_expectation_squared = 0;
+    for (particle = 0; particle < n_particles; particle++)
     {   /*
-        Perform the Metropolis algorithm.  To save one
-        exponential calculation, the difference is taken
-        of the exponents instead of the ratio of the
-        exponentials. Marginally better...
+        Iterate over all particles.  In this loop, all current
+        positions are calulated along with the current wave
+        functions.
         */
-        acceptance += 1;    // Debug.
         for (dim = 0; dim < n_dims; dim++)
-        {
-            pos_current(dim, particle) = pos_new(dim, particle);
-        }
-        wave_current = wave_new;
-
-        local_energy = 0;   // Overwrite local energy from previous particle step.
-        for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
         {   /*
-            After moving one particle, the local energy is
-            calculated based on all particle positions.
+            Set initial values.
             */
-            local_energy += local_energy_ptr(
-                pos_current.col(particle_inner),
-                alpha,
-                beta
-            );
+            pos_current(dim, particle) = step_size*(uniform(engine) - 0.5);
         }
+        wave_current += wave_function_exponent_ptr(
+            pos_current.col(particle),  // Particle position.
+            alpha,
+            beta
+        );
     }
-}
+    
+    #pragma omp parallel for \
+        private(mc, particle, dim, particle_inner) \
+        firstprivate(wave_new, wave_current, local_energy) \
+        firstprivate(pos_new, pos_current) \
+        reduction(+:acceptance, energy_expectation, energy_expectation_squared)
+    for (mc = 0; mc < n_mc_cycles; mc++)
+    {   /*
+        Run over all Monte Carlo cycles.
+        */
+        for (particle = 0; particle < n_particles; particle++)
+        {   /*
+            Iterate over all particles.  In this loop, new
+            proposed positions and wave functions are
+            calculated.
+            */
+            for (dim = 0; dim < n_dims; dim++)
+            {   /*
+                Set new values.
+                */
+                pos_new(dim, particle) = pos_current(dim, particle) + step_size*(uniform(engine) - 0.5);
+            }
 
-void ImportanceSampling::set_initial_positions(int dim, int particle, double alpha)
-{   /*
-    Set the initial positions according to the importance sampling
-    approach, drawing random numbers normally distributed.
+            wave_new = 0;   // Overwrite the new wave func from previous particle step.
+            for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
+            {   /*
+                After moving one particle, the wave function is
+                calculated based on all particle positions.
+                */
+                wave_new += wave_function_exponent_ptr(
+                        pos_new.col(particle_inner),  // Particle position.
+                        alpha,
+                        beta
+                    );
+            }
 
-    Parameters
-    ----------
-    dim : integer
-        Current dimension index.
+            exponential_diff = 2*(wave_new - wave_current);
 
-    particle : integer
-        Current particle index.
+            if (uniform(engine) < std::exp(exponential_diff))
+            {   /*
+                Perform the Metropolis algorithm.  To save one
+                exponential calculation, the difference is taken
+                of the exponents instead of the ratio of the
+                exponentials. Marginally better...
+                */
+                acceptance += 1;    // Debug.
+                for (dim = 0; dim < n_dims; dim++)
+                {
+                    pos_current(dim, particle) = pos_new(dim, particle);
+                }
+                wave_current = wave_new;
 
-    alpha : double
-        Variational parameter.
-    */
-    pos_current(dim, particle) = normal(engine)*sqrt(time_step);
+                local_energy = 0;   // Overwrite local energy from previous particle step.
+                for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
+                {   /*
+                    After moving one particle, the local energy is
+                    calculated based on all particle positions.
+                    */
+                    local_energy += local_energy_ptr(
+                        pos_current.col(particle_inner),
+                        alpha,
+                        beta
+                    );
+                }
+            }
 
-    qforce_current(dim, particle) = -4*alpha*pos_current(dim, particle);
-}
+            energy_expectation += local_energy;
+            energy_expectation_squared += local_energy*local_energy;
+        }
+        energies(mc, variation) = local_energy;
+    }
 
-void ImportanceSampling::set_new_positions(int dim, int particle, double alpha)
-{   /*
-    Set new positions according to the importance sampling approach,
-    drawing random numbers normally distributed.
+    energy_expectation /= n_mc_cycles;
+    energy_expectation_squared /= n_mc_cycles;
+    energy_variance = energy_expectation_squared
+        - energy_expectation*energy_expectation/n_particles;
 
-    Parameters
-    ----------
-    dim : integer
-        Current dimension index.
+    acceptances(variation) = acceptance;    // Debug.
 
-    particle : integer
-        Current particle index.
+    //std::cout << "alpha:    " << alpha  << std::endl;
+    //std::cout << "<E^2>:    " << energy_expectation_squared <<std::endl;
+    //std::cout << "<E>^2:    " << energy_expectation*energy_expectation << std::endl;
+    //std::cout << "sigma^2:  " << energy_variance << std::endl;
+    //std::cout << "" << std::endl;
 
-    alpha : double
-        Variational parameter.
-    */
-    pos_new(dim, particle) = pos_current(dim, particle) +
-        diffusion_coeff*qforce_current(dim, particle)*time_step +
-        normal(engine)*sqrt(time_step);
-
-    qforce_new(dim, particle) = -4*alpha*pos_new(dim, particle);
 }
 
 void ImportanceSampling::solve()
@@ -204,66 +198,161 @@ void ImportanceSampling::solve()
     }
 }
 
-void ImportanceSampling::metropolis(int dim, int particle, double alpha, int &acceptance)
+void ImportanceSampling::one_variation(int variation)
 {   /*
-    Metropolis specifics for importance sampling.
+    Perform calculations for a single variational parameter.
 
     Parameters
     ----------
-    dim : integer
-        Current dimension index.
-
-    particle : integer
-        Current particle index.
-
-    alpha : double
-        Variational parameter.
-
-    acceptance : integer reference
-        Debug counter for the acceptance rate.
+    variation : int
+        Which iteration of variational parameter alpha.
     */
-    std::cout << pos_current(1, 1) << std::endl;
-    double greens_ratio = 0;
-    for (int dim = 0; dim < n_dims; dim++)
-    {   /*
-        Calculate greens ratio for the acceptance
-        criterion.
-        */
-        greens_ratio +=
-            0.5*(qforce_current(dim, particle) + qforce_new(dim, particle))
-            *(0.5*diffusion_coeff*time_step*
-            (qforce_current(dim, particle) - qforce_new(dim, particle))
-            - pos_new(dim, particle) + pos_current(dim, particle));
-    }
 
-    greens_ratio = exp(greens_ratio);
-    exponential_diff = 2*(wave_new - wave_current);
+    double alpha = alphas(variation);
+    int acceptance = 0;  // Debug.
 
-    if (uniform(engine) < greens_ratio*std::exp(exponential_diff))
+    wave_current = 0;   // Reset wave function for each variation.
+    energy_expectation = 0; // Reset for each variation.
+    energy_variance = 0; // Reset for each variation.
+    double time_step = 0.01;
+
+    energy_expectation_squared = 0;
+    for (particle = 0; particle < n_particles; particle++)
     {   /*
-        Metropolis step with new acceptance criterion.
+        Iterate over all particles.  In this loop, all current
+        positions are calulated along with the current wave
+        functions.
         */
-        acceptance++;    // Debug.
         for (dim = 0; dim < n_dims; dim++)
-        {
-            pos_current(dim, particle) = pos_new(dim, particle);
-            qforce_current(dim, particle) = qforce_new(dim, particle);
-        }
-        wave_current = wave_new;
-
-        local_energy = 0;   // Overwrite local energy from previous particle step.
-        for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
         {   /*
-            After moving one particle, the local energy is
-            calculated based on all particle positions.
+            Set initial values.
             */
-            local_energy += local_energy_ptr(
-                pos_current.col(particle_inner),
-                alpha,
-                beta
-            );
+            pos_current(dim, particle) = normal(engine)*sqrt(time_step);
+            qforce_current(dim, particle) = -4*alpha*pos_current(dim, particle);
         }
+        wave_current += wave_function_exponent_ptr(
+            pos_current.col(particle),  // Particle position.
+            alpha,
+            beta
+        );
     }
+    
+    #pragma omp parallel for \
+        private(mc, particle, dim, particle_inner) \
+        firstprivate(wave_new, wave_current, local_energy) \
+        firstprivate(pos_new, qforce_new, pos_current, qforce_current) \
+        reduction(+:acceptance, energy_expectation, energy_expectation_squared)
+    for (mc = 0; mc < n_mc_cycles; mc++)
+    {   /*
+        Run over all Monte Carlo cycles.
+        */
+        for (particle = 0; particle < n_particles; particle++)
+        {   /*
+            Iterate over all particles.  In this loop, new
+            proposed positions and wave functions are
+            calculated.
+            */
+            for (dim = 0; dim < n_dims; dim++)
+            {   /*
+                Set new values.
+                */
+                pos_new(dim, particle) = pos_current(dim, particle) +
+                    diffusion_coeff*qforce_current(dim, particle)*time_step +
+                    normal(engine)*sqrt(time_step);
+                
+                qforce_new(dim, particle) = -4*alpha*pos_new(dim, particle);
+            }
+
+            wave_new = 0;   // Overwrite the new wave func from previous particle step.
+            for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
+            {   /*
+                After moving one particle, the wave function is
+                calculated based on all particle positions.
+                */
+                wave_new += wave_function_exponent_ptr(
+                        pos_new.col(particle_inner),  // Particle position.
+                        alpha,
+                        beta
+                    );
+            }
+
+            double greens_ratio = 0;
+            for (int dim = 0; dim < n_dims; dim++)
+            {   /*
+                Calculate greens ratio for the acceptance
+                criterion.
+                */
+                greens_ratio +=
+                    0.5*(qforce_current(dim, particle) + qforce_new(dim, particle))
+                    *(0.5*diffusion_coeff*time_step*
+                    (qforce_current(dim, particle) - qforce_new(dim, particle))
+                    - pos_new(dim, particle) + pos_current(dim, particle));
+            }
+
+            greens_ratio = exp(greens_ratio);
+            exponential_diff = 2*(wave_new - wave_current);
+
+            if (uniform(engine) < greens_ratio*std::exp(exponential_diff))
+            {   /*
+                Metropolis step with new acceptance criterion.
+                */
+                acceptance++;    // Debug.
+                for (dim = 0; dim < n_dims; dim++)
+                {
+                    pos_current(dim, particle) = pos_new(dim, particle);
+                    qforce_current(dim, particle) = qforce_new(dim, particle);
+                }
+                wave_current = wave_new;
+
+                local_energy = 0;   // Overwrite local energy from previous particle step.
+                for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
+                {   /*
+                    After moving one particle, the local energy is
+                    calculated based on all particle positions.
+                    */
+                    local_energy += local_energy_ptr(
+                        pos_current.col(particle_inner),
+                        alpha,
+                        beta
+                    );
+                }
+                // GD specifics.
+                wave_derivative = 0;
+                for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
+                {   /*
+                    Calculations needed for gradient descent.
+                    */
+                    wave_derivative += wave_function_3d_diff_wrt_alpha(
+                        pos_current.col(particle_inner),
+                        alpha,
+                        beta
+                    );
+                }
+
+                wave_derivative_expectation += wave_derivative;
+                wave_times_energy_expectation += wave_derivative*local_energy;
+                // GD specifics.
+            }
+
+            energy_expectation += local_energy;
+            energy_expectation_squared += local_energy*local_energy;
+        }
+        energies(mc, variation) = local_energy;
+    }
+
+    energy_expectation /= n_mc_cycles;
+    energy_expectation_squared /= n_mc_cycles;
+    energy_variance = energy_expectation_squared
+        - energy_expectation*energy_expectation/n_particles;
+
+    acceptances(variation) = acceptance;    // Debug.
+
+    //std::cout << "alpha:    " << alpha  << std::endl;
+    //std::cout << "<E^2>:    " << energy_expectation_squared <<std::endl;
+    //std::cout << "<E>^2:    " << energy_expectation*energy_expectation << std::endl;
+    //std::cout << "sigma^2:  " << energy_variance << std::endl;
+    //std::cout << "" << std::endl;
+
 }
 
 void GradientDescent::solve()
@@ -324,7 +413,7 @@ void GradientDescent::metropolis(int dim, int particle, double alpha, int &accep
     acceptance : integer reference
         Debug counter for the acceptance rate.
     */
-    ImportanceSampling::metropolis(dim, particle, alpha, acceptance);
+    // ImportanceSampling::metropolis(dim, particle, alpha, acceptance);
 
     wave_derivative = 0;
     for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
