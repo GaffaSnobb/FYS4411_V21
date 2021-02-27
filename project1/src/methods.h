@@ -9,7 +9,7 @@ class BruteForce : public VMC
         // method = "brute_force";
         void set_initial_positions(int dim, int particle, double alpha);
         void set_new_positions(int dim, int particle, double alpha);
-        void metropolis(int dim, int particle, double alpha);
+        void metropolis(int dim, int particle, double alpha, int &acceptance);
         void solve();
 };
 
@@ -17,11 +17,11 @@ class ImportanceSampling : public VMC
 {
     using VMC::VMC;
     protected:
-        double time_step = 0.1;
+        double time_step = 0.01;
     public:
         void set_initial_positions(int dim, int particle, double alpha);
         void set_new_positions(int dim, int particle, double alpha);
-        void metropolis(int dim, int particle, double alpha);
+        void metropolis(int dim, int particle, double alpha, int &acceptance);
         void solve();
 };
 
@@ -35,7 +35,7 @@ class GradientDescent : public ImportanceSampling
         // double energy_derivative = 0;
     public:
         void solve();
-        void metropolis(int dim, int particle, double alpha);
+        void metropolis(int dim, int particle, double alpha, int &acceptance);
         void extra(double alpha);
 };
 

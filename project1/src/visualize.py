@@ -50,5 +50,5 @@ if __name__ == "__main__":
 
     f_importance = f"{path}/output_importance_particles.txt"
     f_brute_force = f"{path}/output_brute_force_particles.txt"
-    local_energy_alpha(f_brute_force, "brute_force")
+    # local_energy_alpha(f_brute_force, "brute_force")
     local_energy_alpha(f_importance, "importance")

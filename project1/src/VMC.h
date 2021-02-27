@@ -8,8 +8,7 @@
 #include <iomanip>          // Data formatting when writing to file.
 #include <chrono>           // Timing.
 #include <armadillo>        // Linear algebra.
-
-// #include "omp.h"            // Parallelization.
+#include "omp.h"            // Parallelization.
 #include "wave_function.h"
 #include "other_functions.h"
 
@@ -28,34 +27,37 @@ class VMC
         const int n_particles;          // Number of particles.
         const int n_dims;               // Number of spatial dimensions.
 
-        const double step_size = 1;
-        const double alpha_step = 1.0/n_variations; // TODO: Not used by gradient descent.
+        const double step_size = 0.5;   // For brute force.
+        // const double alpha_step = 1.0/n_variations; // Careful with using n_variations which may be un-initialized.
+        const double alpha_step = 0.1; // TODO: Not used by gradient descent.
         const double beta = 1;
         const double diffusion_coeff = 0.5;
 
-        double e_expectation_squared;   // Square of the energy expectation value.
-        double local_energy;            // Local energy.
-        double exponential_diff;        // Difference of the exponentials, for Metropolis.
-        double wave_current;            // Current wave function.
-        double wave_new;                // Proposed new wave function.
+        double energy_expectation_squared;  // Square of the energy expectation value.
+        double local_energy;                // Local energy.
+        double exponential_diff;            // Difference of the exponentials, for Metropolis.
+        double wave_current;                // Current wave function.
+        double wave_new;                    // Proposed new wave function.
         double energy_expectation = 0;
         double energy_variance = 0;
 
+
         int particle;       // Index for particle loop.
         int particle_inner; // Index for inner particle loops.
-        int _;              // Index for MC loop.
+        int mc;              // Index for MC loop.
         int dim;            // Index for dimension loops.
 
-        arma::Mat<double> pos_new = arma::Mat<double>(n_dims, n_particles);         // Proposed new position.
-        arma::Mat<double> pos_current = arma::Mat<double>(n_dims, n_particles);     // Current position.
-        arma::Col<double> e_variances = arma::Col<double>(n_variations);            // Energy variances.
-        arma::Col<double> e_expectations = arma::Col<double>(n_variations);         // Energy expectation values.
-        arma::Col<double> alphas = arma::Col<double>(n_variations);                 // Variational parameter.
-        arma::Mat<double> qforce_current = arma::Mat<double>(n_dims, n_particles);  // Current quantum force.
-        arma::Mat<double> qforce_new = arma::Mat<double>(n_dims, n_particles);      // New quantum force.
+        // Moved initialization to class constructor.
+        arma::Mat<double> pos_new;       // Proposed new position.
+        arma::Mat<double> pos_current;   // Current position.
+        arma::Col<double> e_variances;   // Energy variances.
+        arma::Col<double> e_expectations;// Energy expectation values.
+        arma::Col<double> alphas;        // Variational parameter.
+        arma::Mat<double> qforce_current;// Current quantum force.
+        arma::Mat<double> qforce_new;    // New quantum force.
 
-        arma::Row<double> test_local = arma::Row<double>(n_mc_cycles);              // Temporary
-        arma::Mat<double> energies = arma::Mat<double>(n_mc_cycles, n_variations);
+        arma::Row<double> test_local;    // Temporary
+        arma::Mat<double> energies;
 
         std::mt19937 engine;      // Mersenne Twister RNG.
         std::uniform_real_distribution<double> uniform;  // Continuous uniform distribution.
@@ -65,18 +67,21 @@ class VMC
         double (*wave_function_exponent_ptr)(arma::Mat<double>, double, double);
 
     public:
+        arma::Col<double> acceptances;   // Debug.
+        // double acceptance = 0;  // Debug.
         VMC(const int n_dims_input, const int n_variations_input, const int n_mc_cycles_input, const int n_particles_input);
         void set_local_energy();
         void set_wave_function();
         virtual void set_initial_positions(int dim, int particle, double alpha);
         virtual void set_new_positions(int dim, int particle, double alpha);
-        virtual void metropolis(int dim, int particle, double alpha);
+        virtual void metropolis(int dim, int particle, double alpha, int &acceptance);
         virtual void solve();
         void one_variation(int variation);
 
         void write_to_file(std::string fname);
         void write_to_file_particles(std::string fpath);
         void write_energies_to_file(std::string fpath);
+        ~VMC();
 };
 
 #endif

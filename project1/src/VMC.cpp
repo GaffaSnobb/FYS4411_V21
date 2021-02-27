@@ -18,6 +18,18 @@ VMC::VMC(
     n_dims_input : constant integer
         The number of spatial dimensions.
     */
+    pos_new = arma::Mat<double>(n_dims, n_particles);         // Proposed new position.
+    pos_current = arma::Mat<double>(n_dims, n_particles);     // Current position.
+    e_variances = arma::Col<double>(n_variations);            // Energy variances.
+    e_expectations = arma::Col<double>(n_variations);         // Energy expectation values.
+    alphas = arma::Col<double>(n_variations);                 // Variational parameter.
+    qforce_current = arma::Mat<double>(n_dims, n_particles);  // Current quantum force.
+    qforce_new = arma::Mat<double>(n_dims, n_particles);      // New quantum force.
+    test_local = arma::Row<double>(n_mc_cycles);              // Temporary
+    energies = arma::Mat<double>(n_mc_cycles, n_variations);
+
+    acceptances = arma::Col<double>(n_variations);   // Debug.
+    acceptances.zeros();
 
     // Pre-filling the alphas vector due to parallelization.
     alphas.fill(alpha_step);
@@ -82,7 +94,7 @@ void VMC::set_new_positions(int dim, int particle, double alpha)
     std::cout << "NotImplementedError" << std::endl;
 }
 
-void VMC::metropolis(int dim, int particle, double alpha)
+void VMC::metropolis(int dim, int particle, double alpha, int &acceptance)
 {   /*
     This function will be overwritten by child class method.
     */
@@ -103,18 +115,18 @@ void VMC::one_variation(int variation)
 
     Parameters
     ----------
-    variation : int,
-                Which iteration of variational parameter alpha
+    variation : int
+        Which iteration of variational parameter alpha.
     */
 
     double alpha = alphas(variation);
+    int acceptance = 0;  // Debug.
 
     wave_current = 0;   // Reset wave function for each variation.
     energy_expectation = 0; // Reset for each variation.
     energy_variance = 0; // Reset for each variation.
 
-    e_expectation_squared = 0;
-    wave_current = 0;
+    energy_expectation_squared = 0;
     for (particle = 0; particle < n_particles; particle++)
     {   /*
         Iterate over all particles.  In this loop, all current
@@ -131,7 +143,13 @@ void VMC::one_variation(int variation)
             beta
         );
     }
-    for (_ = 0; _ < n_mc_cycles; _++)
+    
+    #pragma omp parallel for \
+        private(mc, particle, dim, particle_inner) \
+        firstprivate(wave_new, wave_current, local_energy) \
+        firstprivate(pos_new, qforce_new, pos_current, qforce_current) \
+        reduction(+:acceptance, energy_expectation, energy_expectation_squared)
+    for (mc = 0; mc < n_mc_cycles; mc++)
     {   /*
         Run over all Monte Carlo cycles.
         */
@@ -158,25 +176,26 @@ void VMC::one_variation(int variation)
                         beta
                     );
             }
-
-            metropolis(dim, particle, alpha);
+            pos_current(1, 1) = 1337;
+            metropolis(dim, particle, alpha, acceptance);
+            std::cout << pos_current(1, 1) << std::endl;
+            exit(0);
 
             energy_expectation += local_energy;
-            e_expectation_squared += local_energy*local_energy;
-
+            energy_expectation_squared += local_energy*local_energy;
         }
-
-        energies(_, variation) = local_energy;
-
+        energies(mc, variation) = local_energy;
     }
 
     energy_expectation /= n_mc_cycles;
-    e_expectation_squared /= n_mc_cycles;
-    energy_variance = e_expectation_squared
+    energy_expectation_squared /= n_mc_cycles;
+    energy_variance = energy_expectation_squared
         - energy_expectation*energy_expectation/n_particles;
 
+    acceptances(variation) = acceptance;    // Debug.
+
     //std::cout << "alpha:    " << alpha  << std::endl;
-    //std::cout << "<E^2>:    " << e_expectation_squared <<std::endl;
+    //std::cout << "<E^2>:    " << energy_expectation_squared <<std::endl;
     //std::cout << "<E>^2:    " << energy_expectation*energy_expectation << std::endl;
     //std::cout << "sigma^2:  " << energy_variance << std::endl;
     //std::cout << "" << std::endl;
@@ -204,7 +223,6 @@ void VMC::write_to_file(std::string fpath)
     outfile.close();
 }
 
-
 void VMC::write_to_file_particles(std::string fpath)
 {
     outfile.open(fpath, std::ios::out);
@@ -226,7 +244,6 @@ void VMC::write_to_file_particles(std::string fpath)
     outfile.close();
 }
 
-
 void VMC::write_energies_to_file(std::string fpath)
 {
     outfile.open(fpath, std::ios::out);
@@ -239,4 +256,9 @@ void VMC::write_energies_to_file(std::string fpath)
     outfile << "\n";
     energies.save(outfile, arma::raw_ascii);
     outfile.close();
+}
+
+VMC::~VMC()
+{
+    // acceptances.print();
 }

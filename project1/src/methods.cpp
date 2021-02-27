@@ -57,16 +57,33 @@ void BruteForce::solve()
 
         t2 = std::chrono::steady_clock::now();
         comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
-        std::cout << "variation : " << variation << ",  time : " << comp_time.count() << "s" << std::endl;
+        std::cout << "variation : " << variation;
+        std::cout << ", alpha: " << alphas(variation);
+        std::cout << ", energy: " << energy_expectation/(n_particles*n_dims);
+        std::cout << ",  time : " << comp_time.count() << "s";
+        std::cout << ", acceptance: " << acceptances(variation)/(n_mc_cycles*n_particles) << std::endl;
     }
 }
 
-void BruteForce::metropolis(int dim, int particle, double alpha)
+void BruteForce::metropolis(int dim, int particle, double alpha, int &acceptance)
 {   /*
     Metropolis specifics for brute force.
+
+    Parameters
+    ----------
+    dim : integer
+        Current dimension index.
+
+    particle : integer
+        Current particle index.
+
+    alpha : double
+        Variational parameter.
+
+    acceptance : integer reference
+        Debug counter for the acceptance rate.
     */
-    exponential_diff =
-        2*(wave_new - wave_current);
+    exponential_diff = 2*(wave_new - wave_current);
 
     if (uniform(engine) < std::exp(exponential_diff))
     {   /*
@@ -75,6 +92,7 @@ void BruteForce::metropolis(int dim, int particle, double alpha)
         of the exponents instead of the ratio of the
         exponentials. Marginally better...
         */
+        acceptance += 1;    // Debug.
         for (dim = 0; dim < n_dims; dim++)
         {
             pos_current(dim, particle) = pos_new(dim, particle);
@@ -145,25 +163,48 @@ void ImportanceSampling::solve()
     Iterate over variational parameters. Extract energy variances and
     expectation values.
     */
-    std::chrono::steady_clock::time_point t1;
-    std::chrono::steady_clock::time_point t2;
-    std::chrono::duration<double> comp_time;
+
+    #ifdef _OPENMP
+        double t1;
+        double t2;
+        double comp_time;
+    #else
+        std::chrono::steady_clock::time_point t1;
+        std::chrono::steady_clock::time_point t2;
+        std::chrono::duration<double> comp_time;
+    #endif
+
     for (int variation = 0; variation < n_variations; variation++)
     {
-        t1 = std::chrono::steady_clock::now();
+        #ifdef _OPENMP
+            t1 = omp_get_wtime();
+        #else
+            t1 = std::chrono::steady_clock::now();
+        #endif
 
         one_variation(variation);
         e_expectations(variation) = energy_expectation;
         e_variances(variation) = energy_variance;
 
-        t2 = std::chrono::steady_clock::now();
-        comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
-
-        std::cout << "variation : " << variation << ",  time : " << comp_time.count() << "s" << std::endl;
+        std::cout << "variation : " << std::setw(3) <<  variation;
+        std::cout << ", alpha: " << std::setw(4) << alphas(variation);
+        // std::cout << ", energy: " << energy_expectation;
+        std::cout << ", acceptance: " << std::setw(5) << acceptances(variation)/(n_mc_cycles*n_particles);
+        
+        #ifdef _OPENMP
+            t2 = omp_get_wtime();
+            comp_time = t2 - t1;
+            std::cout << ",  time : " << comp_time << "s" << std::endl;
+        #else
+            t2 = std::chrono::steady_clock::now();
+            comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
+            std::cout << ",  time : " << comp_time.count() << "s" << std::endl;
+        #endif
+        
     }
 }
 
-void ImportanceSampling::metropolis(int dim, int particle, double alpha)
+void ImportanceSampling::metropolis(int dim, int particle, double alpha, int &acceptance)
 {   /*
     Metropolis specifics for importance sampling.
 
@@ -177,7 +218,11 @@ void ImportanceSampling::metropolis(int dim, int particle, double alpha)
 
     alpha : double
         Variational parameter.
+
+    acceptance : integer reference
+        Debug counter for the acceptance rate.
     */
+    std::cout << pos_current(1, 1) << std::endl;
     double greens_ratio = 0;
     for (int dim = 0; dim < n_dims; dim++)
     {   /*
@@ -198,6 +243,7 @@ void ImportanceSampling::metropolis(int dim, int particle, double alpha)
     {   /*
         Metropolis step with new acceptance criterion.
         */
+        acceptance++;    // Debug.
         for (dim = 0; dim < n_dims; dim++)
         {
             pos_current(dim, particle) = pos_new(dim, particle);
@@ -258,7 +304,7 @@ void GradientDescent::solve()
     }
 }
 
-void GradientDescent::metropolis(int dim, int particle, double alpha)
+void GradientDescent::metropolis(int dim, int particle, double alpha, int &acceptance)
 {   /*
     Metropolis specifics for gradient descent.  In here you find both
     the Metropolis criterion calculations and additional values needed
@@ -274,8 +320,11 @@ void GradientDescent::metropolis(int dim, int particle, double alpha)
 
     alpha : double
         Variational parameter.
+
+    acceptance : integer reference
+        Debug counter for the acceptance rate.
     */
-    ImportanceSampling::metropolis(dim, particle, alpha);
+    ImportanceSampling::metropolis(dim, particle, alpha, acceptance);
 
     wave_derivative = 0;
     for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
