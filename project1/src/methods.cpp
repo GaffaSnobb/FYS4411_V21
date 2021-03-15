@@ -48,12 +48,11 @@ void BruteForce::one_variation(int variation)
     double alpha = alphas(variation);
     int acceptance = 0;  // Debug.
 
-    wave_current = 0;   // Reset wave function for each variation.
+    wave_current = 0;       // Reset wave function for each variation.
     energy_expectation = 0; // Reset for each variation.
-    energy_variance = 0; // Reset for each variation.
-    double time_step = 0.01;
-
+    energy_variance = 0;    // Reset for each variation. NB: Variable not inside parallel region.
     energy_expectation_squared = 0;
+
     for (particle = 0; particle < n_particles; particle++)
     {   /*
         Iterate over all particles.  In this loop, all current
@@ -67,7 +66,7 @@ void BruteForce::one_variation(int variation)
             pos_current(dim, particle) = step_size*(uniform(engine) - 0.5);
         }
         wave_current += wave_function_exponent_ptr(
-            pos_current.col(particle),  // Particle position.
+            pos_current.col(particle),  // Position of one particle.
             alpha,
             beta
         );
@@ -75,7 +74,8 @@ void BruteForce::one_variation(int variation)
     
     #pragma omp parallel for \
         private(mc, particle, dim, particle_inner) \
-        firstprivate(wave_new, wave_current, local_energy) \
+        private(wave_new, exponential_diff) \
+        firstprivate(wave_current, local_energy) \
         firstprivate(pos_new, pos_current) \
         reduction(+:acceptance, energy_expectation, energy_expectation_squared)
     for (mc = 0; mc < n_mc_cycles; mc++)
@@ -117,7 +117,7 @@ void BruteForce::one_variation(int variation)
                 of the exponents instead of the ratio of the
                 exponentials. Marginally better...
                 */
-                acceptance += 1;    // Debug.
+                acceptance++;    // Debug.
                 for (dim = 0; dim < n_dims; dim++)
                 {
                     pos_current(dim, particle) = pos_new(dim, particle);
@@ -204,13 +204,13 @@ void ImportanceSampling::one_variation(int variation)
     */
 
     double alpha = alphas(variation);
-    int acceptance = 0;  // Debug.
+    int acceptance = 0;  // Debug. Count the number of accepted steps.
 
     wave_current = 0;   // Reset wave function for each variation.
     energy_expectation = 0; // Reset for each variation.
     energy_variance = 0; // Reset for each variation.
-
     energy_expectation_squared = 0;
+
     for (particle = 0; particle < n_particles; particle++)
     {   /*
         Iterate over all particles.  In this loop, all current
@@ -225,7 +225,7 @@ void ImportanceSampling::one_variation(int variation)
             qforce_current(dim, particle) = -4*alpha*pos_current(dim, particle);
         }
         wave_current += wave_function_exponent_ptr(
-            pos_current.col(particle),  // Particle position.
+            pos_current.col(particle),  // Position of one particle.
             alpha,
             beta
         );
@@ -326,7 +326,7 @@ void ImportanceSampling::one_variation(int variation)
 
                 wave_derivative_expectation += wave_derivative;
                 wave_times_energy_expectation += wave_derivative*local_energy;
-                // GD specifics.
+                // GD specifics end.
             }
 
             energy_expectation += local_energy;
