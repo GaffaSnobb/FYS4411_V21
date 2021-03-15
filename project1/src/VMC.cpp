@@ -4,7 +4,8 @@ VMC::VMC(
     const int n_dims_input,
     const int n_variations_input,
     const int n_mc_cycles_input,
-    const int n_particles_input
+    const int n_particles_input,
+    arma::Col<double> alphas_input
 ) : n_dims(n_dims_input),
     n_variations(n_variations_input),
     n_mc_cycles(n_mc_cycles_input),
@@ -26,6 +27,9 @@ VMC::VMC(
 
     n_particles_input : constant integer
         The number of particles.
+
+    alphas_input : armadillo column vector
+        A linspace of the variational parameters.
     */
     pos_new = arma::Mat<double>(n_dims, n_particles);         // Proposed new position.
     pos_current = arma::Mat<double>(n_dims, n_particles);     // Current position.
@@ -35,7 +39,8 @@ VMC::VMC(
     qforce_new = arma::Mat<double>(n_dims, n_particles);      // New quantum force.
     test_local = arma::Row<double>(n_mc_cycles);              // Temporary
     energies = arma::Mat<double>(n_mc_cycles, n_variations);
-    alphas = arma::linspace(0.3, 0.7, n_variations);          // Variational parameters.
+    // alphas = arma::linspace(0.3, 0.7, n_variations);          // Variational parameters.
+    alphas = alphas_input;
 
     acceptances = arma::Col<double>(n_variations);   // Debug.
     acceptances.zeros();

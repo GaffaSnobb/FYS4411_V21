@@ -27,7 +27,6 @@ class VMC
         const int n_particles;          // Number of particles.
         const int n_dims;               // Number of spatial dimensions.
 
-        // const double step_size = 0.2;   // For brute force. MOVED TO BRUTEFORCE CLASS
         const double beta = 1;
         const double diffusion_coeff = 0.5;
 
@@ -66,7 +65,13 @@ class VMC
 
     public:
         arma::Col<double> acceptances;   // Debug.
-        VMC(const int n_dims_input, const int n_variations_input, const int n_mc_cycles_input, const int n_particles_input);
+        VMC(
+            const int n_dims_input,
+            const int n_variations_input,
+            const int n_mc_cycles_input,
+            const int n_particles_input,
+            arma::Col<double> alphas
+        );
         void set_local_energy();
         void set_wave_function();
         void write_to_file(std::string fname);

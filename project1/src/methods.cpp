@@ -5,8 +5,9 @@ BruteForce::BruteForce(
     const int n_variations_input,
     const int n_mc_cycles_input,
     const int n_particles_input,
+    arma::Col<double> alphas_input,
     const double brute_force_step_size_input
-) : VMC(n_dims_input, n_variations_input, n_mc_cycles_input, n_particles_input),
+) : VMC(n_dims_input, n_variations_input, n_mc_cycles_input, n_particles_input, alphas_input),
     step_size(brute_force_step_size_input)
 {   /*
     Class constructor.
@@ -24,6 +25,9 @@ BruteForce::BruteForce(
 
     n_particles_input : constant integer
         The number of particles.
+
+    alphas_input : armadillo column vector
+        A linspace of the variational parameters.
 
     brute_force_step_size_input : constant double
         The step size for when new random positions are drawn for the
@@ -155,6 +159,40 @@ void BruteForce::one_variation(int variation)
 
 }
 
+ImportanceSampling::ImportanceSampling(
+    const int n_dims_input,
+    const int n_variations_input,
+    const int n_mc_cycles_input,
+    const int n_particles_input,
+    arma::Col<double> alphas_input,
+    const double importance_time_step_input
+) : VMC(n_dims_input, n_variations_input, n_mc_cycles_input, n_particles_input, alphas_input),
+    time_step(importance_time_step_input)
+{   /*
+    Class constructor.
+
+    Parameters
+    ----------
+    n_dims_input : constant integer
+        The number of spatial dimensions.
+
+    n_variations_input : constant integer
+        The number of variational parameters.
+
+    n_mc_cycles_input : constant integer
+        The number of Monte Carlo cycles per variational parameter.
+
+    n_particles_input : constant integer
+        The number of particles.
+
+    alphas_input : armadillo column vector
+        A linspace of the variational parameters.
+
+    importance_time_step_input : constant double
+
+    */
+}
+
 void ImportanceSampling::one_variation(int variation)
 {   /*
     Perform calculations for a single variational parameter.
@@ -171,7 +209,6 @@ void ImportanceSampling::one_variation(int variation)
     wave_current = 0;   // Reset wave function for each variation.
     energy_expectation = 0; // Reset for each variation.
     energy_variance = 0; // Reset for each variation.
-    double time_step = 0.01;
 
     energy_expectation_squared = 0;
     for (particle = 0; particle < n_particles; particle++)
@@ -196,7 +233,8 @@ void ImportanceSampling::one_variation(int variation)
     
     #pragma omp parallel for \
         private(mc, particle, dim, particle_inner) \
-        firstprivate(wave_new, wave_current, local_energy) \
+        private(wave_new, exponential_diff) \
+        firstprivate(wave_current, local_energy) \
         firstprivate(pos_new, qforce_new, pos_current, qforce_current) \
         reduction(+:acceptance, energy_expectation, energy_expectation_squared)
     for (mc = 0; mc < n_mc_cycles; mc++)
@@ -322,10 +360,9 @@ void GradientDescent::solve()
     */
     wave_derivative_expectation = 0;
     wave_times_energy_expectation = 0;
-    alphas(0) = 0.1; // Initial value.
     double learning_rate = 0.001;
-    time_step = 0.05;
     double energy_derivative = 0;
+    alphas(0) = 0.1;
 
     for (int variation = 0; variation < n_variations - 1; variation++)
     {
