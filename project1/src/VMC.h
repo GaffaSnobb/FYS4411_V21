@@ -27,9 +27,7 @@ class VMC
         const int n_particles;          // Number of particles.
         const int n_dims;               // Number of spatial dimensions.
 
-        const double step_size = 0.5;   // For brute force.
-        // const double alpha_step = 1.0/n_variations; // Careful with using n_variations which may be un-initialized.
-        const double alpha_step = 0.1; // TODO: Not used by gradient descent.
+        // const double step_size = 0.2;   // For brute force. MOVED TO BRUTEFORCE CLASS
         const double beta = 1;
         const double diffusion_coeff = 0.5;
 
@@ -44,7 +42,7 @@ class VMC
 
         int particle;       // Index for particle loop.
         int particle_inner; // Index for inner particle loops.
-        int mc;              // Index for MC loop.
+        int mc;             // Index for MC loop.
         int dim;            // Index for dimension loops.
 
         // Moved initialization to class constructor.
@@ -74,6 +72,8 @@ class VMC
         void write_to_file(std::string fname);
         void write_to_file_particles(std::string fpath);
         void write_energies_to_file(std::string fpath);
+        void solve();
+        virtual void one_variation(int variation);
         ~VMC();
 };
 

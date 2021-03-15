@@ -1,31 +1,34 @@
 #include "methods.h"
 
-
-void BruteForce::solve()
+BruteForce::BruteForce(
+    const int n_dims_input,
+    const int n_variations_input,
+    const int n_mc_cycles_input,
+    const int n_particles_input,
+    const double brute_force_step_size_input
+) : VMC(n_dims_input, n_variations_input, n_mc_cycles_input, n_particles_input),
+    step_size(brute_force_step_size_input)
 {   /*
-    Iterate over variational parameters. Extract energy variances and
-    expectation values.
+    Class constructor.
+
+    Parameters
+    ----------
+    n_dims_input : constant integer
+        The number of spatial dimensions.
+
+    n_variations_input : constant integer
+        The number of variational parameters.
+
+    n_mc_cycles_input : constant integer
+        The number of Monte Carlo cycles per variational parameter.
+
+    n_particles_input : constant integer
+        The number of particles.
+
+    brute_force_step_size_input : constant double
+        The step size for when new random positions are drawn for the
+        brute force approach.
     */
-
-    std::chrono::steady_clock::time_point t1;
-    std::chrono::steady_clock::time_point t2;
-    std::chrono::duration<double> comp_time;
-    
-    for (int variation = 0; variation < n_variations; variation++)
-    {
-        t1 = std::chrono::steady_clock::now();
-        one_variation(variation);
-        e_expectations(variation) = energy_expectation;
-        e_variances(variation) = energy_variance;
-
-        t2 = std::chrono::steady_clock::now();
-        comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
-        std::cout << "variation : " << variation;
-        std::cout << ", alpha: " << alphas(variation);
-        std::cout << ", energy: " << energy_expectation/(n_particles*n_dims);
-        std::cout << ",  time : " << comp_time.count() << "s";
-        std::cout << ", acceptance: " << acceptances(variation)/(n_mc_cycles*n_particles) << std::endl;
-    }
 }
 
 void BruteForce::one_variation(int variation)
@@ -150,52 +153,6 @@ void BruteForce::one_variation(int variation)
     //std::cout << "sigma^2:  " << energy_variance << std::endl;
     //std::cout << "" << std::endl;
 
-}
-
-void ImportanceSampling::solve()
-{   /*
-    Iterate over variational parameters. Extract energy variances and
-    expectation values.
-    */
-
-    #ifdef _OPENMP
-        double t1;
-        double t2;
-        double comp_time;
-    #else
-        std::chrono::steady_clock::time_point t1;
-        std::chrono::steady_clock::time_point t2;
-        std::chrono::duration<double> comp_time;
-    #endif
-
-    for (int variation = 0; variation < n_variations; variation++)
-    {
-        #ifdef _OPENMP
-            t1 = omp_get_wtime();
-        #else
-            t1 = std::chrono::steady_clock::now();
-        #endif
-
-        one_variation(variation);
-        e_expectations(variation) = energy_expectation;
-        e_variances(variation) = energy_variance;
-
-        std::cout << "variation : " << std::setw(3) <<  variation;
-        std::cout << ", alpha: " << std::setw(4) << alphas(variation);
-        // std::cout << ", energy: " << energy_expectation;
-        std::cout << ", acceptance: " << std::setw(5) << acceptances(variation)/(n_mc_cycles*n_particles);
-        
-        #ifdef _OPENMP
-            t2 = omp_get_wtime();
-            comp_time = t2 - t1;
-            std::cout << ",  time : " << comp_time << "s" << std::endl;
-        #else
-            t2 = std::chrono::steady_clock::now();
-            comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
-            std::cout << ",  time : " << comp_time.count() << "s" << std::endl;
-        #endif
-        
-    }
 }
 
 void ImportanceSampling::one_variation(int variation)
@@ -393,40 +350,40 @@ void GradientDescent::solve()
     }
 }
 
-void GradientDescent::metropolis(int dim, int particle, double alpha, int &acceptance)
-{   /*
-    Metropolis specifics for gradient descent.  In here you find both
-    the Metropolis criterion calculations and additional values needed
-    to perform gradient descent.
+// void GradientDescent::metropolis(int dim, int particle, double alpha, int &acceptance)
+// {   /*
+//     Metropolis specifics for gradient descent.  In here you find both
+//     the Metropolis criterion calculations and additional values needed
+//     to perform gradient descent.
 
-    Parameters
-    ----------
-    dim : integer
-        Current dimension index.
+//     Parameters
+//     ----------
+//     dim : integer
+//         Current dimension index.
 
-    particle : integer
-        Current particle index.
+//     particle : integer
+//         Current particle index.
 
-    alpha : double
-        Variational parameter.
+//     alpha : double
+//         Variational parameter.
 
-    acceptance : integer reference
-        Debug counter for the acceptance rate.
-    */
-    // ImportanceSampling::metropolis(dim, particle, alpha, acceptance);
+//     acceptance : integer reference
+//         Debug counter for the acceptance rate.
+//     */
+//     // ImportanceSampling::metropolis(dim, particle, alpha, acceptance);
 
-    wave_derivative = 0;
-    for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
-    {   /*
-        Calculations needed for gradient descent.
-        */
-        wave_derivative += wave_function_3d_diff_wrt_alpha(
-            pos_current.col(particle_inner),
-            alpha,
-            beta
-        );
-    }
+//     wave_derivative = 0;
+//     for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
+//     {   /*
+//         Calculations needed for gradient descent.
+//         */
+//         wave_derivative += wave_function_3d_diff_wrt_alpha(
+//             pos_current.col(particle_inner),
+//             alpha,
+//             beta
+//         );
+//     }
 
-    wave_derivative_expectation += wave_derivative;
-    wave_times_energy_expectation += wave_derivative*local_energy;
-}
+//     wave_derivative_expectation += wave_derivative;
+//     wave_times_energy_expectation += wave_derivative*local_energy;
+// }

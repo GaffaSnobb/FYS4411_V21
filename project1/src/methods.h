@@ -4,9 +4,17 @@
 
 class BruteForce : public VMC
 {
-    using VMC::VMC; // Inherit constructor of VMC class.
+    // using VMC::VMC; // Inherit constructor of VMC class.
+    private:
+        const double step_size;
     public:
-        void solve();
+        BruteForce(
+            const int n_dims_input,
+            const int n_variations_input,
+            const int n_mc_cycles_input,
+            const int n_particles_input,
+            const double brute_force_step_size
+        );
         void one_variation(int variation);
 };
 
@@ -19,7 +27,6 @@ class ImportanceSampling : public VMC
         double wave_times_energy_expectation = 0;
         double time_step = 0.01;
     public:
-        void solve();
         void one_variation(int variation);
 };
 
@@ -30,8 +37,7 @@ class GradientDescent : public ImportanceSampling
         // double energy_derivative = 0;
     public:
         void solve();
-        void metropolis(int dim, int particle, double alpha, int &acceptance);
-        void extra(double alpha);
+        // void metropolis(int dim, int particle, double alpha, int &acceptance);
 };
 
 #endif

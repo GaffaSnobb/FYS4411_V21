@@ -17,23 +17,29 @@ VMC::VMC(
     ----------
     n_dims_input : constant integer
         The number of spatial dimensions.
+
+    n_variations_input : constant integer
+        The number of variational parameters.
+
+    n_mc_cycles_input : constant integer
+        The number of Monte Carlo cycles per variational parameter.
+
+    n_particles_input : constant integer
+        The number of particles.
     */
     pos_new = arma::Mat<double>(n_dims, n_particles);         // Proposed new position.
     pos_current = arma::Mat<double>(n_dims, n_particles);     // Current position.
     e_variances = arma::Col<double>(n_variations);            // Energy variances.
     e_expectations = arma::Col<double>(n_variations);         // Energy expectation values.
-    alphas = arma::Col<double>(n_variations);                 // Variational parameter.
     qforce_current = arma::Mat<double>(n_dims, n_particles);  // Current quantum force.
     qforce_new = arma::Mat<double>(n_dims, n_particles);      // New quantum force.
     test_local = arma::Row<double>(n_mc_cycles);              // Temporary
     energies = arma::Mat<double>(n_mc_cycles, n_variations);
+    alphas = arma::linspace(0.3, 0.7, n_variations);          // Variational parameters.
 
     acceptances = arma::Col<double>(n_variations);   // Debug.
     acceptances.zeros();
 
-    // Pre-filling the alphas vector due to parallelization.
-    alphas.fill(alpha_step);
-    alphas = arma::cumsum(alphas);
     e_expectations.zeros(); // Array must be zeroed since values will be added.
     energies.zeros();
     engine.seed(seed);
@@ -77,6 +83,57 @@ void VMC::set_wave_function()
     else if (n_dims == 3)
     {
         wave_function_exponent_ptr = &wave_function_exponent_3d;
+    }
+}
+
+void VMC::one_variation(int variation)
+{
+    std::cout << "NotImplementedError" << std::endl;
+}
+
+void VMC::solve()
+{   /*
+    Iterate over variational parameters. Extract energy variances and
+    expectation values.
+    */
+
+    #ifdef _OPENMP
+        double t1;
+        double t2;
+        double comp_time;
+    #else
+        std::chrono::steady_clock::time_point t1;
+        std::chrono::steady_clock::time_point t2;
+        std::chrono::duration<double> comp_time;
+    #endif
+
+    for (int variation = 0; variation < n_variations; variation++)
+    {
+        #ifdef _OPENMP
+            t1 = omp_get_wtime();
+        #else
+            t1 = std::chrono::steady_clock::now();
+        #endif
+
+        one_variation(variation);
+        e_expectations(variation) = energy_expectation;
+        e_variances(variation) = energy_variance;
+
+        std::cout << "variation : " << std::setw(3) <<  variation;
+        std::cout << ", alpha: " << std::setw(10) << alphas(variation);
+        // std::cout << ", energy: " << energy_expectation;
+        std::cout << ", acceptance: " << std::setw(7) << acceptances(variation)/(n_mc_cycles*n_particles);
+        
+        #ifdef _OPENMP
+            t2 = omp_get_wtime();
+            comp_time = t2 - t1;
+            std::cout << ",  time : " << comp_time << "s" << std::endl;
+        #else
+            t2 = std::chrono::steady_clock::now();
+            comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
+            std::cout << ",  time : " << comp_time.count() << "s" << std::endl;
+        #endif
+        
     }
 }
 
