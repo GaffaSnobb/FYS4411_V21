@@ -2,7 +2,7 @@ COMPILER = g++
 # COMPILER = g++-10
 FLAGS = -std=c++17 -O1
 LIBRARIES = -larmadillo -fopenmp
-OBJECTS = VMC.o wave_function.o other_functions.o methods.o quantum_force.o
+OBJECTS = VMC.o wave_function.o local_energy.o methods.o quantum_force.o
 
 all : main.out
 
@@ -18,8 +18,8 @@ methods.o : methods.cpp methods.h
 wave_function.o : wave_function.h wave_function.cpp
 	$(COMPILER) $(FLAGS) -c wave_function.cpp
 
-other_functions.o : other_functions.h other_functions.cpp
-	$(COMPILER) $(FLAGS) -c other_functions.cpp
+local_energy.o : local_energy.h local_energy.cpp
+	$(COMPILER) $(FLAGS) -c local_energy.cpp
 
 quantum_force.o : quantum_force.h quantum_force.cpp
 	$(COMPILER) $(FLAGS) -c quantum_force.cpp
