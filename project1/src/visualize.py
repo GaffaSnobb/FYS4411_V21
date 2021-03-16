@@ -16,6 +16,7 @@ def brute_and_importance(fname_brute, fname_importance):
     fig.savefig("../fig/compare_brute_importance.png")
     plt.show()
 
+
 def gradient_descent(fname):
     alpha, var, exp = read_from_file(fname)
     plt.plot(alpha, exp, ".")
@@ -40,6 +41,21 @@ def local_energy_alpha(fname, type):
     plt.show()
 
 
+def tmp_gd():
+    """
+    temporary plot function
+    """
+    alpha, var_energy, exp_energy = read_from_file("generated_data/output_gradient_descent_particles.txt")
+
+    fig = plt.figure()
+    plt.grid()
+    plt.plot(alpha, exp_energy, ".", color="k", label="Expected local energy")
+    plt.xlabel(r"$ \alpha $")
+    plt.ylabel(r"E/N")
+    plt.legend()
+    plt.show()
+
+
 if __name__ == "__main__":
     path = "generated_data"
     fname_brute_force = f"{path}/output_brute_force.txt"
@@ -50,5 +66,7 @@ if __name__ == "__main__":
 
     f_importance = f"{path}/output_importance_particles.txt"
     f_brute_force = f"{path}/output_brute_force_particles.txt"
-    local_energy_alpha(f_brute_force, "brute_force")
-    local_energy_alpha(f_importance, "importance")
+    # local_energy_alpha(f_brute_force, "brute_force")
+    # local_energy_alpha(f_importance, "importance")
+    # local_energy_alpha(f"{path}/output_gradient_descent_particles.txt", "GD")
+    tmp_gd()

@@ -211,6 +211,12 @@ void ImportanceSampling::one_variation(int variation)
     energy_variance = 0; // Reset for each variation.
     energy_expectation_squared = 0;
 
+    // GD specifics.
+    wave_derivative = 0;
+    wave_derivative_expectation = 0;
+    wave_times_energy_expectation = 0;
+    // GD specifics end.
+
     for (particle = 0; particle < n_particles; particle++)
     {   /*
         Iterate over all particles.  In this loop, all current
@@ -311,7 +317,7 @@ void ImportanceSampling::one_variation(int variation)
                         beta
                     );
                 }
-                // GD specifics.
+
                 wave_derivative = 0;
                 for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
                 {   /*
@@ -323,12 +329,10 @@ void ImportanceSampling::one_variation(int variation)
                         beta
                     );
                 }
-
-                wave_derivative_expectation += wave_derivative;
-                wave_times_energy_expectation += wave_derivative*local_energy;
-                // GD specifics end.
             }
 
+            wave_derivative_expectation += wave_derivative;
+            wave_times_energy_expectation += wave_derivative*local_energy;
             energy_expectation += local_energy;
             energy_expectation_squared += local_energy*local_energy;
         }
@@ -340,6 +344,11 @@ void ImportanceSampling::one_variation(int variation)
     energy_variance = energy_expectation_squared
         - energy_expectation*energy_expectation/n_particles;
 
+    // GD specifics.
+    wave_times_energy_expectation /= n_mc_cycles;
+    wave_derivative_expectation /= n_mc_cycles;
+    // GD specifics end.
+
     acceptances(variation) = acceptance;    // Debug.
 
     //std::cout << "alpha:    " << alpha  << std::endl;
@@ -350,6 +359,49 @@ void ImportanceSampling::one_variation(int variation)
 
 }
 
+GradientDescent::GradientDescent(
+    const int n_dims_input,
+    const int n_variations_input,
+    const int n_mc_cycles_input,
+    const int n_particles_input,
+    const double importance_time_step_input,
+    const double learning_rate_input,
+    const double initial_alpha_input
+) : ImportanceSampling(
+        n_dims_input,
+        n_variations_input,
+        n_mc_cycles_input,
+        n_particles_input,
+        arma::linspace(0, 0, n_variations_input),   // Dummy input. Not in use.
+        importance_time_step_input
+    ),
+    learning_rate(learning_rate_input),
+    initial_alpha(initial_alpha_input)
+{   /*
+    Class constructor.
+
+    Parameters
+    ----------
+    n_dims_input : constant integer
+        The number of spatial dimensions.
+
+    n_variations_input : constant integer
+        The number of variational parameters.
+
+    n_mc_cycles_input : constant integer
+        The number of Monte Carlo cycles per variational parameter.
+
+    n_particles_input : constant integer
+        The number of particles.
+
+    alphas_input : armadillo column vector
+        A linspace of the variational parameters.
+
+    importance_time_step_input : constant double
+
+    */
+}
+
 void GradientDescent::solve()
 {   /*
     Iterate over variational parameters.  Use gradient descent to
@@ -358,69 +410,57 @@ void GradientDescent::solve()
     TODO: Add a cut-off for when the proposed new alpha is adequately
     close to the desired value.
     */
-    wave_derivative_expectation = 0;
-    wave_times_energy_expectation = 0;
-    double learning_rate = 0.001;
+    double learning_rate = 0.0001;
     double energy_derivative = 0;
     alphas(0) = 0.1;
 
+    #ifdef _OPENMP
+        double t1;
+        double t2;
+        double comp_time;
+    #else
+        std::chrono::steady_clock::time_point t1;
+        std::chrono::steady_clock::time_point t2;
+        std::chrono::duration<double> comp_time;
+    #endif
+
     for (int variation = 0; variation < n_variations - 1; variation++)
     {
+        #ifdef _OPENMP
+            t1 = omp_get_wtime();
+        #else
+            t1 = std::chrono::steady_clock::now();
+        #endif
         one_variation(variation);
         e_expectations(variation) = energy_expectation;
         e_variances(variation) = energy_variance;
 
-        wave_derivative_expectation /= n_mc_cycles;
-        wave_times_energy_expectation /= n_mc_cycles;
         energy_derivative = 2*(wave_times_energy_expectation - wave_derivative_expectation*energy_expectation/n_particles);
+        
+        std::cout << "variation : " << std::setw(3) <<  variation;
+        std::cout << ", alpha: " << std::setw(10) << alphas(variation);
+        // std::cout << ", energy: " << energy_expectation;
+        std::cout << ", acceptance: " << std::setw(7) << acceptances(variation)/(n_mc_cycles*n_particles);
+
+        #ifdef _OPENMP
+            t2 = omp_get_wtime();
+            comp_time = t2 - t1;
+            std::cout << ",  time : " << comp_time << "s" << std::endl;
+        #else
+            t2 = std::chrono::steady_clock::now();
+            comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
+            std::cout << ",  time : " << comp_time.count() << "s" << std::endl;
+        #endif
 
         alphas(variation + 1) = alphas(variation) - learning_rate*energy_derivative;
 
-        // std::cout << "energy_expectation: " << energy_expectation << std::endl;
-        // std::cout << "wave_derivative_expectation: " << wave_derivative_expectation << std::endl;
-        // std::cout << "wave_derivative_expectation*energy_expectation: " << wave_derivative_expectation*energy_expectation << std::endl;
-        // std::cout << "wave_times_energy_expectation: " << wave_times_energy_expectation << std::endl;
-        // std::cout << "energy_derivative: " << energy_derivative << std::endl;
-        // std::cout << "wave_derivative: " << wave_derivative << std::endl;
-        // std::cout << "alpha: " << alphas(variation) << std::endl;
-        // std::cout << "\n";
+        std::cout << "energy_expectation: " << energy_expectation << std::endl;
+        std::cout << "wave_derivative_expectation: " << wave_derivative_expectation << std::endl;
+        std::cout << "wave_derivative_expectation*energy_expectation/n_particles: " << wave_derivative_expectation*energy_expectation/n_particles << std::endl;
+        std::cout << "wave_times_energy_expectation: " << wave_times_energy_expectation << std::endl;
+        std::cout << "energy_derivative: " << energy_derivative << std::endl;
+        std::cout << "wave_derivative: " << wave_derivative << std::endl;
+        std::cout << "alpha: " << alphas(variation) << std::endl;
+        std::cout << "\n";
     }
 }
-
-// void GradientDescent::metropolis(int dim, int particle, double alpha, int &acceptance)
-// {   /*
-//     Metropolis specifics for gradient descent.  In here you find both
-//     the Metropolis criterion calculations and additional values needed
-//     to perform gradient descent.
-
-//     Parameters
-//     ----------
-//     dim : integer
-//         Current dimension index.
-
-//     particle : integer
-//         Current particle index.
-
-//     alpha : double
-//         Variational parameter.
-
-//     acceptance : integer reference
-//         Debug counter for the acceptance rate.
-//     */
-//     // ImportanceSampling::metropolis(dim, particle, alpha, acceptance);
-
-//     wave_derivative = 0;
-//     for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
-//     {   /*
-//         Calculations needed for gradient descent.
-//         */
-//         wave_derivative += wave_function_3d_diff_wrt_alpha(
-//             pos_current.col(particle_inner),
-//             alpha,
-//             beta
-//         );
-//     }
-
-//     wave_derivative_expectation += wave_derivative;
-//     wave_times_energy_expectation += wave_derivative*local_energy;
-// }

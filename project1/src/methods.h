@@ -41,10 +41,19 @@ class ImportanceSampling : public VMC
 
 class GradientDescent : public ImportanceSampling
 {
-    using ImportanceSampling::ImportanceSampling;
     private:
-        // double energy_derivative = 0;
+        const double learning_rate;
+        const double initial_alpha;
     public:
+        GradientDescent(
+            const int n_dims_input,
+            const int n_variations_input,
+            const int n_mc_cycles_input,
+            const int n_particles_input,
+            const double importance_time_step_input,
+            const double learning_rate_input,
+            const double initial_alpha_input
+        );
         void solve();
         // void metropolis(int dim, int particle, double alpha, int &acceptance);
 };
