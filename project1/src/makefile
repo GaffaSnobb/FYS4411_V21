@@ -1,5 +1,5 @@
-# COMPILER = g++
-COMPILER = g++-10
+COMPILER = g++
+# COMPILER = g++-10
 FLAGS = -std=c++17 -O1
 LIBRARIES = -larmadillo# -fopenmp
 OBJECTS = VMC.o wave_function.o other_functions.o methods.o
@@ -24,7 +24,7 @@ other_functions.o : other_functions.h other_functions.cpp
 valgrind : main.out
 	valgrind --tool=memcheck ./run.out
 
-make plot : main.out
+plot : main.out
 	./run.out
 	python visualize.py
 

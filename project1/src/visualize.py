@@ -3,38 +3,23 @@ import matplotlib.pyplot as plt
 from read_from_file import read_from_file
 
 def brute_and_importance(fname_brute, fname_importance):
-    alpha_brute, var_brute, exp_brute, n_brute = read_from_file(fname_brute)
-    alpha_impor, var_impor, exp_impor, n_impor = read_from_file(fname_importance)
-
-    # Get energy per particle
-    exp_brute /= n_brute
-    var_brute /= n_brute
-    exp_impor /= n_impor
-    var_impor /= n_impor
+    alpha_brute, var_brute, exp_brute = read_from_file(fname_brute)
+    alpha_importance, var_importance, exp_importance = read_from_file(fname_importance)
 
     fig = plt.figure()
     plt.grid()
-    plt.errorbar(alpha_impor, exp_impor, np.sqrt(var_impor), fmt=".", color="tab:red", label="importance")
-    plt.errorbar(alpha_brute, exp_brute, np.sqrt(var_brute), fmt=".", color="tab:blue", label="brute force")
+    plt.plot(alpha_importance, exp_importance, color="k", label="importance")
+    plt.plot(alpha_brute, exp_brute, color="tab:blue", label="brute force")
     plt.xlabel(r"$ \alpha $")
-    plt.ylabel(r"E/N")
+    plt.ylabel(r"Energy")
     plt.legend()
     fig.savefig("../fig/compare_brute_importance.png")
     plt.show()
 
 
 def gradient_descent(fname):
-    alpha, var, exp, n_particles = read_from_file(fname)
-
-    var /= n_particles
-    exp /= n_particles
-
-    fig = plt.figure()
-    plt.grid()
-    plt.errorbar(alpha, exp, np.sqrt(var), fmt=".", color="tab:red", label="Gradient descent")
-    plt.xlabel(r"$ \alpha $")
-    plt.ylabel(r"E/N")
-    plt.legend()
+    alpha, var, exp = read_from_file(fname)
+    plt.plot(alpha, exp, ".")
     plt.show()
 
 
@@ -42,10 +27,7 @@ def local_energy_alpha(fname, type):
     """
     temporary plot function
     """
-    alpha, var_energy, exp_energy, n_particles = read_from_file(fname)
-
-    exp_energy /= n_particles
-    var_energy /= n_particles
+    alpha, var_energy, exp_energy = read_from_file(fname)
 
     fig = plt.figure()
     plt.grid()
@@ -79,6 +61,8 @@ if __name__ == "__main__":
     fname_brute_force = f"{path}/output_brute_force.txt"
     fname_importance = f"{path}/output_importance.txt"
     fname_gradient_descent = f"{path}/output_gradient_descent.txt"
+    #brute_and_importance(fname_brute=fname_brute_force, fname_importance=fname_importance)
+    #gradient_descent(fname_gradient_descent)
 
     f_importance = f"{path}/output_importance_particles.txt"
     f_brute_force = f"{path}/output_brute_force_particles.txt"

@@ -51,74 +51,60 @@ def block(x):
     return ans, iter, s, gamma
 
 
-def main():
-    print(45*"_", "\n")
-    print("Importance")
-    print(45*"_", "\n")
 
-    f = "generated_data/output_importance.txt"
-    alpha_1, var_energy, exp_energy, n_particles_1 = read_from_file(f)
+"""
+outline:
+Need energy array (n_alphas, n_mc) or smt.
 
-    f_energy = "generated_data/output_energy_importance.txt"
-    alpha_2, energy, n_particles_2 = read_energy_from_file(f_energy)
+Need list of alpha values (can be read from file?)
+alphas = np.array(n_alphas)
 
-    if n_particles_1 != n_particles_2:
-        print("n_particles are not the same for the two files.")
-        sys.exit(1)
+loop over alpha values and do blocking
 
-    n_particles = n_particles_2
-    alpha = alpha_2
+for this alpha value:
+    call block function with x = energies[this alpha, :]
 
-    for i in range(len(alpha)):
-        print(f"alpha: {alpha[i]:.2f}")
-        print(f"E:   {exp_energy[i]:.2f}, std.: {np.sqrt(var_energy[i]):.2f}")
-        ans, iter, s, gamma = block(energy[:,i])
+    std::chrono::steady_clock::time_point t1;
+    std::chrono::steady_clock::time_point t2;
+    std::chrono::duration<double> comp_time;
 
-    print(45*"_", "\n")
-    print("Brute-Force")
-    print(45*"_", "\n")
+    // Importance:
+    t1 = std::chrono::steady_clock::now();
 
-    f = "generated_data/output_brute_force.txt"
-    alpha_1, var_energy, exp_energy, n_particles_1 = read_from_file(f)
-
-    f_energy = "generated_data/output_energy_brute_force.txt"
-    alpha_2, energy, n_particles_2 = read_energy_from_file(f_energy)
-
-    if n_particles_1 != n_particles_2:
-        print("n_particles are not the same for the two files.")
-        sys.exit(1)
-
-    n_particles = n_particles_2
-    alpha = alpha_2
-
-    for i in range(len(alpha)):
-        print(f"alpha: {alpha[i]:.2f}")
-        print(f"E:   {exp_energy[i]:.2f}, std.: {np.sqrt(var_energy[i]):.2f}")
-        ans, iter, s, gamma = block(energy[:,i])
+    t2 = std::chrono::steady_clock::now();
+    comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
+    std::cout << "total time: " << comp_time.count() << "s\n" << std::endl;
 
 
-    print(45*"_", "\n")
-    print("GD")
-    print(45*"_", "\n")
+"""
 
-    f = "generated_data/output_gradient_descent.txt"
-    alpha_1, var_energy, exp_energy, n_particles_1 = read_from_file(f)
+print(45*"_", "\n")
+print("Importance")
+print(45*"_", "\n")
 
-    f_energy = "generated_data/output_energy_gradient_descent.txt"
-    alpha_2, energy, n_particles_2 = read_energy_from_file(f_energy)
+f = "generated_data/output_importance_particles.txt"
+alpha_, var_energy, exp_energy = read_from_file(f)
 
-    if n_particles_1 != n_particles_2:
-        print("n_particles are not the same for the two files.")
-        sys.exit(1)
+file = "generated_data/output_energy_importance.txt"
+alpha, energy = read_energy_from_file(file)
 
-    n_particles = n_particles_2
-    alpha = alpha_2
-
-    for i in range(len(alpha)):
-        print(f"alpha: {alpha[i]:.2f}")
-        print(f"E:   {exp_energy[i]:.2f}, std.: {np.sqrt(var_energy[i]):.2f}")
-        ans, iter, s, gamma = block(energy[:,i])
+for i in range(len(alpha)):
+    print(f"alpha: {alpha[i]:.2f}")
+    print(f"E:   {exp_energy[i]:.2f}, std.: {np.sqrt(var_energy[i]):.2f}")
+    ans, iter, s, gamma = block(energy[:,i])
 
 
-if __name__ == '__main__':
-    main()
+print(45*"_", "\n")
+print("Brute force")
+print(45*"_", "\n")
+
+f = "generated_data/output_brute_force_particles.txt"
+alpha_, var_energy, exp_energy = read_from_file(f)
+
+file = "generated_data/output_energy_brute_force.txt"
+alpha, energy = read_energy_from_file(file)
+
+for i in range(len(alpha)):
+    print(f"alpha: {alpha[i]:.2f}")
+    print(f"E:   {exp_energy[i]:.3f}, std.: {np.sqrt(var_energy[i]):.3f}")
+    ans, iter, s, gamma = block(energy[:,i])

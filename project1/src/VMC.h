@@ -75,6 +75,7 @@ class VMC
         void set_local_energy();
         void set_wave_function();
         void write_to_file(std::string fname);
+        void write_to_file_particles(std::string fpath);
         void write_energies_to_file(std::string fpath);
         void solve();
         virtual void one_variation(int variation);
