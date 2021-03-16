@@ -31,6 +31,9 @@ VMC::VMC(
 
     alphas_input : armadillo column vector
         A linspace of the variational parameters.
+
+    debug_input : boolean
+        For toggling debug print on / off.
     */
     pos_new = arma::Mat<double>(n_dims, n_particles);         // Proposed new position.
     pos_current = arma::Mat<double>(n_dims, n_particles);     // Current position.
@@ -51,34 +54,83 @@ VMC::VMC(
     energies.zeros();
     engine.seed(seed);
 
-    set_local_energy();
-    set_wave_function();
+    // set_local_energy();  // Moved to main.cpp.
+    // set_wave_function(); // Moved to main.cpp.
 }
 
-void VMC::set_local_energy()
+void VMC::set_quantum_force(bool interaction)
+{
+    if ((n_dims == 1) and !(interaction))
+    {
+        std::cout << "NotImplementedError" << std::endl;
+        exit(0);
+    }
+    else if ((n_dims == 2) and !(interaction))
+    {
+        std::cout << "NotImplementedError" << std::endl;
+        exit(0);
+    }
+    else if ((n_dims == 3) and !(interaction))
+    {
+        quantum_force_ptr = &quantum_force_3d_no_interaction;
+    }
+    else if ((n_dims == 1) and interaction)
+    {
+        std::cout << "NotImplementedError" << std::endl;
+        exit(0);
+    }
+    else if ((n_dims == 2) and interaction)
+    {
+        std::cout << "NotImplementedError" << std::endl;
+        exit(0);
+    }
+    else if ((n_dims == 3) and interaction)
+    {
+        std::cout << "NotImplementedError" << std::endl;
+        exit(0);
+    }
+    else
+    {
+        std::cout << "NotImplementedError" << std::endl;
+        exit(0);
+    }
+    
+}
+
+void VMC::set_local_energy(bool interaction)
 {   /*
     Set pointers to the correct local energy function.
+
+    Parameters
+    ----------
+    interaction : boolean
+        Toggle interaction between particles on / off.
     */
-    //std::cout << "VMC.cpp: set_local_energy()" << std::endl;
-    if (n_dims == 1)
+
+    if ((n_dims == 1) and !(interaction))
     {
-        local_energy_ptr = &local_energy_1d;
+        local_energy_ptr = &local_energy_1d_no_interaction;
     }
-    else if (n_dims == 2)
+    else if ((n_dims == 2) and !(interaction))
     {
-        local_energy_ptr = &local_energy_2d;
+        local_energy_ptr = &local_energy_2d_no_interaction;
     }
-    else if (n_dims == 3)
+    else if ((n_dims == 3) and !(interaction))
     {
-        local_energy_ptr = &local_energy_3d;
+        local_energy_ptr = &local_energy_3d_no_interaction;
     }
 }
 
-void VMC::set_wave_function()
+void VMC::set_wave_function(bool interaction)
 {   /*
     Set pointers to the correct wave function exponent.
+
+    Parameters
+    ----------
+    interaction : boolean
+        Toggle interaction between particles on / off.
     */
-    //std::cout << "VMC.cpp: set_wave_function()" << std::endl;
+
     if (n_dims == 1)
     {
         wave_function_exponent_ptr = &wave_function_exponent_1d;

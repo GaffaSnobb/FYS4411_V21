@@ -10,7 +10,8 @@
 #include <armadillo>        // Linear algebra.
 #include "omp.h"            // Parallelization.
 #include "wave_function.h"
-#include "other_functions.h"
+#include "local_energy.h"
+#include "quantum_force.h"
 
 #include <sstream>
 #include <string>   // String type, string maipulation.
@@ -62,8 +63,9 @@ class VMC
         std::uniform_real_distribution<double> uniform;  // Continuous uniform distribution.
         std::normal_distribution<double> normal;         // Gaussian distribution
 
-        double (*local_energy_ptr)(arma::Mat<double>, double, double);  // Function pointer.
-        double (*wave_function_exponent_ptr)(arma::Mat<double>, double, double);
+        double (*local_energy_ptr)(arma::Mat<double> pos, double alpha, double beta);  // Function pointer.
+        double (*wave_function_exponent_ptr)(arma::Mat<double> pos, double alpha, double beta);
+        arma::Mat<double> (*quantum_force_ptr)(arma::Mat<double> pos, double alpha);
 
     public:
         arma::Col<double> acceptances;   // Debug.
@@ -75,8 +77,9 @@ class VMC
             arma::Col<double> alphas,
             bool debug_input
         );
-        void set_local_energy();
-        void set_wave_function();
+        void set_quantum_force(bool interaction);
+        void set_local_energy(bool interaction);
+        void set_wave_function(bool interaction);
         void write_to_file(std::string fname);
         void write_to_file_particles(std::string fpath);
         void write_energies_to_file(std::string fpath);

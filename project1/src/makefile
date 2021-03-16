@@ -2,7 +2,7 @@ COMPILER = g++
 # COMPILER = g++-10
 FLAGS = -std=c++17 -O1
 LIBRARIES = -larmadillo -fopenmp
-OBJECTS = VMC.o wave_function.o other_functions.o methods.o
+OBJECTS = VMC.o wave_function.o other_functions.o methods.o quantum_force.o
 
 all : main.out
 
@@ -21,8 +21,8 @@ wave_function.o : wave_function.h wave_function.cpp
 other_functions.o : other_functions.h other_functions.cpp
 	$(COMPILER) $(FLAGS) -c other_functions.cpp
 
-valgrind : main.out
-	valgrind --tool=memcheck ./run.out
+quantum_force.o : quantum_force.h quantum_force.cpp
+	$(COMPILER) $(FLAGS) -c quantum_force.cpp
 
 plot : main.out
 	./run.out
@@ -37,3 +37,4 @@ clean :
 	-rm *.out
 	-rm *.o
 	-rm -r __pycache__/
+	-rm generated_data/*.txt

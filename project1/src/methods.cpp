@@ -240,13 +240,17 @@ void ImportanceSampling::one_variation(int variation)
         positions are calulated along with the current wave
         functions.
         */
+
         for (dim = 0; dim < n_dims; dim++)
         {   /*
             Set initial values.
             */
             pos_current(dim, particle) = normal(engine)*sqrt(time_step);
-            qforce_current(dim, particle) = -4*alpha*pos_current(dim, particle);
+            // qforce_current(dim, particle) = -4*alpha*pos_current(dim, particle);
         }
+
+        qforce_current.col(particle) =
+            quantum_force_ptr(pos_current.col(particle), alpha);
         wave_current += wave_function_exponent_ptr(
             pos_current.col(particle),  // Position of one particle.
             alpha,
@@ -280,8 +284,10 @@ void ImportanceSampling::one_variation(int variation)
                     diffusion_coeff*qforce_current(dim, particle)*time_step +
                     normal(engine)*sqrt(time_step);
                 
-                qforce_new(dim, particle) = -4*alpha*pos_new(dim, particle);
+                // qforce_new(dim, particle) = -4*alpha*pos_new(dim, particle);
             }
+
+            qforce_new.col(particle) = quantum_force_ptr(pos_new.col(particle), alpha);
 
             wave_new = 0;   // Overwrite the new wave func from previous particle step.
             for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
@@ -318,7 +324,10 @@ void ImportanceSampling::one_variation(int variation)
                 */
                 acceptance++;    // Debug.
                 for (dim = 0; dim < n_dims; dim++)
-                {
+                {   /*
+                    TODO: Can prob. drop this loop by
+                    pos_current.col(particle) = pos_new.col(particle).
+                    */
                     pos_current(dim, particle) = pos_new(dim, particle);
                     qforce_current(dim, particle) = qforce_new(dim, particle);
                 }
