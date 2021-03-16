@@ -256,6 +256,11 @@ void ImportanceSampling::one_variation(int variation)
             alpha,
             beta
         );
+        // wave_current += wave_function_ptr(
+        //     pos_current.col(particle),  // Position of one particle.
+        //     alpha,
+        //     beta
+        // );
     }
     
     #pragma omp parallel for \
@@ -300,6 +305,11 @@ void ImportanceSampling::one_variation(int variation)
                         alpha,
                         beta
                     );
+                // wave_new += wave_function_ptr(
+                //         pos_new.col(particle_inner),  // Particle position.
+                //         alpha,
+                //         beta
+                //     );
             }
 
             double greens_ratio = 0;
@@ -317,8 +327,11 @@ void ImportanceSampling::one_variation(int variation)
 
             greens_ratio = exp(greens_ratio);
             exponential_diff = 2*(wave_new - wave_current);
-
+            
+            // double wave_ratio = 0;
+            // wave_ratio = wave_new/wave_current;
             if (uniform(engine) < greens_ratio*std::exp(exponential_diff))
+            // if (uniform(engine) < greens_ratio*wave_ratio)
             {   /*
                 Metropolis step with new acceptance criterion.
                 */

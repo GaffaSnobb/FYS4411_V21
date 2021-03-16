@@ -45,7 +45,7 @@ VMC::VMC(
     energies = arma::Mat<double>(n_mc_cycles, n_variations);
     alphas = alphas_input;
     n_variations_final = n_variations;  // If stop condition is not reached.
-    debug = debug_input;    // For toggling debug print on / off.
+    debug = debug_input;                // For toggling debug print on / off.
 
     acceptances = arma::Col<double>(n_variations);   // Debug.
     acceptances.zeros();
@@ -94,7 +94,6 @@ void VMC::set_quantum_force(bool interaction)
         std::cout << "NotImplementedError" << std::endl;
         exit(0);
     }
-    
 }
 
 void VMC::set_local_energy(bool interaction)
@@ -119,6 +118,21 @@ void VMC::set_local_energy(bool interaction)
     {
         local_energy_ptr = &local_energy_3d_no_interaction;
     }
+    else if ((n_dims == 1) and (interaction))
+    {
+        std::cout << "NotImplementedError" << std::endl;
+        exit(0);
+    }
+    else if ((n_dims == 2) and (interaction))
+    {
+        std::cout << "NotImplementedError" << std::endl;
+        exit(0);
+    }
+    else if ((n_dims == 3) and (interaction))
+    {
+        std::cout << "NotImplementedError" << std::endl;
+        exit(0);
+    }
 }
 
 void VMC::set_wave_function(bool interaction)
@@ -131,17 +145,33 @@ void VMC::set_wave_function(bool interaction)
         Toggle interaction between particles on / off.
     */
 
-    if (n_dims == 1)
+    if ((n_dims == 1) and !(interaction))
     {
-        wave_function_exponent_ptr = &wave_function_exponent_1d;
+        wave_function_exponent_ptr = &wave_function_exponent_1d_no_interaction;
     }
-    else if (n_dims == 2)
+    else if ((n_dims == 2) and !(interaction))
     {
-        wave_function_exponent_ptr = &wave_function_exponent_2d;
+        wave_function_exponent_ptr = &wave_function_exponent_2d_no_interaction;
     }
-    else if (n_dims == 3)
+    else if ((n_dims == 3) and !(interaction))
     {
-        wave_function_exponent_ptr = &wave_function_exponent_3d;
+        wave_function_ptr = &wave_function_3d_no_interaction;
+        wave_function_exponent_ptr = &wave_function_exponent_3d_no_interaction;
+    }
+    else if ((n_dims == 1) and (interaction))
+    {
+        std::cout << "NotImplementedError" << std::endl;
+        exit(0);
+    }
+    else if ((n_dims == 2) and (interaction))
+    {
+        std::cout << "NotImplementedError" << std::endl;
+        exit(0);
+    }
+    else if ((n_dims == 3) and (interaction))
+    {
+        std::cout << "NotImplementedError" << std::endl;
+        exit(0);
     }
 }
 
