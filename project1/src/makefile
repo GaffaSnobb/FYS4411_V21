@@ -1,5 +1,5 @@
-COMPILER = g++
-# COMPILER = g++-10
+# COMPILER = g++
+COMPILER = g++-10
 FLAGS = -std=c++17 -O1
 LIBRARIES = -larmadillo# -fopenmp
 OBJECTS = VMC.o wave_function.o other_functions.o methods.o
@@ -10,10 +10,10 @@ main.out : $(OBJECTS)
 	$(COMPILER) $(FLAGS) $(OBJECTS) $(LIBRARIES) -o run.out main.cpp
 
 VMC.o : VMC.h VMC.cpp
-	$(COMPILER) $(FLAGS) -c VMC.cpp
+	$(COMPILER) $(FLAGS) $(LIBRARIES) -c VMC.cpp
 
 methods.o : methods.cpp methods.h
-	$(COMPILER) $(FLAGS) -c methods.cpp
+	$(COMPILER) $(FLAGS) $(LIBRARIES) -c methods.cpp
 
 wave_function.o : wave_function.h wave_function.cpp
 	$(COMPILER) $(FLAGS) -c wave_function.cpp
