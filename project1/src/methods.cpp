@@ -6,8 +6,16 @@ BruteForce::BruteForce(
     const int n_mc_cycles_input,
     const int n_particles_input,
     arma::Col<double> alphas_input,
-    const double brute_force_step_size_input
-) : VMC(n_dims_input, n_variations_input, n_mc_cycles_input, n_particles_input, alphas_input),
+    const double brute_force_step_size_input,
+    bool debug_input
+) : VMC(
+        n_dims_input,
+        n_variations_input,
+        n_mc_cycles_input,
+        n_particles_input,
+        alphas_input,
+        debug_input
+    ),
     step_size(brute_force_step_size_input)
 {   /*
     Class constructor.
@@ -165,8 +173,16 @@ ImportanceSampling::ImportanceSampling(
     const int n_mc_cycles_input,
     const int n_particles_input,
     arma::Col<double> alphas_input,
-    const double importance_time_step_input
-) : VMC(n_dims_input, n_variations_input, n_mc_cycles_input, n_particles_input, alphas_input),
+    const double importance_time_step_input,
+    bool debug_input
+) : VMC(
+        n_dims_input,
+        n_variations_input,
+        n_mc_cycles_input,
+        n_particles_input,
+        alphas_input,
+        debug_input
+    ),
     time_step(importance_time_step_input)
 {   /*
     Class constructor.
@@ -206,9 +222,10 @@ void ImportanceSampling::one_variation(int variation)
     double alpha = alphas(variation);
     int acceptance = 0;  // Debug. Count the number of accepted steps.
 
-    wave_current = 0;   // Reset wave function for each variation.
-    energy_expectation = 0; // Reset for each variation.
-    energy_variance = 0; // Reset for each variation.
+    // Reset values for each variation.
+    wave_current = 0;
+    energy_expectation = 0;
+    energy_variance = 0;
     energy_expectation_squared = 0;
 
     // GD specifics.
@@ -242,7 +259,9 @@ void ImportanceSampling::one_variation(int variation)
         private(wave_new, exponential_diff) \
         firstprivate(wave_current, local_energy) \
         firstprivate(pos_new, qforce_new, pos_current, qforce_current) \
-        reduction(+:acceptance, energy_expectation, energy_expectation_squared)
+        reduction(+:acceptance, energy_expectation, energy_expectation_squared) \
+        reduction(+:wave_times_energy_expectation, wave_derivative_expectation) \
+        firstprivate(wave_derivative)
     for (mc = 0; mc < n_mc_cycles; mc++)
     {   /*
         Run over all Monte Carlo cycles.
@@ -331,8 +350,11 @@ void ImportanceSampling::one_variation(int variation)
                 }
             }
 
+            // GD specifics.
             wave_derivative_expectation += wave_derivative;
             wave_times_energy_expectation += wave_derivative*local_energy;
+            // GD specifics end.
+            
             energy_expectation += local_energy;
             energy_expectation_squared += local_energy*local_energy;
         }
@@ -350,13 +372,6 @@ void ImportanceSampling::one_variation(int variation)
     // GD specifics end.
 
     acceptances(variation) = acceptance;    // Debug.
-
-    //std::cout << "alpha:    " << alpha  << std::endl;
-    //std::cout << "<E^2>:    " << energy_expectation_squared <<std::endl;
-    //std::cout << "<E>^2:    " << energy_expectation*energy_expectation << std::endl;
-    //std::cout << "sigma^2:  " << energy_variance << std::endl;
-    //std::cout << "" << std::endl;
-
 }
 
 GradientDescent::GradientDescent(
@@ -366,14 +381,16 @@ GradientDescent::GradientDescent(
     const int n_particles_input,
     const double importance_time_step_input,
     const double learning_rate_input,
-    const double initial_alpha_input
+    const double initial_alpha_input,
+    bool debug_input
 ) : ImportanceSampling(
         n_dims_input,
         n_variations_input,
         n_mc_cycles_input,
         n_particles_input,
         arma::linspace(0, 0, n_variations_input),   // Dummy input. Not in use.
-        importance_time_step_input
+        importance_time_step_input,
+        debug_input
     ),
     learning_rate(learning_rate_input),
     initial_alpha(initial_alpha_input)
@@ -406,22 +423,18 @@ void GradientDescent::solve()
 {   /*
     Iterate over variational parameters.  Use gradient descent to
     efficiently calculate alphas.
-
-    TODO: Add a cut-off for when the proposed new alpha is adequately
-    close to the desired value.
     */
-    double learning_rate = 0.0001;
     double energy_derivative = 0;
-    alphas(0) = 0.1;
+    alphas(0) = initial_alpha;
+    double comp_time;
 
     #ifdef _OPENMP
         double t1;
         double t2;
-        double comp_time;
     #else
         std::chrono::steady_clock::time_point t1;
         std::chrono::steady_clock::time_point t2;
-        std::chrono::duration<double> comp_time;
+        std::chrono::duration<double> comp_time_chrono;
     #endif
 
     for (int variation = 0; variation < n_variations - 1; variation++)
@@ -431,36 +444,49 @@ void GradientDescent::solve()
         #else
             t1 = std::chrono::steady_clock::now();
         #endif
+        
         one_variation(variation);
         e_expectations(variation) = energy_expectation;
         e_variances(variation) = energy_variance;
 
-        energy_derivative = 2*(wave_times_energy_expectation - wave_derivative_expectation*energy_expectation/n_particles);
+        energy_derivative = 2*(wave_times_energy_expectation -
+            wave_derivative_expectation*energy_expectation/n_particles);
         
-        std::cout << "variation : " << std::setw(3) <<  variation;
-        std::cout << ", alpha: " << std::setw(10) << alphas(variation);
-        // std::cout << ", energy: " << energy_expectation;
-        std::cout << ", acceptance: " << std::setw(7) << acceptances(variation)/(n_mc_cycles*n_particles);
-
         #ifdef _OPENMP
             t2 = omp_get_wtime();
             comp_time = t2 - t1;
-            std::cout << ",  time : " << comp_time << "s" << std::endl;
         #else
             t2 = std::chrono::steady_clock::now();
-            comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
-            std::cout << ",  time : " << comp_time.count() << "s" << std::endl;
+            comp_time_chrono = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
+            comp_time = comp_time_chrono.count();
         #endif
 
         alphas(variation + 1) = alphas(variation) - learning_rate*energy_derivative;
 
-        std::cout << "energy_expectation: " << energy_expectation << std::endl;
-        std::cout << "wave_derivative_expectation: " << wave_derivative_expectation << std::endl;
-        std::cout << "wave_derivative_expectation*energy_expectation/n_particles: " << wave_derivative_expectation*energy_expectation/n_particles << std::endl;
-        std::cout << "wave_times_energy_expectation: " << wave_times_energy_expectation << std::endl;
-        std::cout << "energy_derivative: " << energy_derivative << std::endl;
-        std::cout << "wave_derivative: " << wave_derivative << std::endl;
-        std::cout << "alpha: " << alphas(variation) << std::endl;
-        std::cout << "\n";
+        if (debug)
+        {
+            std::cout << "variation : " << std::setw(3) <<  variation;
+            std::cout << ", alpha: " << std::setw(10) << alphas(variation);
+            // std::cout << ", energy: " << energy_expectation;
+            std::cout << ", acceptance: " << std::setw(7) << acceptances(variation)/(n_mc_cycles*n_particles);
+            std::cout << ",  time : " << comp_time << "s" << std::endl;
+
+            std::cout << "energy_expectation: " << energy_expectation << std::endl;
+            std::cout << "wave_derivative_expectation: " << wave_derivative_expectation << std::endl;
+            std::cout << "wave_derivative_expectation*energy_expectation/n_particles: " << wave_derivative_expectation*energy_expectation/n_particles << std::endl;
+            std::cout << "wave_times_energy_expectation: " << wave_times_energy_expectation << std::endl;
+            std::cout << "energy_derivative: " << energy_derivative << std::endl;
+            std::cout << "wave_derivative: " << wave_derivative << std::endl;
+            std::cout << "\n";
+        }
+
+        if ( std::abs(alphas(variation + 1) - alphas(variation)) < 1e-4 )
+        {
+            n_variations_final = variation;
+            std::cout << "End of gradient descent reached at iteration ";
+            std::cout << n_variations_final << " of " << n_variations << ".";
+            std::cout << std::endl;
+            break;
+        }
     }
 }

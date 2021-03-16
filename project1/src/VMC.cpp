@@ -5,7 +5,8 @@ VMC::VMC(
     const int n_variations_input,
     const int n_mc_cycles_input,
     const int n_particles_input,
-    arma::Col<double> alphas_input
+    arma::Col<double> alphas_input,
+    bool debug_input
 ) : n_dims(n_dims_input),
     n_variations(n_variations_input),
     n_mc_cycles(n_mc_cycles_input),
@@ -39,8 +40,9 @@ VMC::VMC(
     qforce_new = arma::Mat<double>(n_dims, n_particles);      // New quantum force.
     test_local = arma::Row<double>(n_mc_cycles);              // Temporary
     energies = arma::Mat<double>(n_mc_cycles, n_variations);
-    // alphas = arma::linspace(0.3, 0.7, n_variations);          // Variational parameters.
     alphas = alphas_input;
+    n_variations_final = n_variations;  // If stop condition is not reached.
+    debug = debug_input;    // For toggling debug print on / off.
 
     acceptances = arma::Col<double>(n_variations);   // Debug.
     acceptances.zeros();
@@ -170,7 +172,7 @@ void VMC::write_to_file_particles(std::string fpath)
     outfile << std::setw(20) << "variance_energy";
     outfile << std::setw(21) << "expected_energy\n";
 
-    for (int i = 0; i < n_variations; i++)
+    for (int i = 0; i < n_variations_final; i++)
     {   /*
         Write data to file.
         */

@@ -38,11 +38,13 @@ class VMC
         double energy_expectation = 0;
         double energy_variance = 0;
 
-
         int particle;       // Index for particle loop.
         int particle_inner; // Index for inner particle loops.
         int mc;             // Index for MC loop.
         int dim;            // Index for dimension loops.
+
+        int n_variations_final; // If calculation is stopped before n_variations is reached.
+        bool debug = false;     // Toggle debug print on / off.
 
         // Moved initialization to class constructor.
         arma::Mat<double> pos_new;       // Proposed new position.
@@ -70,7 +72,8 @@ class VMC
             const int n_variations_input,
             const int n_mc_cycles_input,
             const int n_particles_input,
-            arma::Col<double> alphas
+            arma::Col<double> alphas,
+            bool debug_input
         );
         void set_local_energy();
         void set_wave_function();

@@ -5,12 +5,12 @@ int main(int argc, char *argv[])
 {
     const int n_mc_cycles = 1e4;//pow(2, 20);   // Number of MC cycles, must be a power of 2
     const int n_dims = 3;                   // Number of dimentions
-    // const int n_variations = 40;          // Number of variational parameters.
-    const int n_variations = 40;
-    const int gd_iterations = 100;          // Max. gradient descent iterations.
-    const double learning_rate = 0.001;     // GD learning rate.
+    const int n_variations = 40;          // Number of variational parameters.
+    const int n_gd_iterations = 100;          // Max. gradient descent iterations.
+    const double learning_rate = 0.0001;     // GD learning rate.
     const int n_particles = 10;             // Number of particles
-    const double initial_alpha_gd = 0.45;    // Initial variational parameter. Only for GD.
+    const double initial_alpha_gd = 0.1;    // Initial variational parameter. Only for GD.
+    bool debug = true;  // Toggle debug print on / off.
     
     arma::Col<double> alphas;
     alphas = arma::linspace(0.1, 1, n_variations);
@@ -41,7 +41,8 @@ int main(int argc, char *argv[])
     //     n_mc_cycles,            // Number of Monte Carlo cycles.
     //     n_particles,            // Number of particles.
     //     alphas,
-    //     importance_time_step
+    //     importance_time_step,
+    //     debug
     // );
     // system_1.solve();
     // system_1.write_to_file_particles("generated_data/output_importance_particles.txt");
@@ -74,7 +75,8 @@ int main(int argc, char *argv[])
     //     n_mc_cycles,            // Number of Monte Carlo cycles.
     //     n_particles,            // Number of particles.
     //     alphas,
-    //     brute_force_step_size   // Step size for new positions for brute force.
+    //     brute_force_step_size,  // Step size for new positions for brute force.
+    //     debug
     // );
     // system_2.solve();
     // system_2.write_to_file_particles("generated_data/output_brute_force_particles.txt");
@@ -101,12 +103,13 @@ int main(int argc, char *argv[])
 
     GradientDescent system_3(
         n_dims,                 // Number of spatial dimensions.
-        n_variations,           // Number of variational parameters.
+        n_gd_iterations,        // Number of variational parameters.
         n_mc_cycles,            // Number of Monte Carlo cycles.
         n_particles,            // Number of particles.
         importance_time_step,   // Time step size for importance sampling.
         learning_rate,          // Learning rate for GD.
-        initial_alpha_gd        // Initial guess for the variational parameter.
+        initial_alpha_gd,       // Initial guess for the variational parameter.
+        debug
     );
     system_3.solve();
     system_3.write_to_file_particles("generated_data/output_gradient_descent_particles.txt");
