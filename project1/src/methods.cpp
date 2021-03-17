@@ -223,8 +223,6 @@ void ImportanceSampling::one_variation(int variation)
     int acceptance = 0;  // Debug. Count the number of accepted steps.
 
     // Reset values for each variation.
-    // wave_current = 0;    // For sum of exponents.
-    wave_current = 1;   // For product of exponentials.
     energy_expectation = 0;
     energy_variance = 0;
     energy_expectation_squared = 0;
@@ -234,7 +232,7 @@ void ImportanceSampling::one_variation(int variation)
     wave_derivative_expectation = 0;
     wave_times_energy_expectation = 0;
     // GD specifics end.
-    double wave_current_2 = 0;
+
     for (particle = 0; particle < n_particles; particle++)
     {   /*
         Iterate over all particles.  In this loop, all current
@@ -247,21 +245,10 @@ void ImportanceSampling::one_variation(int variation)
             Set initial values.
             */
             pos_current(dim, particle) = normal(engine)*sqrt(time_step);
-            // qforce_current(dim, particle) = -4*alpha*pos_current(dim, particle);
         }
 
         qforce_current.col(particle) =
             quantum_force_ptr(pos_current.col(particle), alpha);
-        wave_current_2 += wave_function_exponent_ptr(
-            pos_current.col(particle),  // Position of one particle.
-            alpha,
-            beta
-        );
-        // wave_current *= wave_function_ptr(
-        //     pos_current.col(particle),  // Position of one particle.
-        //     alpha,
-        //     beta
-        // );
     }
 
     wave_current = wave_function_ptr(
@@ -270,9 +257,6 @@ void ImportanceSampling::one_variation(int variation)
         beta,
         n_particles
     );
-
-    std::cout << "wave_current: " << wave_current << std::endl;
-    std::cout << "std::exp(wave_current_2): " << std::exp(wave_current_2) << std::endl;
     
     #pragma omp parallel for \
         private(mc, particle, dim, particle_inner) \
@@ -294,36 +278,15 @@ void ImportanceSampling::one_variation(int variation)
             */
             for (dim = 0; dim < n_dims; dim++)
             {   /*
-                Set new values.
+                Set new positions.
                 */
                 pos_new(dim, particle) = pos_current(dim, particle) +
                     diffusion_coeff*qforce_current(dim, particle)*time_step +
                     normal(engine)*sqrt(time_step);
-                
-                // qforce_new(dim, particle) = -4*alpha*pos_new(dim, particle);
             }
 
             qforce_new.col(particle) = quantum_force_ptr(pos_new.col(particle), alpha);
 
-            // wave_new = 0;   // Overwrite the new wave func from previous particle step.
-            wave_new = 1;
-            double wave_new_2 = 0;
-            for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
-            {   /*
-                After moving one particle, the wave function is
-                calculated based on all particle positions.
-                */
-                wave_new_2 += wave_function_exponent_ptr(
-                        pos_new.col(particle_inner),  // Particle position.
-                        alpha,
-                        beta
-                    );
-                // wave_new *= wave_function_ptr(
-                //         pos_new.col(particle_inner),  // Particle position.
-                //         alpha,
-                //         beta
-                //     );
-            }
             wave_new = wave_function_ptr(
                     pos_new,  // Particle positions.
                     alpha,
@@ -331,15 +294,10 @@ void ImportanceSampling::one_variation(int variation)
                     n_particles
                 );
 
-            std::cout << "wave_new: " << wave_new << std::endl;
-            std::cout << "std::exp(wave_new_2): " << std::exp(wave_new_2) << std::endl;
-            // exit(0);
-            
             double greens_ratio = 0;
-            for (int dim = 0; dim < n_dims; dim++)
+            for (dim = 0; dim < n_dims; dim++)
             {   /*
-                Calculate greens ratio for the acceptance
-                criterion.
+                Calculate greens ratio for the acceptance criterion.
                 */
                 greens_ratio +=
                     0.5*(qforce_current(dim, particle) + qforce_new(dim, particle))
@@ -349,28 +307,18 @@ void ImportanceSampling::one_variation(int variation)
             }
 
             greens_ratio = exp(greens_ratio);
-            exponential_diff = 2*(wave_new_2 - wave_current_2);
-
-            double wave_ratio = 0;
-            wave_ratio = wave_new/wave_current;
-
-            std::cout << "wave_ratio: " << wave_ratio*wave_ratio << std::endl;
-            std::cout << "std::exp(exponential_diff): " << std::exp(exponential_diff) << std::endl;
             
-            // if (uniform(engine) < greens_ratio*std::exp(exponential_diff))
+            double wave_ratio = wave_new/wave_current;
+            wave_ratio *= wave_ratio;   // TODO: Find out why we need wave_ratio**2.
+            
             if (uniform(engine) < greens_ratio*wave_ratio)
             {   /*
                 Metropolis step with new acceptance criterion.
                 */
-                acceptance++;    // Debug.
-                for (dim = 0; dim < n_dims; dim++)
-                {   /*
-                    TODO: Can prob. drop this loop by
-                    pos_current.col(particle) = pos_new.col(particle).
-                    */
-                    pos_current(dim, particle) = pos_new(dim, particle);
-                    qforce_current(dim, particle) = qforce_new(dim, particle);
-                }
+
+                acceptance++;    // Debug.                
+                pos_current.col(particle) = pos_new.col(particle);
+                qforce_current.col(particle) = qforce_new.col(particle);
                 wave_current = wave_new;
 
                 local_energy = 0;   // Overwrite local energy from previous particle step.
@@ -406,7 +354,6 @@ void ImportanceSampling::one_variation(int variation)
             
             energy_expectation += local_energy;
             energy_expectation_squared += local_energy*local_energy;
-            exit(0);
         }
         energies(mc, variation) = local_energy;
     }
@@ -513,14 +460,14 @@ void GradientDescent::solve()
 
         alphas(variation + 1) = alphas(variation) - learning_rate*energy_derivative;
 
+        std::cout << "variation : " << std::setw(3) <<  variation;
+        std::cout << ", alpha: " << std::setw(10) << alphas(variation);
+        // std::cout << ", energy: " << energy_expectation;
+        std::cout << ", acceptance: " << std::setw(7) << acceptances(variation)/(n_mc_cycles*n_particles);
+        std::cout << ",  time : " << comp_time << "s" << std::endl;
+
         if (debug)
         {
-            std::cout << "variation : " << std::setw(3) <<  variation;
-            std::cout << ", alpha: " << std::setw(10) << alphas(variation);
-            // std::cout << ", energy: " << energy_expectation;
-            std::cout << ", acceptance: " << std::setw(7) << acceptances(variation)/(n_mc_cycles*n_particles);
-            std::cout << ",  time : " << comp_time << "s" << std::endl;
-
             std::cout << "energy_expectation: " << energy_expectation << std::endl;
             std::cout << "wave_derivative_expectation: " << wave_derivative_expectation << std::endl;
             std::cout << "wave_derivative_expectation*energy_expectation/n_particles: " << wave_derivative_expectation*energy_expectation/n_particles << std::endl;
