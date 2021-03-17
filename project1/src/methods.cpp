@@ -223,8 +223,6 @@ void ImportanceSampling::one_variation(int variation)
     int acceptance = 0;  // Debug. Count the number of accepted steps.
 
     // Reset values for each variation.
-    // wave_current = 0;    // For sum of exponents.
-    wave_current = 1;   // For product of exponentials.
     energy_expectation = 0;
     energy_variance = 0;
     energy_expectation_squared = 0;
@@ -247,21 +245,10 @@ void ImportanceSampling::one_variation(int variation)
             Set initial values.
             */
             pos_current(dim, particle) = normal(engine)*sqrt(time_step);
-            // qforce_current(dim, particle) = -4*alpha*pos_current(dim, particle);
         }
 
         qforce_current.col(particle) =
             quantum_force_ptr(pos_current.col(particle), alpha);
-        // wave_current += wave_function_exponent_ptr(
-        //     pos_current.col(particle),  // Position of one particle.
-        //     alpha,
-        //     beta
-        // );
-        // wave_current *= wave_function_ptr(
-        //     pos_current.col(particle),  // Position of one particle.
-        //     alpha,
-        //     beta
-        // );
     }
 
     wave_current = wave_function_ptr(
@@ -296,30 +283,10 @@ void ImportanceSampling::one_variation(int variation)
                 pos_new(dim, particle) = pos_current(dim, particle) +
                     diffusion_coeff*qforce_current(dim, particle)*time_step +
                     normal(engine)*sqrt(time_step);
-                
-                // qforce_new(dim, particle) = -4*alpha*pos_new(dim, particle);
             }
 
             qforce_new.col(particle) = quantum_force_ptr(pos_new.col(particle), alpha);
 
-            // wave_new = 0;   // Overwrite the new wave func from previous particle step.
-            wave_new = 1;
-            for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
-            {   /*
-                After moving one particle, the wave function is
-                calculated based on all particle positions.
-                */
-                // wave_new += wave_function_exponent_ptr(
-                //         pos_new.col(particle_inner),  // Particle position.
-                //         alpha,
-                //         beta
-                //     );
-                // wave_new *= wave_function_ptr(
-                //         pos_new.col(particle_inner),  // Particle position.
-                //         alpha,
-                //         beta
-                //     );
-            }
             wave_new = wave_function_ptr(
                     pos_new,  // Particle positions.
                     alpha,
@@ -341,11 +308,9 @@ void ImportanceSampling::one_variation(int variation)
             }
 
             greens_ratio = exp(greens_ratio);
-            // exponential_diff = 2*(wave_new - wave_current);
             
             double wave_ratio = 0;
             wave_ratio = wave_new/wave_current;
-            // if (uniform(engine) < greens_ratio*std::exp(exponential_diff))
             if (uniform(engine) < greens_ratio*wave_ratio)
             {   /*
                 Metropolis step with new acceptance criterion.
