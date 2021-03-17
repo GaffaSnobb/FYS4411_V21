@@ -93,7 +93,7 @@ double wave_function_3d_no_interaction_with_loop(
     arma::Mat<double> pos,
     double alpha,
     double beta,
-    int n_particles
+    const int n_particles
     )
 {   /*
     Parameters
@@ -124,6 +124,40 @@ double wave_function_3d_no_interaction_with_loop(
     }
 
     return wave_function;
+}
+
+double wave_function_3d_interaction_with_loop(
+    arma::Mat<double> pos,
+    double alpha,
+    double beta,
+    const int n_particles
+)
+{   
+    double a = 0.0043;  // Prob. not right, so fix this.
+    double wave_function = 1;
+    double wave_function_inner = 1;
+    int particle;
+    int particle_inner;
+    for (particle = 0; particle < n_particles; particle++)
+    {   /*
+        No interaction term.
+        */
+        wave_function *= std::exp(-alpha*(
+            pos(0, particle)*pos(0, particle) +
+            pos(1, particle)*pos(1, particle) +
+            pos(2, particle)*pos(2, particle)*beta
+        ));
+    }
+    for (particle = 0; particle < n_particles; particle++)
+    {   /*
+        Interaction term.
+        */
+
+        for (particle_inner = particle + 1; particle_inner < n_particles; particle_inner++)
+        {
+            // wave_function_inner *= 
+        }
+    }
 }
 
 double wave_function_3d_diff_wrt_alpha(arma::Mat<double> pos, double alpha, double beta)

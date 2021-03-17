@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
     const int n_particles = 10;             // Number of particles
     const double initial_alpha_gd = 0.1;    // Initial variational parameter. Only for GD.
     bool interaction = false;
-    bool debug = true;  // Toggle debug print on / off.
+    bool debug = false;  // Toggle debug print on / off.
     
     arma::Col<double> alphas;
     alphas = arma::linspace(0.1, 1, n_variations);
