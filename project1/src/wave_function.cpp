@@ -89,6 +89,43 @@ double wave_function_3d_no_interaction(arma::Mat<double> pos, double alpha, doub
     return std::exp(-alpha*(pos(0)*pos(0) + pos(1)*pos(1) + beta*pos(2)*pos(2)));
 }
 
+double wave_function_3d_no_interaction_with_loop(
+    arma::Mat<double> pos,
+    double alpha,
+    double beta,
+    int n_particles
+    )
+{   /*
+    Parameters
+    ----------
+    pos : arma::Col<double>
+        Vector of position of a particle.
+
+    alpha : double
+        Variational parameter.
+
+    beta : double
+        ??? parameter.
+
+    Returns
+    -------
+    : double
+        The resulting wave function evaluated at pos.
+    */
+
+    double wave_function = 1;
+    for (int particle = 0; particle < n_particles; particle++)
+    {
+        wave_function *= std::exp(-alpha*(
+            pos(0, particle)*pos(0, particle) +
+            pos(1, particle)*pos(1, particle) +
+            pos(2, particle)*pos(2, particle)*beta
+        ));
+    }
+
+    return wave_function;
+}
+
 double wave_function_3d_diff_wrt_alpha(arma::Mat<double> pos, double alpha, double beta)
 {   /*
     CORRECTION: This is only the factor in front of the wave function

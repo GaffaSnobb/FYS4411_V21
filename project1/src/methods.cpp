@@ -257,12 +257,19 @@ void ImportanceSampling::one_variation(int variation)
         //     alpha,
         //     beta
         // );
-        wave_current *= wave_function_ptr(
-            pos_current.col(particle),  // Position of one particle.
-            alpha,
-            beta
-        );
+        // wave_current *= wave_function_ptr(
+        //     pos_current.col(particle),  // Position of one particle.
+        //     alpha,
+        //     beta
+        // );
     }
+
+    wave_current = wave_function_ptr(
+        pos_current,  // Position of all particles.
+        alpha,
+        beta,
+        n_particles
+    );
     
     #pragma omp parallel for \
         private(mc, particle, dim, particle_inner) \
@@ -307,12 +314,18 @@ void ImportanceSampling::one_variation(int variation)
                 //         alpha,
                 //         beta
                 //     );
-                wave_new *= wave_function_ptr(
-                        pos_new.col(particle_inner),  // Particle position.
-                        alpha,
-                        beta
-                    );
+                // wave_new *= wave_function_ptr(
+                //         pos_new.col(particle_inner),  // Particle position.
+                //         alpha,
+                //         beta
+                //     );
             }
+            wave_new = wave_function_ptr(
+                    pos_new,  // Particle positions.
+                    alpha,
+                    beta,
+                    n_particles
+                );
 
             double greens_ratio = 0;
             for (int dim = 0; dim < n_dims; dim++)
