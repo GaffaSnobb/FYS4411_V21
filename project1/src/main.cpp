@@ -112,9 +112,9 @@ int main(int argc, char *argv[])
         initial_alpha_gd,       // Initial guess for the variational parameter.
         debug
     );
+    system_3.set_wave_function(interaction);
     system_3.set_quantum_force(interaction);
     system_3.set_local_energy(interaction);
-    system_3.set_wave_function(interaction);
     system_3.solve();
     system_3.write_to_file_particles("generated_data/output_gradient_descent_particles.txt");
     

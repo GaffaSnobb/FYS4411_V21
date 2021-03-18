@@ -247,10 +247,17 @@ void ImportanceSampling::one_variation(int variation)
             pos_current(dim, particle) = normal(engine)*sqrt(time_step);
         }
 
-        qforce_current.col(particle) =
-            quantum_force_ptr(pos_current.col(particle), alpha);
+        // qforce_current.col(particle) =
+        //     quantum_force_ptr(pos_current.col(particle), alpha);
     }
 
+    quantum_force_ptr(
+        pos_current,
+        qforce_current,
+        alpha,
+        beta,
+        n_particles
+    );
     wave_current = wave_function_ptr(
         pos_current,  // Position of all particles.
         alpha,
@@ -284,7 +291,7 @@ void ImportanceSampling::one_variation(int variation)
                     diffusion_coeff*qforce_current(dim, particle)*time_step +
                     normal(engine)*sqrt(time_step);
             }
-
+            // HERE!!
             qforce_new.col(particle) = quantum_force_ptr(pos_new.col(particle), alpha);
 
             wave_new = wave_function_ptr(
