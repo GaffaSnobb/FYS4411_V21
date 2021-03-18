@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
     const double learning_rate = 0.0001;     // GD learning rate.
     const int n_particles = 10;             // Number of particles
     const double initial_alpha_gd = 0.1;    // Initial variational parameter. Only for GD.
-    bool interaction = false;
+    bool interaction = true;
     bool debug = false;  // Toggle debug print on / off.
     
     arma::Col<double> alphas;

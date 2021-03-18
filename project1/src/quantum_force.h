@@ -2,7 +2,21 @@
 #define QUANTUM
 
 #include <armadillo>
-void quantum_force_3d_no_interaction(arma::Mat<double> pos, arma::Mat<double> &qforce, double alpha, double beta, const int n_particles);
-arma::Mat<double> quantum_force_3d_interaction(arma::Mat<double> pos, double alpha, double beta, const int n_particles);
+#include "wave_function.h"
+
+arma::Mat<double> quantum_force_3d_no_interaction(
+    const arma::Mat<double> &pos,
+    const double alpha,
+    const double beta,
+    const int current_particle,
+    const int n_particles
+);
+arma::Mat<double> quantum_force_3d_interaction(
+    const arma::Mat<double> &pos,
+    const double alpha,
+    const double beta,
+    const int current_particle,
+    const int n_particles
+);
 
 #endif
