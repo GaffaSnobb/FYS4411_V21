@@ -84,6 +84,7 @@ def block(x):
     return best_error, error
 
 
+
 def mean_var_error(data):
     mean = np.mean(data)
     var = np.var(data)
@@ -91,10 +92,22 @@ def mean_var_error(data):
     return mean, var, error
 
 
+
 def analyze(f_energy, type=""):
+    """
+    print the results of blocking for all alphas.
+    input
+    ----------------------------
+    f_energy: str, filename
+    type:     str, when running for Gradient descent the columns with zero
+                    alpha is removed (the ones that are not filled)
+
+    """
     print(45*"_"+"\n", type, 45*"_"+"\n", sep="\n")
 
-    alphas, energies, n_particles = read_energy_from_file(f_energy, clip=True)
+    alphas, energies, n_particles = read_energy_from_file(f_energy)
+    if type == "GradientDescent":
+        alphas, energies, n_particles = read_energy_from_file(f_energy, clip=True)
 
     for alpha in range(len(alphas)):
         print(f"alpha: {alphas[alpha]:.2f}")
@@ -105,21 +118,50 @@ def analyze(f_energy, type=""):
         iter = np.arange(len(error))
         best = np.ones(len(error)) * best_error
 
-        """
-        plt.figure()
-        plt.grid()
-        plt.title(type)
-        plt.plot(iter, error, color="k", label=r"$Error, \alpha=$"+f"{alphas[alpha]}")
-        plt.plot(iter, best, linestyle="dashed", color="tab:red", label="Optimal")
 
-        plt.xticks(np.arange(min(iter), max(iter)+1, 1.0))
-        plt.xlabel("Blocking iterations, k")
-        plt.ylabel(r"Sample Error, $\sqrt{\sigma^2_k \ / \ n_k}$")
-        plt.legend()
-        plt.show()
-        """
 
-    return iter
+def plot_error(f_energy, type="", alpha_value = None):
+    """
+    plot the error as a function of number of iterations
+
+    input
+    ----------------------------
+        f_energy:    str, filename of data
+        type:        str, todo: unprof solution maybe fix later
+        alpha_value: int, where the wanted alpha value is, is no value is
+                            specified, this defaults to the middle alpha.
+
+    """
+    alphas, energies, n_particles = read_energy_from_file(f_energy)
+    if type == "GradientDescent":
+        alphas, energies, n_particles = read_energy_from_file(f_energy, clip=True)
+
+    if alpha_value:
+        alpha = alpha_value
+    else:
+        alpha = int(len(alphas)/2)
+
+    print(45*"_"+"\n", type, 45*"_"+"\n", sep="\n")
+    print(f"alpha: {alphas[alpha]:.2f}")
+
+    data = energies[:,alpha]
+    best_error, error = block(data)
+
+    iter = np.arange(len(error))
+    best = np.ones(len(error)) * best_error
+
+    plt.figure()
+    plt.grid()
+    plt.title(type)
+    plt.plot(iter, error, color="k", label=r"$Error, \alpha=$"+f"{alphas[alpha]}")
+    plt.plot(iter, best, linestyle="dashed", color="tab:red", label="Optimal")
+
+    plt.xticks(np.arange(min(iter), max(iter)+1, 1.0))
+    plt.xlabel("Blocking iterations, k")
+    plt.ylabel(r"Sample Error, $\sqrt{\sigma^2_k \ / \ n_k}$")
+    plt.legend()
+    plt.show()
+
 
 
 if __name__ == '__main__':
@@ -128,5 +170,7 @@ if __name__ == '__main__':
     f_gd = "generated_data/output_energy_gradient_descent.txt"
 
     analyze(f_importance, "Importance")
-    analyze(f_brute, "Brute Force")
-    analyze(f_gd, "Gradient Descent")
+    analyze(f_brute, "BruteForce")
+    analyze(f_gd, "GradientDescent")
+
+    plot_error(f_importance, "Importance", alpha_value=30)
