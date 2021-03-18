@@ -1,16 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def get_number_particles(filename):
-    f = open(filename)
-    n_particles = (f.readline()).split()[1]
-    f.close()
-    return float(n_particles)
-
 def read_from_file(filename):
-    n_particles = get_number_particles(filename)
-    alpha, var, exp = np.loadtxt(fname=filename, skiprows=2, unpack=True)
-    return alpha, var, exp, n_particles
+    alpha, var, exp = np.loadtxt(fname=filename, skiprows=1, unpack=True)
+    return alpha, var, exp
 
 def read_energy_from_file(filename, clip = False):
     """

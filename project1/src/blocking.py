@@ -126,7 +126,7 @@ if __name__ == '__main__':
     f_importance = "generated_data/output_energy_importance.txt"
     f_brute = "generated_data/output_energy_brute_force.txt"
     f_gd = "generated_data/output_energy_gradient_descent.txt"
-    
+
     analyze(f_importance, "Importance")
     analyze(f_brute, "Brute Force")
     analyze(f_gd, "Gradient Descent")
