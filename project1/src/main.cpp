@@ -3,19 +3,19 @@
 
 int main(int argc, char *argv[])
 {
-    const int n_mc_cycles = 1e4;//pow(2, 20);   // Number of MC cycles, must be a power of 2
+    const int n_mc_cycles = pow(2, 13);//1e4;//pow(2, 20);   // Number of MC cycles, must be a power of 2
     const int n_dims = 3;                   // Number of dimentions
     const int n_variations = 40;          // Number of variational parameters.
     const int n_gd_iterations = 100;          // Max. gradient descent iterations.
     const double learning_rate = 0.0001;     // GD learning rate.
     const int n_particles = 10;             // Number of particles
     const double initial_alpha_gd = 0.1;    // Initial variational parameter. Only for GD.
-    bool debug = true;  // Toggle debug print on / off.
-    
+    bool debug = false;  // Toggle debug print on / off.
+
     arma::Col<double> alphas;
     alphas = arma::linspace(0.1, 1, n_variations);
 
-    
+
     #ifdef _OPENMP
         const double importance_time_step = 0.01;        // Time step for importance parallel.
         std::cout << "OpenMP active\n" << std::endl;
@@ -31,65 +31,69 @@ int main(int argc, char *argv[])
         t1 = std::chrono::steady_clock::now();
     #endif
 
-    // // -----------------------------------------------------------------
-    // // Importance:
-    // std::cout << "Importance sampling" << std::endl;
+     // -----------------------------------------------------------------
+     // Importance:
+     std::cout << "Importance sampling" << std::endl;
 
-    // ImportanceSampling system_1(
-    //     n_dims,                 // Number of spatial dimensions.
-    //     n_variations,           // Number of variational parameters.
-    //     n_mc_cycles,            // Number of Monte Carlo cycles.
-    //     n_particles,            // Number of particles.
-    //     alphas,
-    //     importance_time_step,
-    //     debug
-    // );
-    // system_1.solve();
-    // system_1.write_to_file_particles("generated_data/output_importance_particles.txt");
-    
-    // #ifdef _OPENMP
-    //     t2 = omp_get_wtime();
-    //     comp_time = t2 - t1;
-    //     std::cout << "total time: " << comp_time << "s\n" << std::endl;
-    // #else
-    //     t2 = std::chrono::steady_clock::now();
-    //     comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
-    //     std::cout << "total time: " << comp_time.count() << "s\n" << std::endl;
-    // #endif
+     ImportanceSampling system_1(
+         n_dims,                 // Number of spatial dimensions.
+         n_variations,           // Number of variational parameters.
+         n_mc_cycles,            // Number of Monte Carlo cycles.
+         n_particles,            // Number of particles.
+         alphas,
+         importance_time_step,
+         debug
+     );
+     system_1.solve();
+     system_1.write_to_file("generated_data/output_importance.txt");
+     system_1.write_energies_to_file("generated_data/output_energy_importance.txt");
+     //system_1.write_to_file_particles("generated_data/output_importance_particles.txt");
 
-    // // -----------------------------------------------------------------
-    // // Brute:
-    // #ifdef _OPENMP
-    //     const double brute_force_step_size = 0.5;   // Brute force step size parallel. 0.5 and above works.
-    //     t1 = omp_get_wtime();
-    // #else
-    //     const double brute_force_step_size = 0.2;   // Brute force step size parallel. 0.2 is good.
-    //     t1 = std::chrono::steady_clock::now();
-    // #endif
+     #ifdef _OPENMP
+         t2 = omp_get_wtime();
+         comp_time = t2 - t1;
+         std::cout << "total time: " << comp_time << "s\n" << std::endl;
+     #else
+         t2 = std::chrono::steady_clock::now();
+         comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
+         std::cout << "total time: " << comp_time.count() << "s\n" << std::endl;
+     #endif
 
-    // std::cout << "Brute force metropolis" << std::endl;
+     // -----------------------------------------------------------------
+     // Brute:
+     #ifdef _OPENMP
+         const double brute_force_step_size = 0.5;   // Brute force step size parallel. 0.5 and above works.
+         t1 = omp_get_wtime();
+     #else
+         const double brute_force_step_size = 0.2;   // Brute force step size parallel. 0.2 is good.
+         t1 = std::chrono::steady_clock::now();
+     #endif
 
-    // BruteForce system_2(
-    //     n_dims,                 // Number of spatial dimensions.
-    //     n_variations,           // Number of variational parameters.
-    //     n_mc_cycles,            // Number of Monte Carlo cycles.
-    //     n_particles,            // Number of particles.
-    //     alphas,
-    //     brute_force_step_size,  // Step size for new positions for brute force.
-    //     debug
-    // );
-    // system_2.solve();
-    // system_2.write_to_file_particles("generated_data/output_brute_force_particles.txt");
-    
-    // #ifdef _OPENMP
-    //     t2 = omp_get_wtime();
-    //     comp_time = t2 - t1;
-    //     std::cout << "total time: " << comp_time << "s\n" << std::endl;
-    // #else
-    //     t2 = std::chrono::steady_clock::now();
-    //     comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
-    //     std::cout << "total time: " << comp_time.count() << "s\n" << std::endl;
-    // #endif
+     std::cout << "Brute force metropolis" << std::endl;
+
+     BruteForce system_2(
+         n_dims,                 // Number of spatial dimensions.
+         n_variations,           // Number of variational parameters.
+         n_mc_cycles,            // Number of Monte Carlo cycles.
+         n_particles,            // Number of particles.
+         alphas,
+         brute_force_step_size,  // Step size for new positions for brute force.
+         debug
+     );
+     system_2.solve();
+     system_2.write_to_file("generated_data/output_brute_force.txt");
+     system_2.write_energies_to_file("generated_data/output_energy_brute_force.txt");
+     //system_2.write_to_file_particles("generated_data/output_brute_force_particles.txt");
+
+     #ifdef _OPENMP
+         t2 = omp_get_wtime();
+         comp_time = t2 - t1;
+         std::cout << "total time: " << comp_time << "s\n" << std::endl;
+     #else
+         t2 = std::chrono::steady_clock::now();
+         comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
+         std::cout << "total time: " << comp_time.count() << "s\n" << std::endl;
+     #endif
 
     // -----------------------------------------------------------------
     // GD:
@@ -112,8 +116,10 @@ int main(int argc, char *argv[])
         debug
     );
     system_3.solve();
-    system_3.write_to_file_particles("generated_data/output_gradient_descent_particles.txt");
-    
+    system_3.write_to_file("generated_data/output_gradient_descent.txt");
+    system_3.write_energies_to_file("generated_data/output_energy_gradient_descent.txt");
+    //system_3.write_to_file_particles("generated_data/output_gradient_descent_particles.txt");
+
     #ifdef _OPENMP
         t2 = omp_get_wtime();
         comp_time = t2 - t1;
