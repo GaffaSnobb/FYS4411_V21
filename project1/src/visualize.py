@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from read_from_file import read_from_file
+from read_from_file import read_from_file, read_energy_from_file
 
 def brute_and_importance(fname_brute, fname_importance):
     alpha_brute, var_brute, exp_brute = read_from_file(fname_brute)
@@ -56,6 +56,17 @@ def tmp_gd():
     plt.show()
 
 
+def tmp():
+    f_energy = "generated_data/output_energy_importance.txt"
+    alpha, energy, n_particles = read_energy_from_file(f_energy)
+
+    data = energy[:,0]
+    iter = np.arange(len(data))
+    plt.plot(iter, data)
+    plt.show()
+
+
+
 if __name__ == "__main__":
     path = "generated_data"
     fname_brute_force = f"{path}/output_brute_force.txt"
@@ -64,9 +75,7 @@ if __name__ == "__main__":
     #brute_and_importance(fname_brute=fname_brute_force, fname_importance=fname_importance)
     #gradient_descent(fname_gradient_descent)
 
-    f_importance = f"{path}/output_importance_particles.txt"
-    f_brute_force = f"{path}/output_brute_force_particles.txt"
-    # local_energy_alpha(f_brute_force, "brute_force")
-    # local_energy_alpha(f_importance, "importance")
-    # local_energy_alpha(f"{path}/output_gradient_descent_particles.txt", "GD")
-    tmp_gd()
+    brute_and_importance(fname_brute=fname_brute_force, fname_importance=fname_importance)
+    gradient_descent(fname_gradient_descent)
+    #local_energy_alpha(fname_brute_force, "brute_force")
+    #local_energy_alpha(fname_importance, "importance")

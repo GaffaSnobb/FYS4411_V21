@@ -194,7 +194,6 @@ void VMC::write_energies_to_file(std::string fpath)
       outfile << std::setw(20) << std::setprecision(10);
       outfile << alphas(i);
     }
-
     outfile << "\n";
     energies.save(outfile, arma::raw_ascii);
     outfile.close();
