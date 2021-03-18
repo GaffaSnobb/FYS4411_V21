@@ -130,7 +130,7 @@ void VMC::solve()
         std::cout << ", alpha: " << std::setw(10) << alphas(variation);
         // std::cout << ", energy: " << energy_expectation;
         std::cout << ", acceptance: " << std::setw(7) << acceptances(variation)/(n_mc_cycles*n_particles);
-        
+
         #ifdef _OPENMP
             t2 = omp_get_wtime();
             comp_time = t2 - t1;
@@ -140,18 +140,23 @@ void VMC::solve()
             comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
             std::cout << ",  time : " << comp_time.count() << "s" << std::endl;
         #endif
-        
+
     }
 }
 
 void VMC::write_to_file(std::string fpath)
 {
     outfile.open(fpath, std::ios::out);
+    outfile << "n_particles " << n_particles << "\n";
     outfile << std::setw(20) << "alpha";
     outfile << std::setw(20) << "variance_energy";
     outfile << std::setw(21) << "expected_energy\n";
 
-    for (int i = 0; i < n_variations; i++)
+    int end_iter = n_variations;
+
+    if ( !(n_variations_final == n_variations)){end_iter = n_variations_final;}
+
+    for (int i = 0; i < end_iter; i++)
     {   /*
         Write data to file.
         */
@@ -165,8 +170,9 @@ void VMC::write_to_file(std::string fpath)
     outfile.close();
 }
 
+
 void VMC::write_to_file_particles(std::string fpath)
-{
+{   // Deprecated
     outfile.open(fpath, std::ios::out);
     outfile << std::setw(20) << "alpha";
     outfile << std::setw(20) << "variance_energy";
@@ -190,6 +196,7 @@ void VMC::write_energies_to_file(std::string fpath)
 {
     outfile.open(fpath, std::ios::out);
 
+    outfile << "n_particles " << n_particles << "\n";
     for (int i = 0; i < n_variations; i++){
       outfile << std::setw(20) << std::setprecision(10);
       outfile << alphas(i);
