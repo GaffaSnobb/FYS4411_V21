@@ -86,6 +86,7 @@ class VMC
         void write_energies_to_file(std::string fpath);
         void solve();
         virtual void one_variation(int variation);
+        void not_implemented_error(std::string name, bool interaction);
         ~VMC();
 };
 
