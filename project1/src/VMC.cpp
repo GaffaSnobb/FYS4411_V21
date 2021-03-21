@@ -82,7 +82,8 @@ void VMC::set_quantum_force(bool interaction)
     }
     else if ((n_dims == 3) and interaction)
     {
-        not_implemented_error("quantum force", interaction);
+        quantum_force_ptr = &quantum_force_3d_interaction;
+        // quantum_force_ptr = &quantum_force_3d_no_interaction;
     }
     else
     {
@@ -122,7 +123,8 @@ void VMC::set_local_energy(bool interaction)
     }
     else if ((n_dims == 3) and (interaction))
     {
-        not_implemented_error("local energy", interaction);
+        // not_implemented_error("local energy", interaction);
+        local_energy_ptr = &local_energy_3d_no_interaction;        
     }
 }
 
@@ -146,9 +148,7 @@ void VMC::set_wave_function(bool interaction)
     }
     else if ((n_dims == 3) and !(interaction))
     {
-        // wave_function_ptr = &wave_function_3d_no_interaction;
-        // wave_function_ptr = &wave_function_3d_no_interaction_with_loop;
-        wave_function_ptr = &wave_function_3d_interaction_with_loop;
+        wave_function_ptr = &wave_function_3d_no_interaction_with_loop;
         wave_function_exponent_ptr = &wave_function_exponent_3d_no_interaction;
     }
     else if ((n_dims == 1) and (interaction))
@@ -168,7 +168,7 @@ void VMC::set_wave_function(bool interaction)
 void VMC::not_implemented_error(std::string name, bool interaction)
 {   
     std::cout << "NotImplementedError" << std::endl;
-    std::cout << "Cant set " << name << " for dimensions: " << n_dims;
+    std::cout << "Cannot set " << name << " for dimensions: " << n_dims;
     std::cout << " and interaction: " << interaction << "." << std::endl;
     exit(0);
 }

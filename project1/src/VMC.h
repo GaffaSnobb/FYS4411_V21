@@ -66,7 +66,13 @@ class VMC
         double (*local_energy_ptr)(arma::Mat<double> pos, double alpha, double beta);  // Function pointer.
         double (*wave_function_exponent_ptr)(arma::Mat<double> pos, double alpha, double beta); // TODO: At some point, this can be removed.
         double (*wave_function_ptr)(arma::Mat<double> pos, double alpha, double beta, const int n_particles);
-        void (*quantum_force_ptr)(arma::Mat<double> pos, arma::Mat<double> &qforce, double alpha, double beta, const int n_particles);
+        arma::Mat<double> (*quantum_force_ptr)(
+            const arma::Mat<double> &pos,
+            const double alpha,
+            const double beta,
+            const int current_particle, 
+            const int n_particles
+        );
 
     public:
         arma::Col<double> acceptances;   // Debug.
