@@ -477,7 +477,7 @@ void GradientDescent::solve()
 
         std::cout << "variation : " << std::setw(3) <<  variation;
         std::cout << ", alpha: " << std::setw(10) << alphas(variation);
-        // std::cout << ", energy: " << energy_expectation;
+        std::cout << ", energy: " << std::setw(10) << energy_expectation;
         std::cout << ", acceptance: " << std::setw(7) << acceptances(variation)/(n_mc_cycles*n_particles);
         std::cout << ",  time : " << comp_time << "s" << std::endl;
 
@@ -497,6 +497,8 @@ void GradientDescent::solve()
             n_variations_final = variation;
             std::cout << "End of gradient descent reached at iteration ";
             std::cout << n_variations_final << " of " << n_variations << ".";
+            std::cout << " Current alpha: " << alphas(variation) << ", ";
+            std::cout << "next alpha: " << alphas(variation + 1);
             std::cout << std::endl;
             break;
         }

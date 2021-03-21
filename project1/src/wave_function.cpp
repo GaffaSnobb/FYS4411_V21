@@ -197,7 +197,11 @@ double wave_function_3d_interaction_with_loop(
     return wave_function*wave_function_inner;
 }
 
-double wave_function_3d_diff_wrt_alpha(arma::Mat<double> pos, double alpha, double beta)
+double wave_function_3d_diff_wrt_alpha(
+    arma::Mat<double> pos,
+    double alpha,
+    double beta
+)
 {   /*
     CORRECTION: This is only the factor in front of the wave function
     after differentiation. 

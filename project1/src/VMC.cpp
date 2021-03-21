@@ -124,7 +124,9 @@ void VMC::set_local_energy(bool interaction)
     else if ((n_dims == 3) and (interaction))
     {
         // not_implemented_error("local energy", interaction);
-        local_energy_ptr = &local_energy_3d_no_interaction;        
+        // local_energy_ptr = &local_energy_3d_no_interaction;        
+        local_energy_ptr = &local_energy_3d_interaction;        
+
     }
 }
 
