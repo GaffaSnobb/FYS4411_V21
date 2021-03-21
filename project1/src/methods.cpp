@@ -139,9 +139,11 @@ void BruteForce::one_variation(int variation)
                     calculated based on all particle positions.
                     */
                     local_energy += local_energy_ptr(
-                        pos_current.col(particle_inner),
+                        pos_current,
                         alpha,
-                        beta
+                        beta,
+                        particle_inner,
+                        n_particles
                     );
                 }
             }
@@ -339,9 +341,11 @@ void ImportanceSampling::one_variation(int variation)
                     calculated based on all particle positions.
                     */
                     local_energy += local_energy_ptr(
-                        pos_current.col(particle_inner),
+                        pos_current,
                         alpha,
-                        beta
+                        beta,
+                        particle_inner,
+                        n_particles
                     );
                 }
 
@@ -488,13 +492,13 @@ void GradientDescent::solve()
             std::cout << "\n";
         }
 
-        // if ( std::abs(alphas(variation + 1) - alphas(variation)) < 1e-4 )
-        // {
-        //     n_variations_final = variation;
-        //     std::cout << "End of gradient descent reached at iteration ";
-        //     std::cout << n_variations_final << " of " << n_variations << ".";
-        //     std::cout << std::endl;
-        //     break;
-        // }
+        if ( std::abs(alphas(variation + 1) - alphas(variation)) < 1e-4 )
+        {
+            n_variations_final = variation;
+            std::cout << "End of gradient descent reached at iteration ";
+            std::cout << n_variations_final << " of " << n_variations << ".";
+            std::cout << std::endl;
+            break;
+        }
     }
 }

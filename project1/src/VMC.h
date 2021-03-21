@@ -63,9 +63,20 @@ class VMC
         std::uniform_real_distribution<double> uniform;  // Continuous uniform distribution.
         std::normal_distribution<double> normal;         // Gaussian distribution
 
-        double (*local_energy_ptr)(arma::Mat<double> pos, double alpha, double beta);  // Function pointer.
+        double (*local_energy_ptr)(
+            const arma::Mat<double> &pos,
+            const double alpha,
+            const double beta,
+            const int current_particle,
+            const int n_particles
+        );
         double (*wave_function_exponent_ptr)(arma::Mat<double> pos, double alpha, double beta); // TODO: At some point, this can be removed.
-        double (*wave_function_ptr)(arma::Mat<double> pos, double alpha, double beta, const int n_particles);
+        double (*wave_function_ptr)(
+            arma::Mat<double> pos,
+            double alpha,
+            double beta,
+            const int n_particles
+        );
         arma::Mat<double> (*quantum_force_ptr)(
             const arma::Mat<double> &pos,
             const double alpha,

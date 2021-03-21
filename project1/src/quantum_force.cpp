@@ -28,12 +28,25 @@ arma::Mat<double> quantum_force_3d_interaction(
     ----------
     pos : arma::Mat<double> reference
         Positions of all particles.
+
+    alpha : constant double
+        Current variational parameter.
+
+    beta : constant double
+        ???
+
+    current_particle : constant integer
+        The index of the current particle.
+
+    n_particles : constant integer
+        The total number of particles.
     */
 
     int particle;       // Particle index.
     int particle_inner; // Particle index.
     arma::Col<double> term_1(3);
     double a = 0.0043;  // Prob. not right, so fix this.
+    
     // Term 1.
     term_1 = { // (x, y, beta*z).
         pos(0, current_particle),
