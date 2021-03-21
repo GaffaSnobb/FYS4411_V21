@@ -56,7 +56,7 @@ class VMC
         arma::Mat<double> qforce_current;// Current quantum force.
         arma::Mat<double> qforce_new;    // New quantum force.
 
-        arma::Row<double> test_local;    // Temporary
+        arma::Row<double> test_local;    // Temporary. TODO: Remove?
         arma::Mat<double> energies;
 
         std::mt19937 engine;      // Mersenne Twister RNG.
@@ -64,9 +64,9 @@ class VMC
         std::normal_distribution<double> normal;         // Gaussian distribution
 
         double (*local_energy_ptr)(arma::Mat<double> pos, double alpha, double beta);  // Function pointer.
-        double (*wave_function_exponent_ptr)(arma::Mat<double> pos, double alpha, double beta);
-        double (*wave_function_ptr)(arma::Mat<double> pos, double alpha, double beta, int n_particles);
-        arma::Mat<double> (*quantum_force_ptr)(arma::Mat<double> pos, double alpha);
+        double (*wave_function_exponent_ptr)(arma::Mat<double> pos, double alpha, double beta); // TODO: At some point, this can be removed.
+        double (*wave_function_ptr)(arma::Mat<double> pos, double alpha, double beta, const int n_particles);
+        void (*quantum_force_ptr)(arma::Mat<double> pos, arma::Mat<double> &qforce, double alpha, double beta, const int n_particles);
 
     public:
         arma::Col<double> acceptances;   // Debug.
