@@ -148,7 +148,6 @@ void VMC::set_wave_function(bool interaction)
     {
         // wave_function_ptr = &wave_function_3d_no_interaction;
         // wave_function_ptr = &wave_function_3d_no_interaction_with_loop;
-        wave_function_ptr = &wave_function_3d_interaction_with_loop;
         wave_function_exponent_ptr = &wave_function_exponent_3d_no_interaction;
     }
     else if ((n_dims == 1) and (interaction))

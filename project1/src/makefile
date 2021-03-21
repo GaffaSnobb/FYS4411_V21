@@ -1,5 +1,5 @@
-COMPILER = g++
-# COMPILER = g++-10
+# COMPILER = g++
+COMPILER = g++-10
 FLAGS = -std=c++17 -O1
 LIBRARIES = -larmadillo -fopenmp
 OBJECTS = VMC.o wave_function.o local_energy.o methods.o quantum_force.o

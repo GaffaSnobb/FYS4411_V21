@@ -132,37 +132,12 @@ double wave_function_3d_interaction_with_loop(
     double beta,
     const int n_particles
 )
-{   /*
-    3D wave function with interaction term.
-
-    Parameters
-    ----------
-    pos : arma::Mat<double>
-        Position matrix of all particles. 3xN.
-
-    alpha : double
-        Variational parameter.
-
-    beta : double
-        ???
-
-    n_particles : constant integer
-        The total number of particles.
-
-    Returns
-    -------
-    wave_function*wave_function_inner : double
-        The total wavefunction.
-    */
-    
+{   
     double a = 0.0043;  // Prob. not right, so fix this.
-    double wave_function = 1;       // Non-interaction term.
-    double wave_function_inner = 1; // Interaction term.
-    double particle_distance;       // Condition for the interaction term of the wavefunction.
-
-    int particle;       // Index for particle loop.
-    int particle_inner; // Index for inner particle loop.
-
+    double wave_function = 1;
+    double wave_function_inner = 1;
+    int particle;
+    int particle_inner;
     for (particle = 0; particle < n_particles; particle++)
     {   /*
         No interaction term.
@@ -180,21 +155,9 @@ double wave_function_3d_interaction_with_loop(
 
         for (particle_inner = particle + 1; particle_inner < n_particles; particle_inner++)
         {
-            particle_distance =
-                arma::norm(pos.col(particle) - pos.col(particle_inner), 2);
-
-            if (particle_distance > a)
-            {   /*
-                Interaction if the particle spacing is greater than 'a'.
-                If the spacing is 'a' or less, the interaction is 1, but
-                we do not need to state that explicitly (there are
-                invisible ones everywhere!!).
-                */
-                wave_function_inner *= 1 - a/particle_distance;
-            }
+            // wave_function_inner *= 
         }
     }
-    return wave_function*wave_function_inner;
 }
 
 double wave_function_3d_diff_wrt_alpha(arma::Mat<double> pos, double alpha, double beta)
