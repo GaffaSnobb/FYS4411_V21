@@ -11,7 +11,8 @@ void print_parameters(
     double learning_rate,
     double initial_alpha_gd,
     double beta,
-    double importance_time_step
+    double importance_time_step,
+    double gd_tolerance
 )
 {
     std::cout << "PARAMETERS:" << std::endl;
@@ -28,6 +29,7 @@ void print_parameters(
     std::cout << "initial_alpha_gd: " << initial_alpha_gd << std::endl;
     std::cout << "beta: " << beta << std::endl;
     std::cout << "importance_time_step: " << importance_time_step << std::endl;
+    std::cout << "gd_tolerance: " << gd_tolerance << std::endl;
     std::cout << "--------------------------" << std::endl;
     std::cout << std::endl;
 }
@@ -47,19 +49,19 @@ int main(int argc, char *argv[])
     double initial_alpha_gd;  // Initial variational parameter. Only for GD.
     double importance_time_step;
     bool parallel;
+    arma::Col<double> alphas;
 
     // Global parameters:
     const int n_dims = 3;           // Number of dimensions.
-    const int n_particles = 10;     // Number of particles.
-    const bool interaction = true;
+    int n_particles = 10;     // Number of particles.
+    const bool interaction = false;
     const bool debug = false;       // Toggle debug print on / off.
     const double seed = 1337;       // RNG seed.
-    arma::Col<double> alphas;
-    alphas = arma::linspace(0.1, 1, n_variations);
+    double gd_tolerance = 1e-3;
 
     // Select methods (might be wise to only choose one at a time):
-    const bool gradient_descent = true;
-    const bool importance_sampling = false;
+    const bool gradient_descent = false;
+    const bool importance_sampling = true;
     const bool brute_force = false;
     
 
@@ -69,21 +71,56 @@ int main(int argc, char *argv[])
         parallel = false;
     #endif
 
-    if ((interaction) and (n_dims == 3) and (parallel))
+    if ((interaction) and (n_dims == 3) and (parallel) and (gradient_descent))
     {   /*
         Interaction ON, 3D and parallelized.
         */
         n_mc_cycles = 5e4;
         n_variations = 40;
-        n_gd_iterations = 50;
-        learning_rate = 1e-3;
-        initial_alpha_gd = 0.4;
+        n_gd_iterations = 200;
+        learning_rate = 1e-4;
+        initial_alpha_gd = 0.2;
         importance_time_step = 0.01;
         beta = 2.82843;
-        // importance_time_step = 0.1; // Time step for importance serial. 0.1 - 0.01 is good.
+        alphas = arma::linspace(0.1, 1, n_variations);
     }
 
-    else if ((!interaction) and (n_dims == 3) and (parallel))
+    else if ((interaction) and (n_dims == 3) and (parallel) and (importance_sampling))
+    {   /*
+        Interaction ON, 3D, parallelized and importance.
+        */
+        n_mc_cycles = 1e5;
+        n_variations = 15;
+        importance_time_step = 0.01;
+        beta = 2.82843;
+        alphas = arma::linspace(0.4, 0.6, n_variations);
+    }
+
+    else if ((interaction) and (n_dims == 3) and (!parallel) and (importance_sampling))
+    {   /*
+        Interaction ON, 3D, serial and importance.
+        */
+        n_particles = 5;     // Number of particles.
+        n_mc_cycles = 1e5;
+        n_variations = 20;
+        importance_time_step = 0.01;
+        beta = 2.82843;
+        alphas = arma::linspace(0.3, 0.7, n_variations);
+    }
+
+    else if ((!interaction) and (n_dims == 3) and (!parallel) and (importance_sampling))
+    {   /*
+        Interaction OFF, 3D, serial and importance.
+        */
+        n_particles = 10;     // Number of particles.
+        n_mc_cycles = 1e5;
+        n_variations = 30;
+        importance_time_step = 0.01;
+        beta = 2.82843;
+        alphas = arma::linspace(0.1, 0.7, n_variations);
+    }
+
+    else if ((!interaction) and (n_dims == 3) and (parallel) and (gradient_descent))
     {   /*
         Interaction OFF, 3D and parallelized.
         */
@@ -94,13 +131,19 @@ int main(int argc, char *argv[])
         initial_alpha_gd = 0.2;
         importance_time_step = 0.1;
         beta = 1;
+        alphas = arma::linspace(0.1, 1, n_variations);
     }
 
     else
     {
-        std::cout << "No parameters specified for n_dims: " << n_dims;
-        std::cout << ", interaction: " << interaction << " and parallel: ";
-        std::cout << parallel << ". Exiting..." << std::endl;
+        std::cout << "No parameters specified for:";
+        std::cout << "\nn_dims: " << n_dims;
+        std::cout << "\ninteraction: " << interaction;
+        std::cout << "\nparallel: " << parallel;
+        std::cout << "\ngradient_descent: " << gradient_descent;
+        std::cout << "\nimportance_sampling: " << importance_sampling;
+        std::cout << "\nbrute_force: " << brute_force;
+        std::cout << "\nExiting...\n" << std::endl;
         exit(0);
     }
 
@@ -114,7 +157,8 @@ int main(int argc, char *argv[])
         learning_rate,
         initial_alpha_gd,
         beta,
-        importance_time_step
+        importance_time_step,
+        gd_tolerance
     );
     
     #ifdef _OPENMP
@@ -133,7 +177,6 @@ int main(int argc, char *argv[])
     if (importance_sampling)
     {
         std::cout << "Importance sampling" << std::endl;
-
         ImportanceSampling system_1(
             n_dims,                 // Number of spatial dimensions.
             n_variations,           // Number of variational parameters.
@@ -144,6 +187,10 @@ int main(int argc, char *argv[])
             importance_time_step,
             debug
         );
+        system_1.set_wave_function(interaction);
+        system_1.set_quantum_force(interaction);
+        system_1.set_local_energy(interaction);
+        system_1.set_seed(seed);
         system_1.solve();
         system_1.write_to_file_particles("generated_data/output_importance_particles.txt");
         
@@ -223,7 +270,7 @@ int main(int argc, char *argv[])
         system_3.set_quantum_force(interaction);
         system_3.set_local_energy(interaction);
         system_3.set_seed(seed);
-        system_3.solve();
+        system_3.solve(gd_tolerance);
         system_3.write_to_file_particles("generated_data/output_gradient_descent_particles.txt");
         
         #ifdef _OPENMP
@@ -247,7 +294,8 @@ int main(int argc, char *argv[])
         learning_rate,
         initial_alpha_gd,
         beta,
-        importance_time_step
+        importance_time_step,
+        gd_tolerance
     );
 
     return 0;
