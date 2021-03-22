@@ -1,4 +1,5 @@
 #include "quantum_force.h"
+#include "parameters.h"
 
 arma::Mat<double> quantum_force_3d_no_interaction(
     const arma::Mat<double> &pos,
@@ -45,19 +46,13 @@ arma::Mat<double> quantum_force_3d_interaction(
     int particle;       // Particle index.
     int particle_inner; // Particle index.
     arma::Col<double> term_1(3);
-    double a = 0.0043;  // Prob. not right, so fix this.
-    
+    const double x = pos(0, current_particle);  // Readability.
+    const double y = pos(1, current_particle);
+    const double z = pos(2, current_particle);
+
     // Term 1.
-    term_1 = { // (x, y, beta*z).
-        pos(0, current_particle),
-        pos(1, current_particle),
-        pos(2, current_particle)*beta
-    };
-    term_1 *= -2*alpha*std::exp(-alpha*(
-        pos(0, current_particle)*pos(0, current_particle) +
-        pos(1, current_particle)*pos(1, current_particle) +
-        pos(2, current_particle)*pos(2, current_particle)*beta
-    ));
+    term_1 = {x, y, z*beta};
+    term_1 *= -2*alpha*std::exp(-alpha*(x*x + y*y + z*z*beta));
     // Term 1 end.
 
     // Term 2.
@@ -97,9 +92,7 @@ arma::Mat<double> quantum_force_3d_interaction(
             {   /*
                 Interaction if the particle spacing is greater than 'a'.
                 NB: Not explicity stating what happens when
-                particle_distance < a, since I belive it should be 0
-                then (not 1 as in the wavefunction). This is in
-                agreement with log(1) = 0.
+                particle_distance < a. Then, the term is 0.
                 */
                 term_3 += std::log(1 - a/particle_distance);
             }
@@ -140,16 +133,15 @@ arma::Mat<double> quantum_force_3d_interaction(
         {   /*
             Interaction if the particle spacing is greater than 'a'.
             NB: Not explicity stating what happens when
-            particle_distance < a, since I belive it should be 0
-            then (not 1 as in the wavefunction). This is in
-            agreement with log(1) = 0.
+            particle_distance < a. Then, the term is 0.
             */
             tmp = {
-                pos(0, particle) - pos(0, current_particle),
-                pos(1, particle) - pos(1, current_particle),
-                pos(2, particle) - pos(2, current_particle)
+                pos(0, particle) - x,
+                pos(1, particle) - y,
+                pos(2, particle) - z
             };
-            tmp *= 1/(1 - a/particle_distance)*a*std::pow(particle_distance, -3);
+            tmp *=
+                1/(1 - a/particle_distance)*a*std::pow(particle_distance, -3);
 
             term_6 += tmp;
         }
