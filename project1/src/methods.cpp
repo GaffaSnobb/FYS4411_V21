@@ -265,7 +265,7 @@ void ImportanceSampling::one_variation(int variation)
         n_particles
     );
     
-    #pragma omp parallel for \
+    #pragma omp parallel\
         private(mc, particle, dim, particle_inner) \
         private(wave_new, exponential_diff) \
         firstprivate(wave_current, local_energy) \
@@ -273,105 +273,115 @@ void ImportanceSampling::one_variation(int variation)
         reduction(+:acceptance, energy_expectation, energy_expectation_squared) \
         reduction(+:wave_times_energy_expectation, wave_derivative_expectation) \
         firstprivate(wave_derivative)
-    for (mc = 0; mc < n_mc_cycles; mc++)
-    {   /*
-        Run over all Monte Carlo cycles.
-        */
-        for (particle = 0; particle < n_particles; particle++)
-        {   /*
-            Iterate over all particles.  In this loop, new
-            proposed positions and wave functions are
-            calculated.
-            */
-            for (dim = 0; dim < n_dims; dim++)
-            {   /*
-                Set new positions.
-                */
-                pos_new(dim, particle) = pos_current(dim, particle) +
-                    diffusion_coeff*qforce_current(dim, particle)*time_step +
-                    normal(engine)*sqrt(time_step);
-            }
-            
-            qforce_new.col(particle) = quantum_force_ptr(
-                pos_new,
-                alpha,
-                beta,
-                particle,
-                n_particles
-            );
+    {   
+        std::mt19937 engine_per_thread;
+        engine_per_thread.seed(seed + omp_get_thread_num());
 
-            wave_new = wave_function_ptr(
-                    pos_new,  // Particle positions.
+        #pragma omp for
+        for (mc = 0; mc < n_mc_cycles; mc++)
+        {   /*
+            Run over all Monte Carlo cycles.
+            */
+            for (particle = 0; particle < n_particles; particle++)
+            {   /*
+                Iterate over all particles.  In this loop, new
+                proposed positions and wave functions are
+                calculated.
+                */
+                for (dim = 0; dim < n_dims; dim++)
+                {   /*
+                    Set new positions.
+                    */
+                    // pos_new(dim, particle) = pos_current(dim, particle) +
+                    //     diffusion_coeff*qforce_current(dim, particle)*time_step +
+                    //     normal(engine)*sqrt(time_step);
+                    pos_new(dim, particle) = pos_current(dim, particle) +
+                        diffusion_coeff*qforce_current(dim, particle)*time_step +
+                        normal(engine_per_thread)*sqrt(time_step);
+                }
+                
+                qforce_new.col(particle) = quantum_force_ptr(
+                    pos_new,
                     alpha,
                     beta,
+                    particle,
                     n_particles
                 );
 
-            double greens_ratio = 0;
-            for (dim = 0; dim < n_dims; dim++)
-            {   /*
-                Calculate greens ratio for the acceptance criterion.
-                */
-                greens_ratio +=
-                    0.5*(qforce_current(dim, particle) + qforce_new(dim, particle))
-                    *(0.5*diffusion_coeff*time_step*
-                    (qforce_current(dim, particle) - qforce_new(dim, particle))
-                    - pos_new(dim, particle) + pos_current(dim, particle));
-            }
-
-            greens_ratio = exp(greens_ratio);
-            
-            double wave_ratio = wave_new/wave_current;
-            wave_ratio *= wave_ratio;   // TODO: Find out why we need wave_ratio**2.
-            
-            if (uniform(engine) < greens_ratio*wave_ratio)
-            {   /*
-                Metropolis step with new acceptance criterion.
-                */
-
-                acceptance++;    // Debug.                
-                pos_current.col(particle) = pos_new.col(particle);
-                qforce_current.col(particle) = qforce_new.col(particle);
-                wave_current = wave_new;
-
-                local_energy = 0;   // Overwrite local energy from previous particle step.
-                for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
-                {   /*
-                    After moving one particle, the local energy is
-                    calculated based on all particle positions.
-                    */
-                    local_energy += local_energy_ptr(
-                        pos_current,
+                wave_new = wave_function_ptr(
+                        pos_new,  // Particle positions.
                         alpha,
                         beta,
-                        particle_inner,
                         n_particles
                     );
-                }
 
-                wave_derivative = 0;
-                for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
+                double greens_ratio = 0;
+                for (dim = 0; dim < n_dims; dim++)
                 {   /*
-                    Calculations needed for gradient descent.
+                    Calculate greens ratio for the acceptance criterion.
                     */
-                    wave_derivative += wave_function_3d_diff_wrt_alpha(
-                        pos_current.col(particle_inner),
-                        alpha,
-                        beta
-                    );
+                    greens_ratio +=
+                        0.5*(qforce_current(dim, particle) + qforce_new(dim, particle))
+                        *(0.5*diffusion_coeff*time_step*
+                        (qforce_current(dim, particle) - qforce_new(dim, particle))
+                        - pos_new(dim, particle) + pos_current(dim, particle));
                 }
-            }
 
-            // GD specifics.
-            wave_derivative_expectation += wave_derivative;
-            wave_times_energy_expectation += wave_derivative*local_energy;
-            // GD specifics end.
-            
-            energy_expectation += local_energy;
-            energy_expectation_squared += local_energy*local_energy;
+                greens_ratio = exp(greens_ratio);
+                
+                double wave_ratio = wave_new/wave_current;
+                wave_ratio *= wave_ratio;   // TODO: Find out why we need wave_ratio**2.
+                
+                // if (uniform(engine) < greens_ratio*wave_ratio)
+                if (uniform(engine_per_thread) < greens_ratio*wave_ratio)
+                {   /*
+                    Metropolis step with new acceptance criterion.
+                    */
+
+                    acceptance++;    // Debug.                
+                    pos_current.col(particle) = pos_new.col(particle);
+                    qforce_current.col(particle) = qforce_new.col(particle);
+                    wave_current = wave_new;
+
+                    local_energy = 0;   // Overwrite local energy from previous particle step.
+                    for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
+                    {   /*
+                        After moving one particle, the local energy is
+                        calculated based on all particle positions.
+                        */
+                        local_energy += local_energy_ptr(
+                            pos_current,
+                            alpha,
+                            beta,
+                            particle_inner,
+                            n_particles
+                        );
+                    }
+
+                    wave_derivative = 0;
+                    for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
+                    {   /*
+                        Calculations needed for gradient descent.
+                        */
+                        wave_derivative += wave_function_3d_diff_wrt_alpha(
+                            pos_current.col(particle_inner),
+                            alpha,
+                            beta
+                        );
+                    }
+                }
+
+                // GD specifics.
+                wave_derivative_expectation += wave_derivative;
+                wave_times_energy_expectation += wave_derivative*local_energy;
+                // GD specifics end.
+                
+                energy_expectation += local_energy;
+                energy_expectation_squared += local_energy*local_energy;
+            }
+            energies(mc, variation) = local_energy;
         }
-        energies(mc, variation) = local_energy;
-    }
+    }   // Parallel end.
 
     energy_expectation /= n_mc_cycles;
     energy_expectation_squared /= n_mc_cycles;
