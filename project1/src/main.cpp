@@ -17,9 +17,10 @@ int main(int argc, char *argv[])
 
     const int n_dims = 3;           // Number of dimensions.
     const int n_particles = 10;     // Number of particles.
-    const bool interaction = false;
+    const bool interaction = true;
     const bool debug = false;       // Toggle debug print on / off.
     const double seed = 1337;
+    
     arma::Col<double> alphas;
     alphas = arma::linspace(0.1, 1, n_variations);
 
@@ -33,11 +34,11 @@ int main(int argc, char *argv[])
     {   /*
         Interaction ON, 3D and parallelized.
         */
-        n_mc_cycles = 1e4;
+        n_mc_cycles = 5e4;
         n_variations = 40;
-        n_gd_iterations = 100;
-        learning_rate = 1e-4;
-        initial_alpha_gd = 0;
+        n_gd_iterations = 50;
+        learning_rate = 1e-3;
+        initial_alpha_gd = 0.1;
         importance_time_step = 0.01;
         // importance_time_step = 0.1; // Time step for importance serial. 0.1 - 0.01 is good.
     }
