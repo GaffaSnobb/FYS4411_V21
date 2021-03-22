@@ -50,12 +50,18 @@ VMC::VMC(
     acceptances = arma::Col<double>(n_variations);   // Debug.
     acceptances.zeros();
 
-    e_expectations.zeros(); // Array must be zeroed since values will be added.
+    e_expectations.zeros(); // Array must be zeroed since values will be added to it.
     energies.zeros();
     engine.seed(seed);
 
     // set_local_energy();  // Moved to main.cpp.
     // set_wave_function(); // Moved to main.cpp.
+}
+
+void VMC::set_seed(double seed_input)
+{   
+    seed = seed_input;
+    engine.seed(seed);
 }
 
 void VMC::set_quantum_force(bool interaction)
@@ -123,7 +129,6 @@ void VMC::set_local_energy(bool interaction)
     }
     else if ((n_dims == 3) and (interaction))
     {
-        // not_implemented_error("local energy", interaction);
         // local_energy_ptr = &local_energy_3d_no_interaction;        
         local_energy_ptr = &local_energy_3d_interaction;        
 

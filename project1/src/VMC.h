@@ -24,7 +24,7 @@ class VMC
         std::ofstream outfile;          // Output file.
         const int n_variations;         // Number of variations.
         const int n_mc_cycles;          // Number of MC cycles.
-        const int seed = 1337;          // RNG seed.
+        double seed = 1337;                // RNG seed.
         const int n_particles;          // Number of particles.
         const int n_dims;               // Number of spatial dimensions.
 
@@ -95,6 +95,7 @@ class VMC
             arma::Col<double> alphas,
             bool debug_input
         );
+        void set_seed(double seed_input);
         void set_quantum_force(bool interaction);
         void set_local_energy(bool interaction);
         void set_wave_function(bool interaction);
