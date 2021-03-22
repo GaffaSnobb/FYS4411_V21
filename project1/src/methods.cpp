@@ -6,6 +6,7 @@ BruteForce::BruteForce(
     const int n_mc_cycles_input,
     const int n_particles_input,
     arma::Col<double> alphas_input,
+    const double beta_input,
     const double brute_force_step_size_input,
     bool debug_input
 ) : VMC(
@@ -14,6 +15,7 @@ BruteForce::BruteForce(
         n_mc_cycles_input,
         n_particles_input,
         alphas_input,
+        beta_input,
         debug_input
     ),
     step_size(brute_force_step_size_input)
@@ -175,6 +177,7 @@ ImportanceSampling::ImportanceSampling(
     const int n_mc_cycles_input,
     const int n_particles_input,
     arma::Col<double> alphas_input,
+    const double beta_input,
     const double importance_time_step_input,
     bool debug_input
 ) : VMC(
@@ -183,6 +186,7 @@ ImportanceSampling::ImportanceSampling(
         n_mc_cycles_input,
         n_particles_input,
         alphas_input,
+        beta_input,
         debug_input
     ),
     time_step(importance_time_step_input)
@@ -248,7 +252,7 @@ void ImportanceSampling::one_variation(int variation)
             */
             pos_current(dim, particle) = normal(engine)*sqrt(time_step);
         }
-        
+
         qforce_current.col(particle) = quantum_force_ptr(
             pos_current,
             alpha,
@@ -264,7 +268,7 @@ void ImportanceSampling::one_variation(int variation)
         beta,
         n_particles
     );
-    
+
     #pragma omp parallel\
         private(mc, particle, dim, particle_inner) \
         private(wave_new, exponential_diff) \
@@ -402,6 +406,7 @@ GradientDescent::GradientDescent(
     const double importance_time_step_input,
     const double learning_rate_input,
     const double initial_alpha_input,
+    const double beta_input,
     bool debug_input
 ) : ImportanceSampling(
         n_dims_input,
@@ -409,6 +414,7 @@ GradientDescent::GradientDescent(
         n_mc_cycles_input,
         n_particles_input,
         arma::linspace(0, 0, n_variations_input),   // Dummy input. Not in use.
+        beta_input,
         importance_time_step_input,
         debug_input
     ),
@@ -439,11 +445,33 @@ GradientDescent::GradientDescent(
     */
 }
 
-void GradientDescent::solve()
+void GradientDescent::solve(const double tol)
 {   /*
     Iterate over variational parameters.  Use gradient descent to
     efficiently calculate alphas.
+
+    Parameters
+    ----------
+    tol : constant double
+        Tolerance for the GD cutoff.
     */
+    if (!call_set_local_energy)
+    {
+        std::cout << "Local energy is not set! Exiting..." << std::endl;
+        exit(0);
+    }
+
+    if (!call_set_wave_function)
+    {
+        std::cout << "Wave function is not set! Exiting..." << std::endl;
+        exit(0);
+    }
+
+    if (!call_set_quantum_force)
+    {
+        std::cout << "Quantum force is not set! Exiting..." << std::endl;
+        exit(0);
+    }
     double energy_derivative = 0;
     alphas(0) = initial_alpha;
     double comp_time;
@@ -502,7 +530,7 @@ void GradientDescent::solve()
         {   /*
             Run at least a few variations before breaking.
             */
-            if (std::abs(alphas(variation + 1) - alphas(variation - 2)) < 1e-2)
+            if (std::abs(alphas(variation + 1) - alphas(variation - 4)) < tol)
             {
                 n_variations_final = variation;
                 std::cout << "End of gradient descent reached at iteration ";
