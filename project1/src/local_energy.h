@@ -3,10 +3,6 @@
 
 #include <armadillo>
 
-const double hbar = 1;
-const double m = 1;
-const double omega = 1;
-
 double local_energy_3d_interaction(
     const arma::Mat<double> &pos,
     const double alpha,
