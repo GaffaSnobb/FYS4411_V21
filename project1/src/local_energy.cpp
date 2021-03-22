@@ -277,7 +277,8 @@ double local_energy_3d_interaction(
     }
     // Term 4 end.
 
-    double res = -hbar*hbar/(2*m)*(term_1 + term_2 + term_3 + term_4);
+    // double res = -hbar*hbar/(2*m)*(term_1 + term_2 + term_3 + term_4);
+    double res = 0.5*(-(term_1 + term_2 + term_3 + term_4) + x*x + y*y + z*z*gamma_*gamma_);
     res += 0.5*m*(omega*omega*(x*x + y*y) + omega*omega*z*z);   // V_ext.
 
     return res;
