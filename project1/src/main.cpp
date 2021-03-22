@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     arma::Col<double> alphas;
     alphas = arma::linspace(0.1, 1, n_variations);
 
-    // Select methods:
+    // Select methods (might be wise to only choose one at a time):
     const bool gradient_descent = true;
     const bool importance_sampling = false;
     const bool brute_force = false;
