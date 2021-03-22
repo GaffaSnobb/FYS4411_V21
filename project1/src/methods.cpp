@@ -272,10 +272,12 @@ void ImportanceSampling::one_variation(int variation)
         firstprivate(pos_new, qforce_new, pos_current, qforce_current) \
         reduction(+:acceptance, energy_expectation, energy_expectation_squared) \
         reduction(+:wave_times_energy_expectation, wave_derivative_expectation) \
-        firstprivate(wave_derivative)
+        firstprivate(wave_derivative) \
+        private(engine)
     {   
-        std::mt19937 engine_per_thread;
-        engine_per_thread.seed(seed + omp_get_thread_num());
+        #ifdef _OPENMP
+            engine.seed(seed + omp_get_thread_num());
+        #endif
 
         #pragma omp for
         for (mc = 0; mc < n_mc_cycles; mc++)
@@ -292,12 +294,9 @@ void ImportanceSampling::one_variation(int variation)
                 {   /*
                     Set new positions.
                     */
-                    // pos_new(dim, particle) = pos_current(dim, particle) +
-                    //     diffusion_coeff*qforce_current(dim, particle)*time_step +
-                    //     normal(engine)*sqrt(time_step);
                     pos_new(dim, particle) = pos_current(dim, particle) +
                         diffusion_coeff*qforce_current(dim, particle)*time_step +
-                        normal(engine_per_thread)*sqrt(time_step);
+                        normal(engine)*sqrt(time_step);
                 }
                 
                 qforce_new.col(particle) = quantum_force_ptr(
@@ -332,8 +331,7 @@ void ImportanceSampling::one_variation(int variation)
                 double wave_ratio = wave_new/wave_current;
                 wave_ratio *= wave_ratio;   // TODO: Find out why we need wave_ratio**2.
                 
-                // if (uniform(engine) < greens_ratio*wave_ratio)
-                if (uniform(engine_per_thread) < greens_ratio*wave_ratio)
+                if (uniform(engine) < greens_ratio*wave_ratio)
                 {   /*
                     Metropolis step with new acceptance criterion.
                     */
@@ -498,19 +496,22 @@ void GradientDescent::solve()
             std::cout << "wave_derivative_expectation*energy_expectation/n_particles: " << wave_derivative_expectation*energy_expectation/n_particles << std::endl;
             std::cout << "wave_times_energy_expectation: " << wave_times_energy_expectation << std::endl;
             std::cout << "energy_derivative: " << energy_derivative << std::endl;
-            std::cout << "wave_derivative: " << wave_derivative << std::endl;
             std::cout << "\n";
         }
-
-        if ( std::abs(alphas(variation + 1) - alphas(variation)) < 1e-4 )
-        {
-            n_variations_final = variation;
-            std::cout << "End of gradient descent reached at iteration ";
-            std::cout << n_variations_final << " of " << n_variations << ".";
-            std::cout << " Current alpha: " << alphas(variation) << ", ";
-            std::cout << "next alpha: " << alphas(variation + 1);
-            std::cout << std::endl;
-            break;
+        if (variation >= 4)
+        {   /*
+            Run at least a few variations before breaking.
+            */
+            if (std::abs(alphas(variation + 1) - alphas(variation - 2)) < 1e-2)
+            {
+                n_variations_final = variation;
+                std::cout << "End of gradient descent reached at iteration ";
+                std::cout << n_variations_final << " of " << n_variations << ".";
+                std::cout << " Current alpha: " << alphas(variation) << ", ";
+                std::cout << "next alpha: " << alphas(variation + 1);
+                std::cout << std::endl;
+                break;
+            }
         }
     }
 }
