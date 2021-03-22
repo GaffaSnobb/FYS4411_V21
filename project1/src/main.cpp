@@ -4,30 +4,70 @@
 int main(int argc, char *argv[])
 {   /*
     TODO: Currently omega_ho and omega_z are equal. Fix. (local_energy.cpp).
+    Whats the value of omega_z?
     */
-    const int n_mc_cycles = 1e4;//pow(2, 20);   // Number of MC cycles, must be a power of 2
-    const int n_dims = 3;                   // Number of dimentions
-    const int n_variations = 40;          // Number of variational parameters.
-    const int n_gd_iterations = 100;          // Max. gradient descent iterations.
-    const double learning_rate = 0.0001;     // GD learning rate.
-    const int n_particles = 10;             // Number of particles
-    const double initial_alpha_gd = 0.1;    // Initial variational parameter. Only for GD.
-    bool interaction = false;
-    bool debug = false;  // Toggle debug print on / off.
-    
+
+    int n_mc_cycles;          // Number of MC cycles, must be a power of 2
+    int n_gd_iterations;      // Max. gradient descent iterations.
+    int n_variations;         // Number of variational parameters. Not in use with GD.
+    double learning_rate;     // GD learning rate.
+    double initial_alpha_gd;  // Initial variational parameter. Only for GD.
+    double importance_time_step;
+    bool parallel;
+
+    const int n_dims = 3;           // Number of dimensions.
+    const int n_particles = 10;     // Number of particles.
+    const bool interaction = false;
+    const bool debug = false;       // Toggle debug print on / off.
+    const double seed = 1337;
     arma::Col<double> alphas;
     alphas = arma::linspace(0.1, 1, n_variations);
 
+    #ifdef _OPENMP
+        parallel = true;
+    #else
+        parallel = false;
+    #endif
+
+    if ((interaction) and (n_dims == 3) and (parallel))
+    {   /*
+        Interaction ON, 3D and parallelized.
+        */
+        n_mc_cycles = 1e4;
+        n_variations = 40;
+        n_gd_iterations = 100;
+        learning_rate = 1e-4;
+        initial_alpha_gd = 0;
+        importance_time_step = 0.01;
+        // importance_time_step = 0.1; // Time step for importance serial. 0.1 - 0.01 is good.
+    }
+
+    else if ((!interaction) and (n_dims == 3) and (parallel))
+    {   /*
+        Interaction OFF, 3D and parallelized.
+        */
+        n_mc_cycles = 1e4;
+        n_variations = 40;
+        n_gd_iterations = 500;
+        learning_rate = 1e-4;
+        initial_alpha_gd = 0.2;
+        importance_time_step = 0.1;
+    }
+
+    else
+    {
+        std::cout << "No parameters specified for n_dims: " << n_dims;
+        std::cout << ", interaction: " << interaction << " and parallel: ";
+        std::cout << parallel << ". Exiting..." << std::endl;
+        exit(0);
+    }
+
     
     #ifdef _OPENMP
-        const double importance_time_step = 0.01;        // Time step for importance parallel.
-        std::cout << "OpenMP active\n" << std::endl;
         double t1 = omp_get_wtime();
         double t2;
         double comp_time;
     #else
-        const double importance_time_step = 0.1;        // Time step for importance serial. 0.1 - 0.01 is good.
-        std::cout << "OpenMP inactive\n" << std::endl;
         std::chrono::steady_clock::time_point t1;
         std::chrono::steady_clock::time_point t2;
         std::chrono::duration<double> comp_time;
@@ -117,6 +157,7 @@ int main(int argc, char *argv[])
     system_3.set_wave_function(interaction);
     system_3.set_quantum_force(interaction);
     system_3.set_local_energy(interaction);
+    system_3.set_seed(seed);
     system_3.solve();
     system_3.write_to_file_particles("generated_data/output_gradient_descent_particles.txt");
     
@@ -129,6 +170,23 @@ int main(int argc, char *argv[])
         comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
         std::cout << "total time: " << comp_time.count() << "s\n" << std::endl;
     #endif
+
+    
+    std::cout << "PARAMETERS:" << std::endl;
+    std::cout << "--------------------------" << std::endl;
+
+    std::cout << "OpenMP: " << parallel << std::endl;
+    std::cout << "Interaction: " << interaction << std::endl;
+    std::cout << "n dims: " << n_dims << std::endl;
+
+    std::cout << "n_mc_cycles: " << n_mc_cycles << std::endl;
+    std::cout << "n_variations: " << n_variations << std::endl;
+    std::cout << "n_gd_iterations: " << n_gd_iterations << std::endl;
+    std::cout << "learning_rate: " << learning_rate << std::endl;
+    std::cout << "initial_alpha_gd: " << initial_alpha_gd << std::endl;
+    std::cout << "importance_time_step: " << importance_time_step << std::endl;
+    std::cout << "--------------------------" << std::endl;
+    std::cout << std::endl;
 
     return 0;
 }
