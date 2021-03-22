@@ -12,11 +12,11 @@ int main(int argc, char *argv[])
     const int n_mc_cycles = 1e4;//pow(2, 20);   // Number of MC cycles, must be a power of 2
     const int n_dims = 3;                   // Number of dimentions
     const int n_variations = 40;          // Number of variational parameters.
-    const int n_gd_iterations = 200;          // Max. gradient descent iterations.
+    const int n_gd_iterations = 100;          // Max. gradient descent iterations.
     const double learning_rate = 0.0001;     // GD learning rate.
     const int n_particles = 10;             // Number of particles
     const double initial_alpha_gd = 0.1;    // Initial variational parameter. Only for GD.
-    bool interaction = true;
+    bool interaction = false;
     bool debug = false;  // Toggle debug print on / off.
     
     arma::Col<double> alphas;
