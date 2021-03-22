@@ -1,8 +1,8 @@
-COMPILER = g++
-# COMPILER = g++-10
+# COMPILER = g++
+COMPILER = g++-10
 FLAGS = -std=c++17 -O1
 LIBRARIES = -larmadillo -fopenmp
-OBJECTS = VMC.o wave_function.o local_energy.o methods.o quantum_force.o
+OBJECTS = VMC.o wave_function.o local_energy.o methods.o quantum_force.o parameters.o
 
 all : main.out
 
@@ -24,7 +24,14 @@ local_energy.o : local_energy.h local_energy.cpp
 quantum_force.o : quantum_force.h quantum_force.cpp
 	$(COMPILER) $(FLAGS) -c quantum_force.cpp
 
+parameters.o : parameters.h parameters.cpp
+	$(COMPILER) $(FLAGS) -c parameters.cpp
+
 plot : main.out
+	./run.out
+	python visualize.py
+
+ploit : main.out	# Alias.
 	./run.out
 	python visualize.py
 
