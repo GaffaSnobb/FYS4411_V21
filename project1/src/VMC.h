@@ -28,7 +28,7 @@ class VMC
         const int n_particles;          // Number of particles.
         const int n_dims;               // Number of spatial dimensions.
 
-        const double beta = 1;
+        const double beta;
         const double diffusion_coeff = 0.5;
 
         double energy_expectation_squared;  // Square of the energy expectation value.
@@ -45,6 +45,9 @@ class VMC
         int dim;            // Index for dimension loops.
 
         int n_variations_final; // If calculation is stopped before n_variations is reached.
+        bool call_set_quantum_force = false;
+        bool call_set_wave_function = false;
+        bool call_set_local_energy = false;
         bool debug = false;     // Toggle debug print on / off.
 
         // Moved initialization to class constructor.
@@ -93,6 +96,7 @@ class VMC
             const int n_mc_cycles_input,
             const int n_particles_input,
             arma::Col<double> alphas,
+            const double beta_input,
             bool debug_input
         );
         void set_seed(double seed_input);

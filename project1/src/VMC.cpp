@@ -6,11 +6,13 @@ VMC::VMC(
     const int n_mc_cycles_input,
     const int n_particles_input,
     arma::Col<double> alphas_input,
+    const double beta_input,
     bool debug_input
 ) : n_dims(n_dims_input),
     n_variations(n_variations_input),
     n_mc_cycles(n_mc_cycles_input),
-    n_particles(n_particles_input)
+    n_particles(n_particles_input),
+    beta(beta_input)
 
 {   /*
     Class constructor.
@@ -54,6 +56,7 @@ VMC::VMC(
     energies.zeros();
     engine.seed(seed);
 
+
     // set_local_energy();  // Moved to main.cpp.
     // set_wave_function(); // Moved to main.cpp.
 }
@@ -87,14 +90,14 @@ void VMC::set_quantum_force(bool interaction)
         not_implemented_error("quantum force", interaction);
     }
     else if ((n_dims == 3) and interaction)
-    {
+    {   
         quantum_force_ptr = &quantum_force_3d_interaction;
-        // quantum_force_ptr = &quantum_force_3d_no_interaction;
     }
     else
     {
         not_implemented_error("quantum force", interaction);
     }
+    call_set_quantum_force = true;
 }
 
 void VMC::set_local_energy(bool interaction)
@@ -128,11 +131,11 @@ void VMC::set_local_energy(bool interaction)
         not_implemented_error("local energy", interaction);
     }
     else if ((n_dims == 3) and (interaction))
-    {
-        // local_energy_ptr = &local_energy_3d_no_interaction;        
+    {    
         local_energy_ptr = &local_energy_3d_interaction;        
-
     }
+
+    call_set_local_energy = true;
 }
 
 void VMC::set_wave_function(bool interaction)
@@ -170,6 +173,8 @@ void VMC::set_wave_function(bool interaction)
     {
         wave_function_ptr = &wave_function_3d_interaction_with_loop;
     }
+
+    call_set_wave_function = true;
 }
 
 void VMC::not_implemented_error(std::string name, bool interaction)
@@ -190,6 +195,24 @@ void VMC::solve()
     Iterate over variational parameters. Extract energy variances and
     expectation values.
     */
+
+    if (!call_set_local_energy)
+    {
+        std::cout << "Local energy is not set! Exiting..." << std::endl;
+        exit(0);
+    }
+
+    if (!call_set_wave_function)
+    {
+        std::cout << "Wave function is not set! Exiting..." << std::endl;
+        exit(0);
+    }
+
+    if (!call_set_quantum_force)
+    {
+        std::cout << "Quantum force is not set! Exiting..." << std::endl;
+        exit(0);
+    }
 
     #ifdef _OPENMP
         double t1;
@@ -215,7 +238,7 @@ void VMC::solve()
 
         std::cout << "variation : " << std::setw(3) <<  variation;
         std::cout << ", alpha: " << std::setw(10) << alphas(variation);
-        // std::cout << ", energy: " << energy_expectation;
+        std::cout << ", energy: " << energy_expectation;
         std::cout << ", acceptance: " << std::setw(7) << acceptances(variation)/(n_mc_cycles*n_particles);
         
         #ifdef _OPENMP
