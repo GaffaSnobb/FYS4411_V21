@@ -3,10 +3,6 @@
 
 int main(int argc, char *argv[])
 {   /*
-    TODO: wave_function.cpp, local_energy.cpp, quantum_force.cpp all use
-    'a' and currently 'a' is defined separately in all files. Make 'a'
-    common.
-
     TODO: Currently omega_ho and omega_z are equal. Fix. (local_energy.cpp).
     */
     const int n_mc_cycles = 1e4;//pow(2, 20);   // Number of MC cycles, must be a power of 2
