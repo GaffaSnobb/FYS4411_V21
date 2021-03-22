@@ -1,4 +1,6 @@
 #include "local_energy.h"
+#include "parameters.h"
+#include "omp.h"
 
 double local_energy_3d_interaction(
     const arma::Mat<double> &pos,
@@ -31,7 +33,6 @@ double local_energy_3d_interaction(
 
     int particle;   // Particle loop index.
     int particle_inner;   // Particle loop index.
-    double a = 0.0043;  // Prob. not right, so fix this.
 
     double x = pos(0, current_particle);
     double y = pos(1, current_particle);
@@ -39,7 +40,7 @@ double local_energy_3d_interaction(
     
     // Term 1.
     double term_1 = -2*alpha;
-    term_1 *= 2 - 2*alpha*(x*x + y*y + beta*beta*z*z) + beta*beta;
+    term_1 *= (2 - 2*alpha*(x*x + y*y + beta*beta*z*z) + beta*beta);
     // Term 1 end.
 
     // Term 2.
@@ -264,10 +265,7 @@ double local_energy_3d_interaction(
                 a/(1 - a/particle_distance_1)*1/(particle_distance_1*particle_distance_1);
             u_diff_1 *= 2/particle_distance_1;
 
-            u_diff_2 =
-                1/(1 - a/particle_distance_1)*1/(particle_distance_1*particle_distance_1*particle_distance_1);
-            u_diff_2 *=
-                a*a/(1 - a/particle_distance_1)*1/particle_distance_1 - 2;
+            u_diff_2 = (a*a - 2*a*particle_distance_1)/(particle_distance_1*particle_distance_1*(particle_distance_1 - a)*(particle_distance_1 - a));
         }
         else
         {
@@ -278,20 +276,9 @@ double local_energy_3d_interaction(
         term_4 += u_diff_1 + u_diff_2;
     }
     // Term 4 end.
-    
-    // V_int.
-    // How the hell can we implement infinity?
-    // for (particle = 0; particle < n_particles; particle++)
-    // {
-    //     for (particle_inner = particle + 1; particle_inner < n_particles; particle_inner++)
-    //     {
-
-    //     }
-    // }
-    // V_int end.
 
     double res = -hbar*hbar/(2*m)*(term_1 + term_2 + term_3 + term_4);
-    res += 0.5*m*(omega*omega*(x*x + y*y) + omega*omega*z*z);
+    res += 0.5*m*(omega*omega*(x*x + y*y) + omega*omega*z*z);   // V_ext.
 
     return res;
 }
@@ -304,8 +291,9 @@ double local_energy_3d_no_interaction(
     const int n_particles
 )
 {   /*
-    Analytical expression for the local energy for 3 dimensions, no
-    interaction between particles.
+    Calculate the local energy for a single particle. Analytical
+    expression for the local energy for 3 dimensions, no interaction
+    between particles.
 
     Parameters
     ----------
@@ -324,7 +312,12 @@ double local_energy_3d_no_interaction(
     n_particles : constant integer
         The total number of particles.
     */
-    return -hbar*hbar*alpha/m*(2*alpha*(pos(0, current_particle)*pos(0, current_particle) + pos(1, current_particle)*pos(1, current_particle) + beta*beta*pos(2, current_particle)*pos(2, current_particle)) - 2 - beta) + 0.5*m*omega*omega*(pos(0, current_particle)*pos(0, current_particle) + pos(1, current_particle)*pos(1, current_particle) + pos(2, current_particle)*pos(2, current_particle));
+
+    const double x = pos(0, current_particle);
+    const double y = pos(1, current_particle);
+    const double z = pos(2, current_particle);
+
+    return -hbar*hbar*alpha/m*(2*alpha*(x*x + y*y + beta*beta*z*z) - 2 - beta) + 0.5*m*omega*omega*(x*x + y*y + z*z);
 }
 
 double local_energy_2d_no_interaction(
