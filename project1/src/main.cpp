@@ -1,6 +1,37 @@
 #include "VMC.h"
 #include "methods.h"
 
+void print_parameters(
+    bool parallel,
+    bool interaction,
+    int n_dims,
+    int n_mc_cycles,
+    int n_variations,
+    int n_gd_iterations,
+    double learning_rate,
+    double initial_alpha_gd,
+    double beta,
+    double importance_time_step
+)
+{
+    std::cout << "PARAMETERS:" << std::endl;
+    std::cout << "--------------------------" << std::endl;
+
+    std::cout << "OpenMP: " << parallel << std::endl;
+    std::cout << "Interaction: " << interaction << std::endl;
+    std::cout << "n dims: " << n_dims << std::endl;
+
+    std::cout << "n_mc_cycles: " << n_mc_cycles << std::endl;
+    std::cout << "n_variations: " << n_variations << std::endl;
+    std::cout << "n_gd_iterations: " << n_gd_iterations << std::endl;
+    std::cout << "learning_rate: " << learning_rate << std::endl;
+    std::cout << "initial_alpha_gd: " << initial_alpha_gd << std::endl;
+    std::cout << "beta: " << beta << std::endl;
+    std::cout << "importance_time_step: " << importance_time_step << std::endl;
+    std::cout << "--------------------------" << std::endl;
+    std::cout << std::endl;
+}
+
 int main(int argc, char *argv[])
 {   /*
     TODO: Currently omega_ho and omega_z are equal. Fix. (local_energy.cpp).
@@ -11,6 +42,7 @@ int main(int argc, char *argv[])
     int n_mc_cycles;          // Number of MC cycles, must be a power of 2
     int n_gd_iterations;      // Max. gradient descent iterations.
     int n_variations;         // Number of variational parameters. Not in use with GD.
+    double beta;
     double learning_rate;     // GD learning rate.
     double initial_alpha_gd;  // Initial variational parameter. Only for GD.
     double importance_time_step;
@@ -45,8 +77,9 @@ int main(int argc, char *argv[])
         n_variations = 40;
         n_gd_iterations = 50;
         learning_rate = 1e-3;
-        initial_alpha_gd = 0.1;
+        initial_alpha_gd = 0.4;
         importance_time_step = 0.01;
+        beta = 2.82843;
         // importance_time_step = 0.1; // Time step for importance serial. 0.1 - 0.01 is good.
     }
 
@@ -60,6 +93,7 @@ int main(int argc, char *argv[])
         learning_rate = 1e-4;
         initial_alpha_gd = 0.2;
         importance_time_step = 0.1;
+        beta = 1;
     }
 
     else
@@ -70,6 +104,18 @@ int main(int argc, char *argv[])
         exit(0);
     }
 
+    print_parameters(
+        parallel,
+        interaction,
+        n_dims,
+        n_mc_cycles,
+        n_variations,
+        n_gd_iterations,
+        learning_rate,
+        initial_alpha_gd,
+        beta,
+        importance_time_step
+    );
     
     #ifdef _OPENMP
         double t1 = omp_get_wtime();
@@ -94,6 +140,7 @@ int main(int argc, char *argv[])
             n_mc_cycles,            // Number of Monte Carlo cycles.
             n_particles,            // Number of particles.
             alphas,
+            beta,
             importance_time_step,
             debug
         );
@@ -131,6 +178,7 @@ int main(int argc, char *argv[])
             n_mc_cycles,            // Number of Monte Carlo cycles.
             n_particles,            // Number of particles.
             alphas,
+            beta,
             brute_force_step_size,  // Step size for new positions for brute force.
             debug
         );
@@ -168,6 +216,7 @@ int main(int argc, char *argv[])
             importance_time_step,   // Time step size for importance sampling.
             learning_rate,          // Learning rate for GD.
             initial_alpha_gd,       // Initial guess for the variational parameter.
+            beta,
             debug
         );
         system_3.set_wave_function(interaction);
@@ -188,22 +237,18 @@ int main(int argc, char *argv[])
         #endif
     }
 
-    
-    std::cout << "PARAMETERS:" << std::endl;
-    std::cout << "--------------------------" << std::endl;
-
-    std::cout << "OpenMP: " << parallel << std::endl;
-    std::cout << "Interaction: " << interaction << std::endl;
-    std::cout << "n dims: " << n_dims << std::endl;
-
-    std::cout << "n_mc_cycles: " << n_mc_cycles << std::endl;
-    std::cout << "n_variations: " << n_variations << std::endl;
-    std::cout << "n_gd_iterations: " << n_gd_iterations << std::endl;
-    std::cout << "learning_rate: " << learning_rate << std::endl;
-    std::cout << "initial_alpha_gd: " << initial_alpha_gd << std::endl;
-    std::cout << "importance_time_step: " << importance_time_step << std::endl;
-    std::cout << "--------------------------" << std::endl;
-    std::cout << std::endl;
+    print_parameters(
+        parallel,
+        interaction,
+        n_dims,
+        n_mc_cycles,
+        n_variations,
+        n_gd_iterations,
+        learning_rate,
+        initial_alpha_gd,
+        beta,
+        importance_time_step
+    );
 
     return 0;
 }
