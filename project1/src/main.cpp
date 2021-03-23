@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 
     // Global parameters:
     const int n_dims = 3;           // Number of dimensions.
-    int n_particles = 10;     // Number of particles.
+    int n_particles = 10;     // Number of particles. NB: May be overwritten later in this function.
     const bool interaction = false;
     const bool debug = false;       // Toggle debug print on / off.
     const double seed = 1337;       // RNG seed.
@@ -116,8 +116,8 @@ int main(int argc, char *argv[])
         n_mc_cycles = 1e5;
         n_variations = 30;
         importance_time_step = 0.01;
-        beta = 2.82843;
-        alphas = arma::linspace(0.1, 0.7, n_variations);
+        beta = 1;
+        alphas = arma::linspace(0.4, 0.6, n_variations);
     }
 
     else if ((!interaction) and (n_dims == 3) and (parallel) and (gradient_descent))
