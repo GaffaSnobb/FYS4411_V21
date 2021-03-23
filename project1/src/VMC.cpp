@@ -150,16 +150,15 @@ void VMC::set_wave_function(bool interaction)
 
     if ((n_dims == 1) and !(interaction))
     {
-        wave_function_exponent_ptr = &wave_function_exponent_1d_no_interaction;
+        not_implemented_error("wave function", interaction);
     }
     else if ((n_dims == 2) and !(interaction))
     {
-        wave_function_exponent_ptr = &wave_function_exponent_2d_no_interaction;
+        not_implemented_error("wave function", interaction);
     }
     else if ((n_dims == 3) and !(interaction))
     {
         wave_function_ptr = &wave_function_3d_no_interaction_with_loop;
-        wave_function_exponent_ptr = &wave_function_exponent_3d_no_interaction;
     }
     else if ((n_dims == 1) and (interaction))
     {

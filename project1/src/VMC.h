@@ -73,7 +73,6 @@ class VMC
             const int current_particle,
             const int n_particles
         );
-        double (*wave_function_exponent_ptr)(arma::Mat<double> pos, double alpha, double beta); // TODO: At some point, this can be removed.
         double (*wave_function_ptr)(
             arma::Mat<double> pos,
             double alpha,
