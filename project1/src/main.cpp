@@ -120,6 +120,18 @@ int main(int argc, char *argv[])
         alphas = arma::linspace(0.4, 0.6, n_variations);
     }
 
+    else if ((!interaction) and (n_dims == 3) and (parallel) and (importance_sampling))
+    {   /*
+        Interaction OFF, 3D, parallel and importance.
+        */
+        n_particles = 10;     // Number of particles.
+        n_mc_cycles = 1e6;
+        n_variations = 30;
+        importance_time_step = 0.01;
+        beta = 1;
+        alphas = arma::linspace(0.4, 0.6, n_variations);
+    }
+
     else if ((!interaction) and (n_dims == 3) and (parallel) and (gradient_descent))
     {   /*
         Interaction OFF, 3D and parallelized.
