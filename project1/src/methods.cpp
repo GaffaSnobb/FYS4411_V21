@@ -58,7 +58,6 @@ void BruteForce::one_variation(int variation)
     double alpha = alphas(variation);
     int acceptance = 0;  // Debug.
 
-    wave_current = 0;       // Reset wave function for each variation.
     energy_expectation = 0; // Reset for each variation.
     energy_variance = 0;    // Reset for each variation. NB: Variable not inside parallel region.
     energy_expectation_squared = 0;
@@ -75,85 +74,83 @@ void BruteForce::one_variation(int variation)
             */
             pos_current(dim, particle) = step_size*(uniform(engine) - 0.5);
         }
-        wave_current += wave_function_exponent_ptr(
-            pos_current.col(particle),  // Position of one particle.
-            alpha,
-            beta
-        );
     }
+    wave_current = wave_function_ptr(
+        pos_current,  // Position of one particle.
+        alpha,
+        beta,
+        n_particles
+    );
     
-    #pragma omp parallel for \
+    #pragma omp parallel \
         private(mc, particle, dim, particle_inner) \
-        private(wave_new, exponential_diff) \
+        private(wave_new) \
         firstprivate(wave_current, local_energy) \
         firstprivate(pos_new, pos_current) \
-        reduction(+:acceptance, energy_expectation, energy_expectation_squared)
-    for (mc = 0; mc < n_mc_cycles; mc++)
-    {   /*
-        Run over all Monte Carlo cycles.
-        */
-        for (particle = 0; particle < n_particles; particle++)
+        reduction(+:acceptance, energy_expectation, energy_expectation_squared) \
+        private(engine)
+    {
+        #ifdef _OPENMP
+            engine.seed(seed + omp_get_thread_num());
+        #endif
+
+        #pragma omp for
+        for (mc = 0; mc < n_mc_cycles; mc++)
         {   /*
-            Iterate over all particles.  In this loop, new
-            proposed positions and wave functions are
-            calculated.
+            Run over all Monte Carlo cycles.
             */
-            for (dim = 0; dim < n_dims; dim++)
+            for (particle = 0; particle < n_particles; particle++)
             {   /*
-                Set new values.
+                Iterate over all particles.  In this loop, new
+                proposed positions and wave functions are
+                calculated.
                 */
-                pos_new(dim, particle) = pos_current(dim, particle) + step_size*(uniform(engine) - 0.5);
-            }
-
-            wave_new = 0;   // Overwrite the new wave func from previous particle step.
-            for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
-            {   /*
-                After moving one particle, the wave function is
-                calculated based on all particle positions.
-                */
-                wave_new += wave_function_exponent_ptr(
-                        pos_new.col(particle_inner),  // Particle position.
-                        alpha,
-                        beta
-                    );
-            }
-
-            exponential_diff = 2*(wave_new - wave_current);
-
-            if (uniform(engine) < std::exp(exponential_diff))
-            {   /*
-                Perform the Metropolis algorithm.  To save one
-                exponential calculation, the difference is taken
-                of the exponents instead of the ratio of the
-                exponentials. Marginally better...
-                */
-                acceptance++;    // Debug.
                 for (dim = 0; dim < n_dims; dim++)
-                {
-                    pos_current(dim, particle) = pos_new(dim, particle);
-                }
-                wave_current = wave_new;
-
-                local_energy = 0;   // Overwrite local energy from previous particle step.
-                for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
                 {   /*
-                    After moving one particle, the local energy is
-                    calculated based on all particle positions.
+                    Set new values.
                     */
-                    local_energy += local_energy_ptr(
-                        pos_current,
+                    pos_new(dim, particle) = pos_current(dim, particle) + step_size*(uniform(engine) - 0.5);
+                }
+
+                wave_new = wave_function_ptr(
+                        pos_new,  // Particle positions.
                         alpha,
                         beta,
-                        particle_inner,
                         n_particles
                     );
-                }
-            }
 
-            energy_expectation += local_energy;
-            energy_expectation_squared += local_energy*local_energy;
+                double wave_ratio = wave_new/wave_current;
+                wave_ratio *= wave_ratio;
+
+                if (uniform(engine) < wave_ratio)
+                {   /*
+                    Perform the Metropolis algorithm.
+                    */
+
+                    acceptance++;    // Debug.
+                    pos_current.col(particle) = pos_new.col(particle);
+                    wave_current = wave_new;
+
+                    local_energy = 0;   // Overwrite local energy from previous particle step.
+                    for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
+                    {   /*
+                        After moving one particle, the local energy is
+                        calculated based on all particle positions.
+                        */
+                        local_energy += local_energy_ptr(
+                            pos_current,
+                            alpha,
+                            beta,
+                            particle_inner,
+                            n_particles
+                        );
+                    }
+                }
+                energy_expectation += local_energy;
+                energy_expectation_squared += local_energy*local_energy;
+            }
+            energies(mc, variation) = local_energy;
         }
-        energies(mc, variation) = local_energy;
     }
 
     energy_expectation /= n_mc_cycles;
@@ -162,13 +159,6 @@ void BruteForce::one_variation(int variation)
         - energy_expectation*energy_expectation/n_particles;
 
     acceptances(variation) = acceptance;    // Debug.
-
-    //std::cout << "alpha:    " << alpha  << std::endl;
-    //std::cout << "<E^2>:    " << energy_expectation_squared <<std::endl;
-    //std::cout << "<E>^2:    " << energy_expectation*energy_expectation << std::endl;
-    //std::cout << "sigma^2:  " << energy_variance << std::endl;
-    //std::cout << "" << std::endl;
-
 }
 
 ImportanceSampling::ImportanceSampling(
@@ -271,7 +261,7 @@ void ImportanceSampling::one_variation(int variation)
 
     #pragma omp parallel\
         private(mc, particle, dim, particle_inner) \
-        private(wave_new, exponential_diff) \
+        private(wave_new) \
         firstprivate(wave_current, local_energy) \
         firstprivate(pos_new, qforce_new, pos_current, qforce_current) \
         reduction(+:acceptance, energy_expectation, energy_expectation_squared) \
