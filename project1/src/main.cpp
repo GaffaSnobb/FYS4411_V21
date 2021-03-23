@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
     // Global parameters:
     const int n_dims = 3;           // Number of dimensions.
     int n_particles = 10;     // Number of particles. NB: May be overwritten later in this function.
-    const bool interaction = false;
+    const bool interaction = true;
     const bool debug = false;       // Toggle debug print on / off.
     const double seed = 1337;       // RNG seed.
     double gd_tolerance = 1e-3;
@@ -90,10 +90,10 @@ int main(int argc, char *argv[])
         Interaction ON, 3D, parallelized and importance.
         */
         n_mc_cycles = 1e5;
-        n_variations = 15;
+        n_variations = 20;
         importance_time_step = 0.01;
         beta = 2.82843;
-        alphas = arma::linspace(0.4, 0.6, n_variations);
+        alphas = arma::linspace(0.2, 0.5, n_variations);
     }
 
     else if ((interaction) and (n_dims == 3) and (!parallel) and (importance_sampling))
