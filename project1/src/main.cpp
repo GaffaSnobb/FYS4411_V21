@@ -12,7 +12,11 @@ void print_parameters(
     double initial_alpha_gd,
     double beta,
     double importance_time_step,
-    double gd_tolerance
+    double gd_tolerance,
+    double brute_force_step_size,
+    bool gradient_descent,
+    bool importance_sampling,
+    bool brute_force
 )
 {
     std::cout << "PARAMETERS:" << std::endl;
@@ -20,6 +24,9 @@ void print_parameters(
 
     std::cout << "OpenMP: " << parallel << std::endl;
     std::cout << "Interaction: " << interaction << std::endl;
+    std::cout << "gradient_descent: " << gradient_descent << std::endl;
+    std::cout << "importance_sampling: " << importance_sampling << std::endl;
+    std::cout << "brute_force: " << brute_force << std::endl;
     std::cout << "n dims: " << n_dims << std::endl;
 
     std::cout << "n_mc_cycles: " << n_mc_cycles << std::endl;
@@ -30,6 +37,7 @@ void print_parameters(
     std::cout << "beta: " << beta << std::endl;
     std::cout << "importance_time_step: " << importance_time_step << std::endl;
     std::cout << "gd_tolerance: " << gd_tolerance << std::endl;
+    std::cout << "brute_force_step_size: " << brute_force_step_size << std::endl;
     std::cout << "--------------------------" << std::endl;
     std::cout << std::endl;
 }
@@ -44,6 +52,7 @@ int main(int argc, char *argv[])
     int n_mc_cycles;          // Number of MC cycles, must be a power of 2
     int n_gd_iterations;      // Max. gradient descent iterations.
     int n_variations;         // Number of variational parameters. Not in use with GD.
+    double brute_force_step_size;
     double beta;
     double learning_rate;     // GD learning rate.
     double initial_alpha_gd;  // Initial variational parameter. Only for GD.
@@ -54,15 +63,15 @@ int main(int argc, char *argv[])
     // Global parameters:
     const int n_dims = 3;           // Number of dimensions.
     int n_particles = 10;     // Number of particles. NB: May be overwritten later in this function.
-    const bool interaction = true;
+    const bool interaction = false;
     const bool debug = false;       // Toggle debug print on / off.
     const double seed = 1337;       // RNG seed.
     double gd_tolerance = 1e-3;
 
     // Select methods (might be wise to only choose one at a time):
     const bool gradient_descent = false;
-    const bool importance_sampling = true;
-    const bool brute_force = false;
+    const bool importance_sampling = false;
+    const bool brute_force = true;
     
 
     #ifdef _OPENMP
@@ -82,6 +91,20 @@ int main(int argc, char *argv[])
         initial_alpha_gd = 0.2;
         importance_time_step = 0.01;
         beta = 2.82843;
+        alphas = arma::linspace(0.1, 1, n_variations);
+    }
+
+    else if ((!interaction) and (n_dims == 3) and (parallel) and (gradient_descent))
+    {   /*
+        Interaction OFF, 3D and parallelized.
+        */
+        n_mc_cycles = 1e4;
+        n_variations = 40;
+        n_gd_iterations = 500;
+        learning_rate = 1e-4;
+        initial_alpha_gd = 0.2;
+        importance_time_step = 0.1;
+        beta = 1;
         alphas = arma::linspace(0.1, 1, n_variations);
     }
 
@@ -132,18 +155,18 @@ int main(int argc, char *argv[])
         alphas = arma::linspace(0.4, 0.6, n_variations);
     }
 
-    else if ((!interaction) and (n_dims == 3) and (parallel) and (gradient_descent))
+    else if ((!interaction) and (n_dims == 3) and (!parallel) and (brute_force))
     {   /*
-        Interaction OFF, 3D and parallelized.
+        Interaction OFF, 3D, parallel and importance.
         */
-        n_mc_cycles = 1e4;
-        n_variations = 40;
-        n_gd_iterations = 500;
-        learning_rate = 1e-4;
-        initial_alpha_gd = 0.2;
-        importance_time_step = 0.1;
+        n_particles = 10;     // Number of particles.
+        n_mc_cycles = 1e6;
+        n_variations = 30;
+        importance_time_step = 0.01;
         beta = 1;
-        alphas = arma::linspace(0.1, 1, n_variations);
+        alphas = arma::linspace(0.4, 0.6, n_variations);
+        brute_force_step_size = 0.2;
+        // brute_force_step_size = 0.5;   // Brute force step size parallel. 0.5 and above works.
     }
 
     else
@@ -170,7 +193,11 @@ int main(int argc, char *argv[])
         initial_alpha_gd,
         beta,
         importance_time_step,
-        gd_tolerance
+        gd_tolerance,
+        brute_force_step_size,
+        gradient_descent,
+        importance_sampling,
+        brute_force
     );
     
     #ifdef _OPENMP
@@ -222,10 +249,8 @@ int main(int argc, char *argv[])
     if (brute_force)
     {
         #ifdef _OPENMP
-            const double brute_force_step_size = 0.5;   // Brute force step size parallel. 0.5 and above works.
             t1 = omp_get_wtime();
         #else
-            const double brute_force_step_size = 0.2;   // Brute force step size parallel. 0.2 is good.
             t1 = std::chrono::steady_clock::now();
         #endif
 
@@ -241,6 +266,10 @@ int main(int argc, char *argv[])
             brute_force_step_size,  // Step size for new positions for brute force.
             debug
         );
+        system_2.set_wave_function(interaction);
+        system_2.set_quantum_force(interaction);
+        system_2.set_local_energy(interaction);
+        system_2.set_seed(seed);
         system_2.solve();
         system_2.write_to_file_particles("generated_data/output_brute_force_particles.txt");
         
@@ -307,7 +336,11 @@ int main(int argc, char *argv[])
         initial_alpha_gd,
         beta,
         importance_time_step,
-        gd_tolerance
+        gd_tolerance,
+        brute_force_step_size,
+        gradient_descent,
+        importance_sampling,
+        brute_force
     );
 
     return 0;
