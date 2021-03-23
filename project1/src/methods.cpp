@@ -281,8 +281,7 @@ void ImportanceSampling::one_variation(int variation)
             for (particle = 0; particle < n_particles; particle++)
             {   /*
                 Iterate over all particles.  In this loop, new
-                proposed positions and wave functions are
-                calculated.
+                proposed positions are calculated.
                 */
                 for (dim = 0; dim < n_dims; dim++)
                 {   /*
@@ -327,10 +326,9 @@ void ImportanceSampling::one_variation(int variation)
                 
                 if (uniform(engine) < greens_ratio*wave_ratio)
                 {   /*
-                    Metropolis step with new acceptance criterion.
+                    Metropolis check.
                     */
-
-                    acceptance++;    // Debug.                
+                    acceptance++;    // Debug.
                     pos_current.col(particle) = pos_new.col(particle);
                     qforce_current.col(particle) = qforce_new.col(particle);
                     wave_current = wave_new;
