@@ -157,7 +157,20 @@ int main(int argc, char *argv[])
 
     else if ((!interaction) and (n_dims == 3) and (!parallel) and (brute_force))
     {   /*
-        Interaction OFF, 3D, parallel and importance.
+        Interaction OFF, 3D, serial and brute force.
+        */
+        n_particles = 10;     // Number of particles.
+        n_mc_cycles = 1e6;
+        n_variations = 30;
+        importance_time_step = 0.01;
+        beta = 1;
+        alphas = arma::linspace(0.4, 0.6, n_variations);
+        brute_force_step_size = 0.2;
+    }
+
+    else if ((!interaction) and (n_dims == 3) and (parallel) and (brute_force))
+    {   /*
+        Interaction OFF, 3D, parallel and brute force.
         */
         n_particles = 10;     // Number of particles.
         n_mc_cycles = 1e6;
