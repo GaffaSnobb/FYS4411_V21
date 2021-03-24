@@ -11,7 +11,6 @@
 #include <sstream>
 #include <string>           // String type, string maipulation.
 #include "omp.h"            // Parallelization.
-#include "reverse.hpp"      // Numerical differentiation.
 #include "forward.hpp"      // Numerical differentiation.
 #include "wave_function.h"
 #include "local_energy.h"
@@ -26,7 +25,7 @@ class VMC
         std::ofstream outfile;          // Output file.
         const int n_variations;         // Number of variations.
         const int n_mc_cycles;          // Number of MC cycles.
-        double seed = 1337;                // RNG seed.
+        double seed = 1337;             // RNG seed.
         const int n_particles;          // Number of particles.
         const int n_dims;               // Number of spatial dimensions.
 
