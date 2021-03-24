@@ -45,8 +45,8 @@ autodiff::HigherOrderDual<2> wave_function_1d_no_interaction(
 
     Parameters
     ----------
-    pos : autodiff::var
-        Position of a single particle.
+    x : autodiff::HigherOrderDual<2>
+        x position of a single particle.
 
     params : Params struct
         For passing function parameters to autodiff::forward enabled
@@ -66,16 +66,89 @@ autodiff::HigherOrderDual<2> wave_function_1d_no_interaction(
     return autodiff::forward::exp(-params.alpha*x*x);
 }
 
-double wave_function_exponent_2d_no_interaction(
+autodiff::HigherOrderDual<2> wave_function_2d_no_interaction(
+    autodiff::HigherOrderDual<2> &x,
+    autodiff::HigherOrderDual<2> &y,
+    const struct Params &params
+)
+{   /*
+    For numerical differentiation with autodiff.
+
+    Parameters
+    ----------
+    x : autodiff::HigherOrderDual<2>
+        x position of a single particle.
+
+    y : autodiff::HigherOrderDual<2>
+        y position of a single particle.
+
+    params : Params struct
+        For passing function parameters to autodiff::forward enabled
+        funstions. params contains:
+
+        alpha : double
+            Variational parameter.
+
+        beta : double
+            ??? parameter.
+
+    Returns
+    -------
+    : autodiff::HigherOrderDual<2>
+        Wave function evaluated for a single particle at a single point.
+    */
+    return autodiff::forward::exp(-params.alpha*(x*x + y*y));
+}
+
+autodiff::HigherOrderDual<2> wave_function_3d_no_interaction(
+    autodiff::HigherOrderDual<2> &x,
+    autodiff::HigherOrderDual<2> &y,
+    autodiff::HigherOrderDual<2> &z,
+    const struct Params &params
+)
+{   /*
+    For numerical differentiation with autodiff.
+
+    Parameters
+    ----------
+    x : autodiff::HigherOrderDual<2>
+        x position of a single particle.
+
+    y : autodiff::HigherOrderDual<2>
+        y position of a single particle.
+
+    z : autodiff::HigherOrderDual<2>
+        z position of a single particle.
+
+    params : Params struct
+        For passing function parameters to autodiff::forward enabled
+        funstions. params contains:
+
+        alpha : double
+            Variational parameter.
+
+        beta : double
+            ??? parameter.
+
+    Returns
+    -------
+    : autodiff::HigherOrderDual<2>
+        Wave function evaluated for a single particle at a single point.
+    */
+    return autodiff::forward::exp(-params.alpha*(x*x + y*y + params.beta*z*z));
+}
+
+double wave_function_2d_no_interaction_with_loop(
     arma::Mat<double> pos,
     double alpha,
-    double beta
+    double beta,
+    const int n_particles
 )
 {   /*
     Parameters
     ----------
     pos : arma::Col<double>
-        Vector of position of a particle.
+        Vector of position of all particles. 3xN.
 
     alpha : double
         Variational parameter.
@@ -83,12 +156,26 @@ double wave_function_exponent_2d_no_interaction(
     beta : double
         ??? parameter.
 
+    n_particles : constant integer
+        The total number of particles.
+
     Returns
     -------
     : double
-        The resulting wave function exponent.
+        The resulting wave function.
     */
-    return -alpha*(pos(0)*pos(0) + pos(1)*pos(1));
+
+    double res = 0;
+    double x;
+    double y;
+
+    for (int particle = 0; particle < n_particles; particle++)
+    {   
+        x = pos(0, particle);
+        y = pos(1, particle);
+        res += -alpha*(x*x + y*y);
+    }
+    return std::exp(res);
 }
 
 double wave_function_exponent_3d_no_interaction(

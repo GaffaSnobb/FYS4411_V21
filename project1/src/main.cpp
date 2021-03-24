@@ -63,26 +63,26 @@ int main(int argc, char *argv[])
     arma::Col<double> alphas;
 
     // Global parameters:
-    const int n_dims = 1;           // Number of dimensions.
+    const int n_dims = 3;           // Number of dimensions.
     int n_particles = 10;     // Number of particles. NB: May be overwritten later in this function.
     const bool interaction = false;
     const bool debug = false;       // Toggle debug print on / off.
-    const double seed = 1337;       // RNG seed.
+    double seed = 1337;       // RNG seed.
     const double gd_tolerance = 1e-3;
+    const bool numerical_differentiation = true;
 
-    // Select methods (might be wise to only choose one at a time):
+    // Select methods (choose one at a time):
     const bool gradient_descent = false;
     const bool importance_sampling = false;
     const bool brute_force = true;
-    const bool numerical_differentiation = false;
     
-
     #ifdef _OPENMP
         parallel = true;
     #else
         parallel = false;
     #endif
 
+    // 3D --------------------------------------------------------------
     if ((interaction) and (n_dims == 3) and (parallel) and (gradient_descent) and (!numerical_differentiation))
     {   /*
         Interaction ON, 3D and parallelized.
@@ -193,7 +193,49 @@ int main(int argc, char *argv[])
         brute_force_step_size = 0.2;
     }
 
-    else if ((!interaction) and (n_dims == 1) and (!parallel) and (brute_force) and (!numerical_differentiation))
+    else if (!interaction and (n_dims == 3) and parallel and brute_force and numerical_differentiation)
+    {   /*
+        Interaction OFF, 3D, parallel, brute force and numerical
+        differentiation.
+        */
+        n_particles = 10;
+        n_mc_cycles = 1e5;
+        n_variations = 20;
+        beta = 1;
+        alphas = arma::linspace(0.1, 1, n_variations);
+        brute_force_step_size = 0.2;
+    }
+
+    // 3D end ----------------------------------------------------------
+    // 2D --------------------------------------------------------------
+    else if (!interaction and (n_dims == 2) and parallel and brute_force and !numerical_differentiation)
+    {   /*
+        Interaction OFF, 2D, parallel, brute force and analytical
+        differentiation.
+        */
+        n_particles = 10;
+        n_mc_cycles = 1e5;
+        n_variations = 30;
+        beta = 1;
+        alphas = arma::linspace(0.1, 1, n_variations);
+        brute_force_step_size = 0.2;
+    }
+
+    else if (!interaction and (n_dims == 2) and parallel and brute_force and numerical_differentiation)
+    {   /*
+        Interaction OFF, 2D, parallel, brute force and numerical
+        differentiation.
+        */
+        n_particles = 10;
+        n_mc_cycles = 1e5;
+        n_variations = 30;
+        beta = 1;
+        alphas = arma::linspace(0.1, 1, n_variations);
+        brute_force_step_size = 0.2;
+    }
+    // 2D end ----------------------------------------------------------
+    // 1D --------------------------------------------------------------
+    else if (!interaction and (n_dims == 1) and !parallel and brute_force and !numerical_differentiation)
     {   /*
         Interaction OFF, 1D, serial and brute force.
         */
@@ -205,6 +247,30 @@ int main(int argc, char *argv[])
         brute_force_step_size = 0.2;
     }
 
+    else if (!interaction and (n_dims == 1) and !parallel and brute_force and numerical_differentiation)
+    {   /*
+        Interaction OFF, 1D, serial, brute force and numerical differentiation.
+        */
+        n_particles = 10;
+        n_mc_cycles = 1e5;
+        n_variations = 10;
+        beta = 1;
+        alphas = arma::linspace(0.1, 1, n_variations);
+        brute_force_step_size = 0.2;
+    }
+
+    else if (!interaction and (n_dims == 1) and parallel and brute_force and numerical_differentiation)
+    {   /*
+        Interaction OFF, 1D, parallel, brute force and numerical differentiation.
+        */
+        n_particles = 10;
+        n_mc_cycles = 1e5;
+        n_variations = 30;
+        beta = 1;
+        alphas = arma::linspace(0.1, 1, n_variations);
+        brute_force_step_size = 0.2;
+    }
+    // 1D end ----------------------------------------------------------
     else
     {
         std::cout << "No parameters specified for:";

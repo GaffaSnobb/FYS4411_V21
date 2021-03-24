@@ -70,14 +70,14 @@ void VMC::set_seed(double seed_input)
 }
 
 void VMC::set_quantum_force(bool interaction)
-{
+{   
     if ((n_dims == 1) and !interaction)
     {
-        quantum_force_ptr = &quantum_force_3d_no_interaction;   // NB!! This may be wrong!
+        quantum_force_ptr = &quantum_force_3d_no_interaction;   // NB!! This might be wrong!
     }
     else if ((n_dims == 2) and !interaction)
     {
-        not_implemented_error("quantum force", interaction);
+        quantum_force_ptr = &quantum_force_3d_no_interaction;   // NB!! This might be wrong!
     }
     else if ((n_dims == 3) and !interaction)
     {
@@ -88,7 +88,7 @@ void VMC::set_quantum_force(bool interaction)
         not_implemented_error("quantum force", interaction);
     }
     else if ((n_dims == 2) and interaction)
-    {
+    {   
         not_implemented_error("quantum force", interaction);
     }
     else if ((n_dims == 3) and interaction)
@@ -120,29 +120,37 @@ void VMC::set_local_energy(bool interaction)
     {
         local_energy_ptr = &local_energy_1d_no_interaction_numerical_differentiation;
     }
+    else if ((n_dims == 1) and interaction and !numerical_differentiation)
+    {
+        not_implemented_error("local energy", interaction);
+    }
     else if ((n_dims == 2) and !interaction and !numerical_differentiation)
     {
         local_energy_ptr = &local_energy_2d_no_interaction;
     }
-    else if ((n_dims == 3) and !interaction and !numerical_differentiation)
+    else if ((n_dims == 2) and !interaction and numerical_differentiation)
     {
-        local_energy_ptr = &local_energy_3d_no_interaction;
-    }
-    else if ((n_dims == 1) and interaction and !numerical_differentiation)
-    {
-        not_implemented_error("local energy", interaction);
+        local_energy_ptr = &local_energy_2d_no_interaction_numerical_differentiation;
     }
     else if ((n_dims == 2) and interaction and !numerical_differentiation)
     {
         not_implemented_error("local energy", interaction);
     }
+    else if ((n_dims == 3) and !interaction and !numerical_differentiation)
+    {
+        local_energy_ptr = &local_energy_3d_no_interaction;
+    }
     else if ((n_dims == 3) and interaction and !numerical_differentiation)
     {    
         local_energy_ptr = &local_energy_3d_interaction;        
     }
+    else if ((n_dims == 3) and !interaction and numerical_differentiation)
+    {    
+        local_energy_ptr = &local_energy_3d_no_interaction_numerical_differentiation;
+    }
     else
     {
-        not_implemented_error("quantum force", interaction);
+        not_implemented_error("local energy", interaction);
     }
 
     call_set_local_energy = true;
@@ -164,7 +172,7 @@ void VMC::set_wave_function(bool interaction)
     }
     else if ((n_dims == 2) and !(interaction))
     {
-        not_implemented_error("wave function", interaction);
+        wave_function_ptr = &wave_function_2d_no_interaction_with_loop;
     }
     else if ((n_dims == 3) and !(interaction))
     {

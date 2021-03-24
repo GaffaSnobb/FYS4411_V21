@@ -349,7 +349,10 @@ double local_energy_2d_no_interaction(
     n_particles : constant integer
         The total number of particles.
     */
-    return -hbar*hbar*alpha/m*(2*alpha*(pos(0, current_particle)*pos(0, current_particle) + pos(1, current_particle)*pos(1, current_particle)) - 2) + 0.5*m*omega*omega*(pos(0, current_particle)*pos(0, current_particle) + pos(1, current_particle)*pos(1, current_particle));
+    double x = pos(0, current_particle);
+    double y = pos(1, current_particle);
+    return -hbar*hbar*alpha/m*(2*alpha*(x*x + y*y) - 2) +
+        0.5*m*omega*omega*(x*x + y*y);
 }
 
 double local_energy_1d_no_interaction(
@@ -426,5 +429,121 @@ double local_energy_1d_no_interaction_numerical_differentiation(
         autodiff::forward::at(x, params)
     );
 
-    return -hbar*double(uxx)/(2*m*double(u.val)) + 0.5*m*omega*omega*pos(0, current_particle)*pos(0, current_particle);
+    return -hbar*double(uxx)/(2*m*double(u.val)) +
+        0.5*m*omega*omega*pos(0, current_particle)*pos(0, current_particle);
+}
+
+double local_energy_2d_no_interaction_numerical_differentiation(
+    const arma::Mat<double> &pos,
+    const double alpha,
+    const double beta,
+    const int current_particle,
+    const int n_particles
+)
+{   /*
+    Numerical expression for the local energy for 2 dimensions, no
+    interaction between particles.
+
+    Parameters
+    ----------
+    pos : arma::Mat<double> reference
+        Positions of all particles.
+
+    alpha : constant double
+        Current variational parameter.
+
+    beta : constant double
+        ???
+
+    current_particle : constant integer
+        The index of the current particle.
+
+    n_particles : constant integer
+        The total number of particles.
+    */
+
+    Params params;
+    params.alpha = alpha;
+    params.beta = beta;
+    double x = pos(0, current_particle);
+    double y = pos(1, current_particle);
+
+    autodiff::HigherOrderDual<2> x_autodiff = x;
+    autodiff::HigherOrderDual<2> y_autodiff = y;
+    autodiff::HigherOrderDual<2> u;
+    u = wave_function_2d_no_interaction(x_autodiff, y_autodiff, params);
+
+    autodiff::dual uxx = autodiff::forward::derivative(
+        wave_function_2d_no_interaction,
+        autodiff::forward::wrt<2>(x_autodiff),
+        autodiff::forward::at(x_autodiff, y_autodiff, params)
+    );
+    autodiff::dual uyy = autodiff::forward::derivative(
+        wave_function_2d_no_interaction,
+        autodiff::forward::wrt<2>(y_autodiff),
+        autodiff::forward::at(x_autodiff, y_autodiff, params)
+    );
+    return -hbar*(double(uxx) + double(uyy))/(2*m*double(u.val)) +
+        0.5*m*omega*omega*(x*x + y*y);
+}
+
+double local_energy_3d_no_interaction_numerical_differentiation(
+    const arma::Mat<double> &pos,
+    const double alpha,
+    const double beta,
+    const int current_particle,
+    const int n_particles
+)
+{   /*
+    Numerical expression for the local energy for 3 dimensions, no
+    interaction between particles.
+
+    Parameters
+    ----------
+    pos : arma::Mat<double> reference
+        Positions of all particles.
+
+    alpha : constant double
+        Current variational parameter.
+
+    beta : constant double
+        ???
+
+    current_particle : constant integer
+        The index of the current particle.
+
+    n_particles : constant integer
+        The total number of particles.
+    */
+
+    Params params;
+    params.alpha = alpha;
+    params.beta = beta;
+    double x = pos(0, current_particle);
+    double y = pos(1, current_particle);
+    double z = pos(2, current_particle);
+
+    autodiff::HigherOrderDual<2> x_autodiff = x;
+    autodiff::HigherOrderDual<2> y_autodiff = y;
+    autodiff::HigherOrderDual<2> z_autodiff = z;
+    autodiff::HigherOrderDual<2> u;
+    u = wave_function_3d_no_interaction(x_autodiff, y_autodiff, z_autodiff, params);
+
+    autodiff::dual uxx = autodiff::forward::derivative(
+        wave_function_3d_no_interaction,
+        autodiff::forward::wrt<2>(x_autodiff),
+        autodiff::forward::at(x_autodiff, y_autodiff, z_autodiff, params)
+    );
+    autodiff::dual uyy = autodiff::forward::derivative(
+        wave_function_3d_no_interaction,
+        autodiff::forward::wrt<2>(y_autodiff),
+        autodiff::forward::at(x_autodiff, y_autodiff, z_autodiff, params)
+    );
+    autodiff::dual uzz = autodiff::forward::derivative(
+        wave_function_3d_no_interaction,
+        autodiff::forward::wrt<2>(z_autodiff),
+        autodiff::forward::at(x_autodiff, y_autodiff, z_autodiff, params)
+    );
+    return -hbar*(double(uxx) + double(uyy) + double(uzz))/(2*m*double(u.val)) +
+        0.5*m*omega*omega*(x*x + y*y + z*z);
 }
