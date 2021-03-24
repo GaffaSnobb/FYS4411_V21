@@ -16,6 +16,7 @@ class BruteForce : public VMC
             arma::Col<double> alphas,
             const double beta_input,
             const double brute_force_step_size_input,
+            const bool numerical_differentiation_input,
             bool debug
         );
         void one_variation(int variation);
@@ -38,6 +39,7 @@ class ImportanceSampling : public VMC
             arma::Col<double> alphas,
             const double beta_input,
             const double importance_time_step_input,
+            const bool numerical_differentiation_input,
             bool debug_input
         );
         void one_variation(int variation);
@@ -58,6 +60,7 @@ class GradientDescent : public ImportanceSampling
             const double learning_rate_input,
             const double initial_alpha_input,
             const double beta_input,
+            const bool numerical_differentiation_input,
             bool debug_input
         );
         void solve(const double tol);

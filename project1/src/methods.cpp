@@ -8,6 +8,7 @@ BruteForce::BruteForce(
     arma::Col<double> alphas_input,
     const double beta_input,
     const double brute_force_step_size_input,
+    const bool numerical_differentiation_input,
     bool debug_input
 ) : VMC(
         n_dims_input,
@@ -16,6 +17,7 @@ BruteForce::BruteForce(
         n_particles_input,
         alphas_input,
         beta_input,
+        numerical_differentiation_input,
         debug_input
     ),
     step_size(brute_force_step_size_input)
@@ -169,6 +171,7 @@ ImportanceSampling::ImportanceSampling(
     arma::Col<double> alphas_input,
     const double beta_input,
     const double importance_time_step_input,
+    const bool numerical_differentiation_input,
     bool debug_input
 ) : VMC(
         n_dims_input,
@@ -177,6 +180,7 @@ ImportanceSampling::ImportanceSampling(
         n_particles_input,
         alphas_input,
         beta_input,
+        numerical_differentiation_input,
         debug_input
     ),
     time_step(importance_time_step_input)
@@ -395,6 +399,7 @@ GradientDescent::GradientDescent(
     const double learning_rate_input,
     const double initial_alpha_input,
     const double beta_input,
+    const bool numerical_differentiation_input,
     bool debug_input
 ) : ImportanceSampling(
         n_dims_input,
@@ -404,6 +409,7 @@ GradientDescent::GradientDescent(
         arma::linspace(0, 0, n_variations_input),   // Dummy input. Not in use.
         beta_input,
         importance_time_step_input,
+        numerical_differentiation_input,
         debug_input
     ),
     learning_rate(learning_rate_input),

@@ -7,6 +7,7 @@ VMC::VMC(
     const int n_particles_input,
     arma::Col<double> alphas_input,
     const double beta_input,
+    const bool numerical_differentiation_input,
     bool debug_input
 ) : n_dims(n_dims_input),
     n_variations(n_variations_input),
@@ -47,6 +48,7 @@ VMC::VMC(
     energies = arma::Mat<double>(n_mc_cycles, n_variations);
     alphas = alphas_input;
     n_variations_final = n_variations;  // If stop condition is not reached.
+    numerical_differentiation = numerical_differentiation_input;
     debug = debug_input;                // For toggling debug print on / off.
 
     acceptances = arma::Col<double>(n_variations);   // Debug.
@@ -69,27 +71,27 @@ void VMC::set_seed(double seed_input)
 
 void VMC::set_quantum_force(bool interaction)
 {
-    if ((n_dims == 1) and !(interaction))
+    if ((n_dims == 1) and !(interaction) and !numerical_differentiation)
     {
         quantum_force_ptr = &quantum_force_3d_no_interaction;   // NB!! This may be wrong!
     }
-    else if ((n_dims == 2) and !(interaction))
+    else if ((n_dims == 2) and !(interaction) and !numerical_differentiation)
     {
         not_implemented_error("quantum force", interaction);
     }
-    else if ((n_dims == 3) and !(interaction))
+    else if ((n_dims == 3) and !(interaction) and !numerical_differentiation)
     {
         quantum_force_ptr = &quantum_force_3d_no_interaction;
     }
-    else if ((n_dims == 1) and interaction)
+    else if ((n_dims == 1) and interaction and !numerical_differentiation)
     {
         not_implemented_error("quantum force", interaction);
     }
-    else if ((n_dims == 2) and interaction)
+    else if ((n_dims == 2) and interaction and !numerical_differentiation)
     {
         not_implemented_error("quantum force", interaction);
     }
-    else if ((n_dims == 3) and interaction)
+    else if ((n_dims == 3) and interaction and !numerical_differentiation)
     {   
         quantum_force_ptr = &quantum_force_3d_interaction;
     }
@@ -110,27 +112,27 @@ void VMC::set_local_energy(bool interaction)
         Toggle interaction between particles on / off.
     */
 
-    if ((n_dims == 1) and !(interaction))
+    if ((n_dims == 1) and !(interaction) and !numerical_differentiation)
     {
         local_energy_ptr = &local_energy_1d_no_interaction;
     }
-    else if ((n_dims == 2) and !(interaction))
+    else if ((n_dims == 2) and !(interaction) and !numerical_differentiation)
     {
         local_energy_ptr = &local_energy_2d_no_interaction;
     }
-    else if ((n_dims == 3) and !(interaction))
+    else if ((n_dims == 3) and !(interaction) and !numerical_differentiation)
     {
         local_energy_ptr = &local_energy_3d_no_interaction;
     }
-    else if ((n_dims == 1) and (interaction))
+    else if ((n_dims == 1) and (interaction) and !numerical_differentiation)
     {
         not_implemented_error("local energy", interaction);
     }
-    else if ((n_dims == 2) and (interaction))
+    else if ((n_dims == 2) and (interaction) and !numerical_differentiation)
     {
         not_implemented_error("local energy", interaction);
     }
-    else if ((n_dims == 3) and (interaction))
+    else if ((n_dims == 3) and (interaction) and !numerical_differentiation)
     {    
         local_energy_ptr = &local_energy_3d_interaction;        
     }

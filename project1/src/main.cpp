@@ -16,7 +16,8 @@ void print_parameters(
     double brute_force_step_size,
     bool gradient_descent,
     bool importance_sampling,
-    bool brute_force
+    bool brute_force,
+    bool numerical_differentiation
 )
 {
     std::cout << "PARAMETERS:" << std::endl;
@@ -27,6 +28,7 @@ void print_parameters(
     std::cout << "gradient_descent: " << gradient_descent << std::endl;
     std::cout << "importance_sampling: " << importance_sampling << std::endl;
     std::cout << "brute_force: " << brute_force << std::endl;
+    std::cout << "numerical_differentiation: " << numerical_differentiation << std::endl;
     std::cout << "n dims: " << n_dims << std::endl;
 
     std::cout << "n_mc_cycles: " << n_mc_cycles << std::endl;
@@ -72,6 +74,7 @@ int main(int argc, char *argv[])
     const bool gradient_descent = false;
     const bool importance_sampling = false;
     const bool brute_force = true;
+    const bool numerical_differentiation = false;
     
 
     #ifdef _OPENMP
@@ -80,7 +83,7 @@ int main(int argc, char *argv[])
         parallel = false;
     #endif
 
-    if ((interaction) and (n_dims == 3) and (parallel) and (gradient_descent))
+    if ((interaction) and (n_dims == 3) and (parallel) and (gradient_descent) and (!numerical_differentiation))
     {   /*
         Interaction ON, 3D and parallelized.
         */
@@ -94,7 +97,7 @@ int main(int argc, char *argv[])
         alphas = arma::linspace(0.1, 1, n_variations);
     }
 
-    else if ((!interaction) and (n_dims == 3) and (parallel) and (gradient_descent))
+    else if ((!interaction) and (n_dims == 3) and (parallel) and (gradient_descent) and (!numerical_differentiation))
     {   /*
         Interaction OFF, 3D and parallelized.
         */
@@ -108,7 +111,7 @@ int main(int argc, char *argv[])
         alphas = arma::linspace(0.1, 1, n_variations);
     }
 
-    else if ((interaction) and (n_dims == 3) and (parallel) and (importance_sampling))
+    else if ((interaction) and (n_dims == 3) and (parallel) and (importance_sampling) and (!numerical_differentiation))
     {   /*
         Interaction ON, 3D, parallelized and importance.
         */
@@ -119,7 +122,7 @@ int main(int argc, char *argv[])
         alphas = arma::linspace(0.1, 0.6, n_variations);
     }
 
-    else if ((interaction) and (n_dims == 3) and (!parallel) and (importance_sampling))
+    else if ((interaction) and (n_dims == 3) and (!parallel) and (importance_sampling) and (!numerical_differentiation))
     {   /*
         Interaction ON, 3D, serial and importance.
         */
@@ -131,7 +134,7 @@ int main(int argc, char *argv[])
         alphas = arma::linspace(0.3, 0.7, n_variations);
     }
 
-    else if ((!interaction) and (n_dims == 3) and (!parallel) and (importance_sampling))
+    else if ((!interaction) and (n_dims == 3) and (!parallel) and (importance_sampling) and (!numerical_differentiation))
     {   /*
         Interaction OFF, 3D, serial and importance.
         */
@@ -143,7 +146,7 @@ int main(int argc, char *argv[])
         alphas = arma::linspace(0.4, 0.6, n_variations);
     }
 
-    else if ((!interaction) and (n_dims == 3) and (parallel) and (importance_sampling))
+    else if ((!interaction) and (n_dims == 3) and (parallel) and (importance_sampling) and (!numerical_differentiation))
     {   /*
         Interaction OFF, 3D, parallel and importance.
         */
@@ -154,7 +157,7 @@ int main(int argc, char *argv[])
         alphas = arma::linspace(0.1, 1, n_variations);
     }
 
-    else if ((!interaction) and (n_dims == 3) and (!parallel) and (brute_force))
+    else if ((!interaction) and (n_dims == 3) and (!parallel) and (brute_force) and (!numerical_differentiation))
     {   /*
         Interaction OFF, 3D, serial and brute force.
         */
@@ -166,7 +169,7 @@ int main(int argc, char *argv[])
         brute_force_step_size = 0.2;
     }
 
-    else if ((!interaction) and (n_dims == 3) and (parallel) and (brute_force))
+    else if ((!interaction) and (n_dims == 3) and (parallel) and (brute_force) and (!numerical_differentiation))
     {   /*
         Interaction OFF, 3D, parallel and brute force.
         */
@@ -178,7 +181,7 @@ int main(int argc, char *argv[])
         brute_force_step_size = 0.2;
     }
 
-    else if ((interaction) and (n_dims == 3) and (parallel) and (brute_force))
+    else if ((interaction) and (n_dims == 3) and (parallel) and (brute_force) and (!numerical_differentiation))
     {   /*
         Interaction ON, 3D, parallel and brute force.
         */
@@ -190,7 +193,7 @@ int main(int argc, char *argv[])
         brute_force_step_size = 0.2;
     }
 
-    else if ((!interaction) and (n_dims == 1) and (!parallel) and (brute_force))
+    else if ((!interaction) and (n_dims == 1) and (!parallel) and (brute_force) and (!numerical_differentiation))
     {   /*
         Interaction OFF, 1D, serial and brute force.
         */
@@ -211,6 +214,7 @@ int main(int argc, char *argv[])
         std::cout << "\ngradient_descent: " << gradient_descent;
         std::cout << "\nimportance_sampling: " << importance_sampling;
         std::cout << "\nbrute_force: " << brute_force;
+        std::cout << "\nnumerical_differentiation: " << numerical_differentiation;
         std::cout << "\nExiting...\n" << std::endl;
         exit(0);
     }
@@ -230,7 +234,8 @@ int main(int argc, char *argv[])
         brute_force_step_size,
         gradient_descent,
         importance_sampling,
-        brute_force
+        brute_force,
+        numerical_differentiation
     );
     
     #ifdef _OPENMP
@@ -257,6 +262,7 @@ int main(int argc, char *argv[])
             alphas,
             beta,
             importance_time_step,
+            numerical_differentiation,
             debug
         );
         system_1.set_wave_function(interaction);
@@ -297,6 +303,7 @@ int main(int argc, char *argv[])
             alphas,
             beta,
             brute_force_step_size,  // Step size for new positions for brute force.
+            numerical_differentiation,
             debug
         );
         system_2.set_wave_function(interaction);
@@ -338,6 +345,7 @@ int main(int argc, char *argv[])
             learning_rate,          // Learning rate for GD.
             initial_alpha_gd,       // Initial guess for the variational parameter.
             beta,
+            numerical_differentiation,
             debug
         );
         system_3.set_wave_function(interaction);
@@ -373,7 +381,8 @@ int main(int argc, char *argv[])
         brute_force_step_size,
         gradient_descent,
         importance_sampling,
-        brute_force
+        brute_force,
+        numerical_differentiation
     );
 
     return 0;

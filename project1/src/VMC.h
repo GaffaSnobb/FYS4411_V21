@@ -49,6 +49,7 @@ class VMC
         bool call_set_quantum_force = false;
         bool call_set_wave_function = false;
         bool call_set_local_energy = false;
+        bool numerical_differentiation = false;
         bool debug = false;     // Toggle debug print on / off.
 
         // Moved initialization to class constructor.
@@ -97,6 +98,7 @@ class VMC
             const int n_particles_input,
             arma::Col<double> alphas,
             const double beta_input,
+            const bool numerical_differentiation_input,
             bool debug_input
         );
         void set_seed(double seed_input);
