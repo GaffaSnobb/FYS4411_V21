@@ -48,16 +48,20 @@ autodiff::HigherOrderDual<2> wave_function_1d_no_interaction(
     pos : autodiff::var
         Position of a single particle.
 
-    alpha : double
-        Variational parameter.
+    params : Params struct
+        For passing function parameters to autodiff::forward enabled
+        funstions. params contains:
 
-    beta : double
-        ??? parameter.
+        alpha : double
+            Variational parameter.
+
+        beta : double
+            ??? parameter.
 
     Returns
     -------
-    : autodiff::var
-        Wave function evaluated for a single particle.
+    : autodiff::HigherOrderDual<2>
+        Wave function evaluated for a single particle at a single point.
     */
     return autodiff::forward::exp(-params.alpha*x*x);
 }
