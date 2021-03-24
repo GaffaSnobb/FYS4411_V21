@@ -112,29 +112,37 @@ void VMC::set_local_energy(bool interaction)
         Toggle interaction between particles on / off.
     */
 
-    if ((n_dims == 1) and !(interaction) and !numerical_differentiation)
+    if ((n_dims == 1) and !interaction and !numerical_differentiation)
     {
         local_energy_ptr = &local_energy_1d_no_interaction;
     }
-    else if ((n_dims == 2) and !(interaction) and !numerical_differentiation)
+    else if ((n_dims == 1) and !interaction and numerical_differentiation)
+    {
+        local_energy_ptr = &local_energy_1d_no_interaction_numerical_differentiation;
+    }
+    else if ((n_dims == 2) and !interaction and !numerical_differentiation)
     {
         local_energy_ptr = &local_energy_2d_no_interaction;
     }
-    else if ((n_dims == 3) and !(interaction) and !numerical_differentiation)
+    else if ((n_dims == 3) and !interaction and !numerical_differentiation)
     {
         local_energy_ptr = &local_energy_3d_no_interaction;
     }
-    else if ((n_dims == 1) and (interaction) and !numerical_differentiation)
+    else if ((n_dims == 1) and interaction and !numerical_differentiation)
     {
         not_implemented_error("local energy", interaction);
     }
-    else if ((n_dims == 2) and (interaction) and !numerical_differentiation)
+    else if ((n_dims == 2) and interaction and !numerical_differentiation)
     {
         not_implemented_error("local energy", interaction);
     }
-    else if ((n_dims == 3) and (interaction) and !numerical_differentiation)
+    else if ((n_dims == 3) and interaction and !numerical_differentiation)
     {    
         local_energy_ptr = &local_energy_3d_interaction;        
+    }
+    else
+    {
+        not_implemented_error("quantum force", interaction);
     }
 
     call_set_local_energy = true;

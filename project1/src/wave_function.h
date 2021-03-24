@@ -8,10 +8,9 @@ double wave_function_1d_no_interaction_with_loop(
     double beta,
     const int n_particles
 );
-autodiff::var wave_function_1d_no_interaction(
-    autodiff::var x,
-    double alpha,
-    double beta
+autodiff::HigherOrderDual<2> wave_function_1d_no_interaction(
+    autodiff::HigherOrderDual<2> &x,
+    const struct Params &params
 );
 double wave_function_exponent_2d_no_interaction(
     arma::Mat<double> pos,
@@ -40,5 +39,4 @@ double wave_function_3d_diff_wrt_alpha(
     double alpha,
     double beta
 );
-
 #endif

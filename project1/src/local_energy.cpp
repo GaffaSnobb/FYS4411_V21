@@ -380,6 +380,69 @@ double local_energy_1d_no_interaction(
     n_particles : constant integer
         The total number of particles.
     */
-    return -hbar*hbar*alpha/m*(2*alpha*pos(0, current_particle)*pos(0, current_particle) - 1) +
-        0.5*m*omega*omega*pos(0, current_particle)*pos(0, current_particle);
+    double x = pos(0, current_particle);
+    return -hbar*hbar*alpha/m*(2*alpha*x*x - 1) + 0.5*m*omega*omega*x*x;
+}
+
+double local_energy_1d_no_interaction_numerical_differentiation(
+    const arma::Mat<double> &pos,
+    const double alpha,
+    const double beta,
+    const int current_particle,
+    const int n_particles
+)
+{   /*
+    Numerical expression for the local energy for 1 dimensions, no
+    interaction between particles.
+
+    Parameters
+    ----------
+    pos : arma::Mat<double> reference
+        Positions of all particles.
+
+    alpha : constant double
+        Current variational parameter.
+
+    beta : constant double
+        ???
+
+    current_particle : constant integer
+        The index of the current particle.
+
+    n_particles : constant integer
+        The total number of particles.
+    */
+
+    // autodiff::var x = pos(0, current_particle);
+    // // autodiff::var u = wave_function_1d_no_interaction(x, alpha, beta);
+    // autodiff::var u = autodiff::reverse::exp(-alpha*x*x);
+    // std::array<autodiff::reverse::Variable<double>, 1> ux;  // First derivative.
+    // std::array<autodiff::reverse::Variable<double>, 1> uxx; // Second derivative.
+    // ux = autodiff::reverse::derivativesx(u, autodiff::reverse::wrt(x));
+    // uxx = autodiff::reverse::derivativesx(ux[0], autodiff::reverse::wrt(x));
+
+    // return -hbar*double(ux[0])/(2*m*double(u)) + 0.5*m*omega*omega*pos(0, current_particle)*pos(0, current_particle);
+
+    Params params;
+    params.alpha = alpha;
+    params.beta = beta;
+
+    autodiff::HigherOrderDual<2> x = pos(0, current_particle);
+    autodiff::HigherOrderDual<2> u = wave_function_1d_no_interaction(x, params);
+
+    // autodiff::dual u = wave_function_1d_no_interaction(x, params);
+    // // autodiff::dual u = autodiff::forward::exp(-alpha*x*x);
+
+    // autodiff::dual ux = autodiff::forward::derivative(
+    //     wave_function_1d_no_interaction,
+    //     autodiff::forward::wrt(x),
+    //     autodiff::forward::at(x, params)
+    // );
+    autodiff::dual uxx = autodiff::forward::derivative(
+        wave_function_1d_no_interaction,
+        autodiff::forward::wrt<2>(x),
+        autodiff::forward::at(x, params)
+    );
+
+    return -hbar*double(uxx)/(2*m*double(u.val)) + 0.5*m*omega*omega*pos(0, current_particle)*pos(0, current_particle);
 }

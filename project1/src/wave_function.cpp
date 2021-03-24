@@ -36,10 +36,9 @@ double wave_function_1d_no_interaction_with_loop(
     return std::exp(res);
 }
 
-autodiff::var wave_function_1d_no_interaction(
-    autodiff::var x,
-    double alpha,
-    double beta
+autodiff::HigherOrderDual<2> wave_function_1d_no_interaction(
+    autodiff::HigherOrderDual<2> &x,
+    const struct Params &params
 )
 {   /*
     For numerical differentiation with autodiff.
@@ -60,7 +59,7 @@ autodiff::var wave_function_1d_no_interaction(
     : autodiff::var
         Wave function evaluated for a single particle.
     */
-    return autodiff::reverse::exp(-alpha*x*x);
+    return autodiff::forward::exp(-params.alpha*x*x);
 }
 
 double wave_function_exponent_2d_no_interaction(

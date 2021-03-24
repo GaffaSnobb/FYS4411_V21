@@ -12,6 +12,7 @@
 #include <string>           // String type, string maipulation.
 #include "omp.h"            // Parallelization.
 #include "reverse.hpp"      // Numerical differentiation.
+#include "forward.hpp"      // Numerical differentiation.
 #include "wave_function.h"
 #include "local_energy.h"
 #include "quantum_force.h"
@@ -112,6 +113,12 @@ class VMC
         virtual void one_variation(int variation);
         void not_implemented_error(std::string name, bool interaction);
         ~VMC();
+};
+
+struct Params
+{
+    autodiff::dual alpha;
+    autodiff::dual beta;
 };
 
 #endif
