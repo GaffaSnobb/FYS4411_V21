@@ -71,27 +71,27 @@ void VMC::set_seed(double seed_input)
 
 void VMC::set_quantum_force(bool interaction)
 {
-    if ((n_dims == 1) and !(interaction) and !numerical_differentiation)
+    if ((n_dims == 1) and !interaction)
     {
         quantum_force_ptr = &quantum_force_3d_no_interaction;   // NB!! This may be wrong!
     }
-    else if ((n_dims == 2) and !(interaction) and !numerical_differentiation)
+    else if ((n_dims == 2) and !interaction)
     {
         not_implemented_error("quantum force", interaction);
     }
-    else if ((n_dims == 3) and !(interaction) and !numerical_differentiation)
+    else if ((n_dims == 3) and !interaction)
     {
         quantum_force_ptr = &quantum_force_3d_no_interaction;
     }
-    else if ((n_dims == 1) and interaction and !numerical_differentiation)
+    else if ((n_dims == 1) and interaction)
     {
         not_implemented_error("quantum force", interaction);
     }
-    else if ((n_dims == 2) and interaction and !numerical_differentiation)
+    else if ((n_dims == 2) and interaction)
     {
         not_implemented_error("quantum force", interaction);
     }
-    else if ((n_dims == 3) and interaction and !numerical_differentiation)
+    else if ((n_dims == 3) and interaction)
     {   
         quantum_force_ptr = &quantum_force_3d_interaction;
     }
