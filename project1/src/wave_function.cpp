@@ -36,7 +36,7 @@ double wave_function_1d_no_interaction_with_loop(
     return std::exp(res);
 }
 
-autodiff::var wave_function_1d_no_interaction_with_loop(
+autodiff::var wave_function_1d_no_interaction(
     autodiff::var x,
     double alpha,
     double beta
