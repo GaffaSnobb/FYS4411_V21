@@ -61,17 +61,17 @@ int main(int argc, char *argv[])
     arma::Col<double> alphas;
 
     // Global parameters:
-    const int n_dims = 3;           // Number of dimensions.
+    const int n_dims = 1;           // Number of dimensions.
     int n_particles = 10;     // Number of particles. NB: May be overwritten later in this function.
     const bool interaction = false;
     const bool debug = false;       // Toggle debug print on / off.
     const double seed = 1337;       // RNG seed.
-    double gd_tolerance = 1e-3;
+    const double gd_tolerance = 1e-3;
 
     // Select methods (might be wise to only choose one at a time):
     const bool gradient_descent = false;
-    const bool importance_sampling = true;
-    const bool brute_force = false;
+    const bool importance_sampling = false;
+    const bool brute_force = true;
     
 
     #ifdef _OPENMP
@@ -187,6 +187,18 @@ int main(int argc, char *argv[])
         n_variations = 20;
         beta = 2.82843;
         alphas = arma::linspace(0.1, 0.5, n_variations);
+        brute_force_step_size = 0.2;
+    }
+
+    else if ((!interaction) and (n_dims == 1) and (!parallel) and (brute_force))
+    {   /*
+        Interaction OFF, 1D, serial and brute force.
+        */
+        n_particles = 10;
+        n_mc_cycles = 1e5;
+        n_variations = 30;
+        beta = 1;
+        alphas = arma::linspace(0.1, 1, n_variations);
         brute_force_step_size = 0.2;
     }
 
