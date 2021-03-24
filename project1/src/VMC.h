@@ -116,9 +116,11 @@ class VMC
 };
 
 struct Params
-{
-    autodiff::dual alpha;
-    autodiff::dual beta;
+{   /*
+    Used for passing arguments to autodiff::forward functions.
+    */
+    double alpha;
+    double beta;
 };
 
 #endif
