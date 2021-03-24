@@ -71,7 +71,7 @@ void VMC::set_quantum_force(bool interaction)
 {
     if ((n_dims == 1) and !(interaction))
     {
-        not_implemented_error("quantum force", interaction);
+        quantum_force_ptr = &quantum_force_3d_no_interaction;   // NB!! This may be wrong!
     }
     else if ((n_dims == 2) and !(interaction))
     {
@@ -150,7 +150,7 @@ void VMC::set_wave_function(bool interaction)
 
     if ((n_dims == 1) and !(interaction))
     {
-        not_implemented_error("wave function", interaction);
+        wave_function_ptr = &wave_function_1d_no_interaction_with_loop;
     }
     else if ((n_dims == 2) and !(interaction))
     {

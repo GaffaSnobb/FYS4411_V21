@@ -8,13 +8,14 @@
 #include <iomanip>          // Data formatting when writing to file.
 #include <chrono>           // Timing.
 #include <armadillo>        // Linear algebra.
+#include <sstream>
+#include <string>           // String type, string maipulation.
 #include "omp.h"            // Parallelization.
+#include "reverse.hpp"      // Numerical differentiation.
 #include "wave_function.h"
 #include "local_energy.h"
 #include "quantum_force.h"
 
-#include <sstream>
-#include <string>   // String type, string maipulation.
 
 class VMC
 {
