@@ -1,6 +1,5 @@
 #include "wave_function.h"
 
-
 double wave_function_1d_no_interaction_with_loop(
     arma::Mat<double> pos,
     double alpha,
@@ -35,6 +34,33 @@ double wave_function_1d_no_interaction_with_loop(
         res += -alpha*pos(0, particle)*pos(0, particle);
     }
     return std::exp(res);
+}
+
+autodiff::var wave_function_1d_no_interaction_with_loop(
+    autodiff::var x,
+    double alpha,
+    double beta
+)
+{   /*
+    For numerical differentiation with autodiff.
+
+    Parameters
+    ----------
+    pos : autodiff::var
+        Position of a single particle.
+
+    alpha : double
+        Variational parameter.
+
+    beta : double
+        ??? parameter.
+
+    Returns
+    -------
+    : autodiff::var
+        Wave function evaluated for a single particle.
+    */
+    return autodiff::reverse::exp(-alpha*x*x);
 }
 
 double wave_function_exponent_2d_no_interaction(
