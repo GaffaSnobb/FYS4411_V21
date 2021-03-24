@@ -1,8 +1,6 @@
 #ifndef QUANTUM
 #define QUANTUM
-
-#include <armadillo>
-#include "wave_function.h"
+#include "VMC.h"
 
 arma::Mat<double> quantum_force_3d_no_interaction(
     const arma::Mat<double> &pos,

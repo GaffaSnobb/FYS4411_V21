@@ -1,7 +1,7 @@
 #ifndef OTHER
 #define OTHER
 
-#include <armadillo>
+#include "VMC.h"
 
 double local_energy_3d_interaction(
     const arma::Mat<double> &pos,
