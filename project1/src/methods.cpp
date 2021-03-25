@@ -64,6 +64,11 @@ void BruteForce::one_variation(int variation)
     energy_variance = 0;    // Reset for each variation. NB: Variable not inside parallel region.
     energy_expectation_squared = 0;
 
+    // One-body density.
+    double particle_distance;
+    particle_per_bin_count_thread.zeros();
+    // One-body density end.
+
     for (particle = 0; particle < n_particles; particle++)
     {   /*
         Iterate over all particles.  In this loop, all current
@@ -88,7 +93,7 @@ void BruteForce::one_variation(int variation)
         private(mc, particle, dim, particle_inner) \
         private(wave_new) \
         firstprivate(wave_current, local_energy) \
-        firstprivate(pos_new, pos_current) \
+        firstprivate(pos_new, pos_current, particle_per_bin_count_thread) \
         reduction(+:acceptance, energy_expectation, energy_expectation_squared) \
         private(engine)
     {
@@ -147,18 +152,38 @@ void BruteForce::one_variation(int variation)
                             n_particles
                         );
                     }
+                    // One-body density.
+                    particle_distance = arma::norm(pos_current.col(particle), 2);
+                    for (bin = 0; bin < n_bins - 1; bin++)
+                    {
+                        if (
+                            (particle_distance >= bin_locations(bin)) and
+                            (particle_distance <  bin_locations(bin + 1))
+                        )
+                        {
+                            particle_per_bin_count_thread(bin) += 1;
+                            break;  // No need to continue checking for this particle!
+                        }
+                    }
+                    // One-body density end.
                 }
                 energy_expectation += local_energy;
                 energy_expectation_squared += local_energy*local_energy;
             }
             energies(mc, variation) = local_energy;
         }
-    }
+        #pragma omp critical
+        {
+            particle_per_bin_count.col(variation) += particle_per_bin_count_thread;
+        }
+    }   // Parallel end.
 
     energy_expectation /= n_mc_cycles;
     energy_expectation_squared /= n_mc_cycles;
+    energy_expectation /= n_particles;
+    energy_expectation_squared /= n_particles;
     energy_variance = energy_expectation_squared
-        - energy_expectation*energy_expectation/n_particles;
+        - energy_expectation*energy_expectation;
 
     acceptances(variation) = acceptance;    // Debug.
 }
