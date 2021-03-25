@@ -43,7 +43,7 @@ def local_energy_alpha(fname, type):
     """
     temporary plot function
     """
-    alpha, var_energy, exp_energy, n_particles = read_from_file(fname)
+    alpha, var_energy, exp_energy = read_from_file(fname)
 
     #exp_energy /= n_particles
     #var_energy /= n_particles
@@ -99,8 +99,8 @@ if __name__ == "__main__":
 
     f_importance = f"{path}/output_importance_particles.txt"
     f_brute_force = f"{path}/output_brute_force_particles.txt"
-    # local_energy_alpha(f_brute_force, "brute_force")
-    local_energy_alpha(f_importance, "importance")
+    local_energy_alpha(f_brute_force, "brute_force")
+    # local_energy_alpha(f_importance, "importance")
     # local_energy_alpha(f"{path}/output_gradient_descent_particles.txt", "GD")
     # tmp_gd()
     # onebody()
