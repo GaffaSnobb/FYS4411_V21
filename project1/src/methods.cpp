@@ -233,6 +233,11 @@ void ImportanceSampling::one_variation(int variation)
     wave_times_energy_expectation = 0;
     // GD specifics end.
 
+    // One-body density.
+    double particle_distance;
+    particle_per_bin_count_thread.zeros();
+    // One-body density end.
+
     for (particle = 0; particle < n_particles; particle++)
     {   /*
         Iterate over all particles.  In this loop, all current
@@ -264,13 +269,13 @@ void ImportanceSampling::one_variation(int variation)
     );
 
     #pragma omp parallel\
-        private(mc, particle, dim, particle_inner) \
+        private(mc, particle, dim, particle_inner, bin) \
         private(wave_new) \
         firstprivate(wave_current, local_energy) \
         firstprivate(pos_new, qforce_new, pos_current, qforce_current) \
         reduction(+:acceptance, energy_expectation, energy_expectation_squared) \
         reduction(+:wave_times_energy_expectation, wave_derivative_expectation) \
-        firstprivate(wave_derivative) \
+        firstprivate(wave_derivative, particle_per_bin_count_thread) \
         private(engine)
     {   
         #ifdef _OPENMP
@@ -351,7 +356,6 @@ void ImportanceSampling::one_variation(int variation)
                             n_particles
                         );
                     }
-
                     wave_derivative = 0;
                     for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
                     {   /*
@@ -369,25 +373,44 @@ void ImportanceSampling::one_variation(int variation)
                 wave_derivative_expectation += wave_derivative;
                 wave_times_energy_expectation += wave_derivative*local_energy;
                 // GD specifics end.
-                
+
+                // One-body density.
+                particle_distance = arma::norm(pos_current.col(particle), 2);
+                for (bin = 0; bin < n_bins - 1; bin++)
+                {
+                    if (
+                        (particle_distance >= bin_locations(bin)) and
+                        (particle_distance <  bin_locations(bin + 1))
+                    )
+                    {
+                        particle_per_bin_count_thread(bin) += 1;
+                        break;  // No need to continue checking for this particle!
+                    }
+                }
+                // One-body density end.
                 energy_expectation += local_energy;
                 energy_expectation_squared += local_energy*local_energy;
             }
             energies(mc, variation) = local_energy;
         }
+        #pragma omp critical
+        {
+            particle_per_bin_count.col(variation) += particle_per_bin_count_thread;
+        }
     }   // Parallel end.
 
+    acceptances(variation) = acceptance;    // Debug.
     energy_expectation /= n_mc_cycles;
+    energy_expectation /= n_particles;
+    energy_expectation_squared /= n_particles;
     energy_expectation_squared /= n_mc_cycles;
     energy_variance = energy_expectation_squared
-        - energy_expectation*energy_expectation/n_particles;
+        - energy_expectation*energy_expectation;
 
     // GD specifics.
     wave_times_energy_expectation /= n_mc_cycles;
     wave_derivative_expectation /= n_mc_cycles;
-    // GD specifics end.
-
-    acceptances(variation) = acceptance;    // Debug.
+    // GD specifics end.    
 }
 
 GradientDescent::GradientDescent(
