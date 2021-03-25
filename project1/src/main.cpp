@@ -73,8 +73,8 @@ int main(int argc, char *argv[])
 
     // Select methods (choose one at a time):
     const bool gradient_descent = false;
-    const bool importance_sampling = true;
-    const bool brute_force = false;
+    const bool importance_sampling = false;
+    const bool brute_force = true;
     
     #ifdef _OPENMP
         parallel = true;
@@ -162,8 +162,8 @@ int main(int argc, char *argv[])
         Interaction OFF, 3D, serial and brute force.
         */
         n_particles = 10;     // Number of particles.
-        n_mc_cycles = 1e6;
-        n_variations = 30;
+        n_mc_cycles = 5e5;
+        n_variations = 10;
         beta = 1;
         alphas = arma::linspace(0.4, 0.6, n_variations);
         brute_force_step_size = 0.2;
@@ -174,8 +174,8 @@ int main(int argc, char *argv[])
         Interaction OFF, 3D, parallel and brute force.
         */
         n_particles = 10;     // Number of particles.
-        n_mc_cycles = 1e6;
-        n_variations = 30;
+        n_mc_cycles = 5e5;
+        n_variations = 20;
         beta = 1;
         alphas = arma::linspace(0.4, 0.6, n_variations);
         brute_force_step_size = 0.2;
@@ -379,6 +379,7 @@ int main(int argc, char *argv[])
         system_2.set_seed(seed);
         system_2.solve();
         system_2.write_to_file_particles("generated_data/output_brute_force_particles.txt");
+        system_2.write_to_file_onebody_density("generated_data/output_brute_force_onebody_density.txt");
         
         #ifdef _OPENMP
             t2 = omp_get_wtime();
@@ -421,6 +422,7 @@ int main(int argc, char *argv[])
         system_3.set_seed(seed);
         system_3.solve(gd_tolerance);
         system_3.write_to_file_particles("generated_data/output_gradient_descent_particles.txt");
+        system_3.write_to_file_onebody_density("generated_data/output_gradient_descent_onebody_density.txt");
         
         #ifdef _OPENMP
             t2 = omp_get_wtime();
