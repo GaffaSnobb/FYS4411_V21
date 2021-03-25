@@ -303,7 +303,6 @@ void VMC::write_to_file(std::string fpath)
     outfile.close();
 }
 
-
 void VMC::write_to_file_particles(std::string fpath)
 {   // Deprecated
     outfile.open(fpath, std::ios::out);
