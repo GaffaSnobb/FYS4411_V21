@@ -58,9 +58,15 @@ VMC::VMC(
     energies.zeros();
     engine.seed(seed);
 
-
-    // set_local_energy();  // Moved to main.cpp.
-    // set_wave_function(); // Moved to main.cpp.
+    // One-body density parameters.
+    n_bins = 50;
+    r_bins_end = 3;
+    bin_locations = arma::linspace(0, r_bins_end - r_bins_end/n_bins, n_bins + 1);
+    particle_per_bin_count = arma::Mat<double>(n_bins, n_variations);
+    particle_per_bin_count.zeros();
+    particle_per_bin_count_thread = arma::Col<double>(n_bins);
+    particle_per_bin_count_thread.zeros();
+    // One-body density parameters end.
 }
 
 void VMC::set_seed(double seed_input)
@@ -324,6 +330,19 @@ void VMC::write_energies_to_file(std::string fpath)
 
     outfile << "\n";
     energies.save(outfile, arma::raw_ascii);
+    outfile.close();
+}
+
+void VMC::write_to_file_onebody_density(std::string fpath)
+{
+    outfile.open(fpath, std::ios::out);
+
+    for (int variation = 0; variation < n_variations; variation++)
+    {
+        outfile << std::setw(25) << alphas(variation);
+    }
+    outfile << "\n";
+    particle_per_bin_count.save(outfile, arma::raw_ascii);
     outfile.close();
 }
 

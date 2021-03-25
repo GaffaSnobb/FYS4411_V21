@@ -44,6 +44,7 @@ class VMC
         int particle_inner; // Index for inner particle loops.
         int mc;             // Index for MC loop.
         int dim;            // Index for dimension loops.
+        int bin;            // Index for bin loop.
 
         int n_variations_final; // If calculation is stopped before n_variations is reached.
         bool call_set_quantum_force = false;
@@ -51,6 +52,14 @@ class VMC
         bool call_set_local_energy = false;
         bool numerical_differentiation = false;
         bool debug = false;     // Toggle debug print on / off.
+
+        // One-body density parameters.
+        int n_bins;                             // Number of bins.
+        double r_bins_end;                      // End of final bin. Radial distance.
+        arma::Col<double> bin_locations;        // Radial location of the start of each bin.
+        arma::Mat<double> particle_per_bin_count;  // Count the number of particles per bin.
+        arma::Col<double> particle_per_bin_count_thread;
+        // One-body density parameters end.
 
         // Moved initialization to class constructor.
         arma::Mat<double> pos_new;       // Proposed new position.
@@ -108,6 +117,7 @@ class VMC
         void write_to_file(std::string fname);
         void write_to_file_particles(std::string fpath);
         void write_energies_to_file(std::string fpath);
+        void write_to_file_onebody_density(std::string fpath);
         void solve();
         virtual void one_variation(int variation);
         void not_implemented_error(std::string name, bool interaction);
