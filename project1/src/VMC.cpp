@@ -6,11 +6,14 @@ VMC::VMC(
     const int n_mc_cycles_input,
     const int n_particles_input,
     arma::Col<double> alphas_input,
+    const double beta_input,
+    const bool numerical_differentiation_input,
     bool debug_input
 ) : n_dims(n_dims_input),
     n_variations(n_variations_input),
     n_mc_cycles(n_mc_cycles_input),
-    n_particles(n_particles_input)
+    n_particles(n_particles_input),
+    beta(beta_input)
 
 {   /*
     Class constructor.
@@ -31,6 +34,9 @@ VMC::VMC(
 
     alphas_input : armadillo column vector
         A linspace of the variational parameters.
+
+    debug_input : boolean
+        For toggling debug print on / off.
     */
     pos_new = arma::Mat<double>(n_dims, n_particles);         // Proposed new position.
     pos_current = arma::Mat<double>(n_dims, n_particles);     // Current position.
@@ -42,55 +48,164 @@ VMC::VMC(
     energies = arma::Mat<double>(n_mc_cycles, n_variations);
     alphas = alphas_input;
     n_variations_final = n_variations;  // If stop condition is not reached.
-    debug = debug_input;    // For toggling debug print on / off.
+    numerical_differentiation = numerical_differentiation_input;
+    debug = debug_input;                // For toggling debug print on / off.
 
     acceptances = arma::Col<double>(n_variations);   // Debug.
     acceptances.zeros();
 
-    e_expectations.zeros(); // Array must be zeroed since values will be added.
+    e_expectations.zeros(); // Array must be zeroed since values will be added to it.
     energies.zeros();
     engine.seed(seed);
 
-    set_local_energy();
-    set_wave_function();
+    // One-body density parameters.
+    n_bins = 50;
+    r_bins_end = 3;
+    bin_locations = arma::linspace(0, r_bins_end - r_bins_end/n_bins, n_bins + 1);
+    particle_per_bin_count = arma::Mat<double>(n_bins, n_variations);
+    particle_per_bin_count.zeros();
+    particle_per_bin_count_thread = arma::Col<double>(n_bins);
+    particle_per_bin_count_thread.zeros();
+    // One-body density parameters end.
 }
 
-void VMC::set_local_energy()
+void VMC::set_seed(double seed_input)
+{   
+    seed = seed_input;
+    engine.seed(seed);
+}
+
+void VMC::set_quantum_force(bool interaction)
+{   
+    if ((n_dims == 1) and !interaction)
+    {
+        quantum_force_ptr = &quantum_force_3d_no_interaction;   // NB!! This might be wrong!
+    }
+    else if ((n_dims == 2) and !interaction)
+    {
+        quantum_force_ptr = &quantum_force_3d_no_interaction;   // NB!! This might be wrong!
+    }
+    else if ((n_dims == 3) and !interaction)
+    {
+        quantum_force_ptr = &quantum_force_3d_no_interaction;
+    }
+    else if ((n_dims == 1) and interaction)
+    {
+        not_implemented_error("quantum force", interaction);
+    }
+    else if ((n_dims == 2) and interaction)
+    {   
+        not_implemented_error("quantum force", interaction);
+    }
+    else if ((n_dims == 3) and interaction)
+    {   
+        quantum_force_ptr = &quantum_force_3d_interaction;
+    }
+    else
+    {
+        not_implemented_error("quantum force", interaction);
+    }
+    call_set_quantum_force = true;
+}
+
+void VMC::set_local_energy(bool interaction)
 {   /*
     Set pointers to the correct local energy function.
+
+    Parameters
+    ----------
+    interaction : boolean
+        Toggle interaction between particles on / off.
     */
-    //std::cout << "VMC.cpp: set_local_energy()" << std::endl;
-    if (n_dims == 1)
+
+    if ((n_dims == 1) and !interaction and !numerical_differentiation)
     {
-        local_energy_ptr = &local_energy_1d;
+        local_energy_ptr = &local_energy_1d_no_interaction;
     }
-    else if (n_dims == 2)
+    else if ((n_dims == 1) and !interaction and numerical_differentiation)
     {
-        local_energy_ptr = &local_energy_2d;
+        local_energy_ptr = &local_energy_1d_no_interaction_numerical_differentiation;
     }
-    else if (n_dims == 3)
+    else if ((n_dims == 1) and interaction and !numerical_differentiation)
     {
-        local_energy_ptr = &local_energy_3d;
+        not_implemented_error("local energy", interaction);
     }
+    else if ((n_dims == 2) and !interaction and !numerical_differentiation)
+    {
+        local_energy_ptr = &local_energy_2d_no_interaction;
+    }
+    else if ((n_dims == 2) and !interaction and numerical_differentiation)
+    {
+        local_energy_ptr = &local_energy_2d_no_interaction_numerical_differentiation;
+    }
+    else if ((n_dims == 2) and interaction and !numerical_differentiation)
+    {
+        not_implemented_error("local energy", interaction);
+    }
+    else if ((n_dims == 3) and !interaction and !numerical_differentiation)
+    {
+        local_energy_ptr = &local_energy_3d_no_interaction;
+    }
+    else if ((n_dims == 3) and interaction and !numerical_differentiation)
+    {    
+        local_energy_ptr = &local_energy_3d_interaction;        
+    }
+    else if ((n_dims == 3) and !interaction and numerical_differentiation)
+    {    
+        local_energy_ptr = &local_energy_3d_no_interaction_numerical_differentiation;
+    }
+    else
+    {
+        not_implemented_error("local energy", interaction);
+    }
+
+    call_set_local_energy = true;
 }
 
-void VMC::set_wave_function()
+void VMC::set_wave_function(bool interaction)
 {   /*
     Set pointers to the correct wave function exponent.
+
+    Parameters
+    ----------
+    interaction : boolean
+        Toggle interaction between particles on / off.
     */
-    //std::cout << "VMC.cpp: set_wave_function()" << std::endl;
-    if (n_dims == 1)
+
+    if ((n_dims == 1) and !(interaction))
     {
-        wave_function_exponent_ptr = &wave_function_exponent_1d;
+        wave_function_ptr = &wave_function_1d_no_interaction_with_loop;
     }
-    else if (n_dims == 2)
+    else if ((n_dims == 2) and !(interaction))
     {
-        wave_function_exponent_ptr = &wave_function_exponent_2d;
+        wave_function_ptr = &wave_function_2d_no_interaction_with_loop;
     }
-    else if (n_dims == 3)
+    else if ((n_dims == 3) and !(interaction))
     {
-        wave_function_exponent_ptr = &wave_function_exponent_3d;
+        wave_function_ptr = &wave_function_3d_no_interaction_with_loop;
     }
+    else if ((n_dims == 1) and (interaction))
+    {
+        not_implemented_error("wave function", interaction);
+    }
+    else if ((n_dims == 2) and (interaction))
+    {
+        not_implemented_error("wave function", interaction);
+    }
+    else if ((n_dims == 3) and (interaction))
+    {
+        wave_function_ptr = &wave_function_3d_interaction_with_loop;
+    }
+
+    call_set_wave_function = true;
+}
+
+void VMC::not_implemented_error(std::string name, bool interaction)
+{   
+    std::cout << "NotImplementedError" << std::endl;
+    std::cout << "Cannot set " << name << " for dimensions: " << n_dims;
+    std::cout << " and interaction: " << interaction << "." << std::endl;
+    exit(0);
 }
 
 void VMC::one_variation(int variation)
@@ -103,6 +218,24 @@ void VMC::solve()
     Iterate over variational parameters. Extract energy variances and
     expectation values.
     */
+
+    if (!call_set_local_energy)
+    {
+        std::cout << "Local energy is not set! Exiting..." << std::endl;
+        exit(0);
+    }
+
+    if (!call_set_wave_function)
+    {
+        std::cout << "Wave function is not set! Exiting..." << std::endl;
+        exit(0);
+    }
+
+    if (!call_set_quantum_force)
+    {
+        std::cout << "Quantum force is not set! Exiting..." << std::endl;
+        exit(0);
+    }
 
     #ifdef _OPENMP
         double t1;
@@ -128,7 +261,7 @@ void VMC::solve()
 
         std::cout << "variation : " << std::setw(3) <<  variation;
         std::cout << ", alpha: " << std::setw(10) << alphas(variation);
-        // std::cout << ", energy: " << energy_expectation;
+        std::cout << ", energy: " << energy_expectation;
         std::cout << ", acceptance: " << std::setw(7) << acceptances(variation)/(n_mc_cycles*n_particles);
 
         #ifdef _OPENMP
@@ -203,6 +336,19 @@ void VMC::write_energies_to_file(std::string fpath)
     }
     outfile << "\n";
     energies.save(outfile, arma::raw_ascii);
+    outfile.close();
+}
+
+void VMC::write_to_file_onebody_density(std::string fpath)
+{
+    outfile.open(fpath, std::ios::out);
+
+    for (int variation = 0; variation < n_variations; variation++)
+    {
+        outfile << std::setw(25) << alphas(variation);
+    }
+    outfile << "\n";
+    particle_per_bin_count.save(outfile, arma::raw_ascii);
     outfile.close();
 }
 

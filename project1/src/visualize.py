@@ -52,7 +52,14 @@ def local_energy_alpha(fname, type):
     plt.grid()
     plt.title(type)
     plt.plot(alpha, exp_energy, color="k", label="Expected local energy")
-    plt.fill_between(alpha, exp_energy - np.sqrt(var_energy), exp_energy + np.sqrt(var_energy), color="k", alpha=0.2, label="std")
+    plt.fill_between(
+        alpha,
+        exp_energy - np.sqrt(var_energy),
+        exp_energy + np.sqrt(var_energy),
+        color="k",
+        alpha=0.2,
+        label="std"
+    )
     plt.xlabel(r"$ \alpha $")
     plt.ylabel(r"Local Energy, $E_{L}$")
     plt.legend()
@@ -70,14 +77,30 @@ def tmp():
     plt.show()
 
 
+def onebody():
+    alphas = np.loadtxt("generated_data/output_importance_onebody_density.txt", max_rows=1)
+    data = np.loadtxt("generated_data/output_importance_onebody_density.txt", skiprows=1)
+    bins = np.arange(0, data.shape[0], 1)
+
+    print(f"{alphas=}")
+    plt.bar(bins, data[:, 4]/np.trapz(data[:, 4])) # Halfway.
+    plt.bar(bins, data[:, -1]/np.trapz(data[:, -1]), alpha=0.5)
+    plt.xlabel("bins")
+    plt.ylabel("scaled counts")
+    plt.show()
 
 if __name__ == "__main__":
     path = "generated_data"
     fname_brute_force = f"{path}/output_brute_force.txt"
     fname_importance = f"{path}/output_importance.txt"
     fname_gradient_descent = f"{path}/output_gradient_descent.txt"
+    #brute_and_importance(fname_brute=fname_brute_force, fname_importance=fname_importance)
+    #gradient_descent(fname_gradient_descent)
 
-    brute_and_importance(fname_brute=fname_brute_force, fname_importance=fname_importance)
-    gradient_descent(fname_gradient_descent)
-    local_energy_alpha(fname_brute_force, "brute_force")
-    local_energy_alpha(fname_importance, "importance")
+    f_importance = f"{path}/output_importance_particles.txt"
+    f_brute_force = f"{path}/output_brute_force_particles.txt"
+    # local_energy_alpha(f_brute_force, "brute_force")
+    local_energy_alpha(f_importance, "importance")
+    # local_energy_alpha(f"{path}/output_gradient_descent_particles.txt", "GD")
+    # tmp_gd()
+    # onebody()
