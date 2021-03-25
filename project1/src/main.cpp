@@ -69,12 +69,12 @@ int main(int argc, char *argv[])
     const bool debug = false;       // Toggle debug print on / off.
     double seed = 1337;       // RNG seed.
     const double gd_tolerance = 1e-3;
-    const bool numerical_differentiation = true;
+    const bool numerical_differentiation = false;
 
     // Select methods (choose one at a time):
     const bool gradient_descent = false;
-    const bool importance_sampling = false;
-    const bool brute_force = true;
+    const bool importance_sampling = true;
+    const bool brute_force = false;
     
     #ifdef _OPENMP
         parallel = true;
@@ -150,8 +150,8 @@ int main(int argc, char *argv[])
     {   /*
         Interaction OFF, 3D, parallel and importance.
         */
-        n_mc_cycles = 1e6;
-        n_variations = 30;
+        n_mc_cycles = 1e5;
+        n_variations = 10;
         importance_time_step = 0.01;
         beta = 1;
         alphas = arma::linspace(0.1, 1, n_variations);
@@ -337,6 +337,7 @@ int main(int argc, char *argv[])
         system_1.set_seed(seed);
         system_1.solve();
         system_1.write_to_file_particles("generated_data/output_importance_particles.txt");
+        system_1.write_to_file_onebody_density("generated_data/output_importance_onebody_density.txt");
         
         #ifdef _OPENMP
             t2 = omp_get_wtime();
