@@ -88,11 +88,12 @@ def read_all_files(filter_method=None, filter_data_type=None):
 
     for i in range(len(fnames)):
         fname = fnames[i].split("_")
-        if len(fname) < 10:
+        if len(fname) != 10:
             """
             Skip 'README.md' (or other files which do not match the
             naming convention).
             """
+            print(f"File {fnames[i]} skipped!")
             continue
         
         data = np.loadtxt(fname = "generated_data/" + fnames[i], skiprows=1)
