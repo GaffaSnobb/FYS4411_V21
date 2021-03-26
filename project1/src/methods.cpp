@@ -180,8 +180,8 @@ void BruteForce::one_variation(int variation)
 
     energy_expectation /= n_mc_cycles;
     energy_expectation_squared /= n_mc_cycles;
-    energy_expectation /= n_particles;
-    energy_expectation_squared /= n_particles;
+    energy_expectation /= (n_particles*n_particles);
+    energy_expectation_squared /= (n_particles*n_particles);
     energy_variance = energy_expectation_squared
         - energy_expectation*energy_expectation;
 
@@ -426,8 +426,8 @@ void ImportanceSampling::one_variation(int variation)
 
     acceptances(variation) = acceptance;    // Debug.
     energy_expectation /= n_mc_cycles;
-    energy_expectation /= n_particles;
-    energy_expectation_squared /= n_particles;
+    energy_expectation /= (n_particles*n_particles);
+    energy_expectation_squared /= (n_particles*n_particles);
     energy_expectation_squared /= n_mc_cycles;
     energy_variance = energy_expectation_squared
         - energy_expectation*energy_expectation;
