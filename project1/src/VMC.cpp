@@ -312,6 +312,7 @@ void VMC::write_to_file(std::string fpath)
         outfile << timing(i) << "\n";
     }
     outfile.close();
+    std::cout << fpath << " written to file." << std::endl;
 }
 
 void VMC::write_energies_to_file(std::string fpath)
@@ -333,6 +334,7 @@ void VMC::write_energies_to_file(std::string fpath)
     outfile << "\n";
     energies.save(outfile, arma::raw_ascii);
     outfile.close();
+    std::cout << fpath << " written to file." << std::endl;
 }
 
 void VMC::write_to_file_onebody_density(std::string fpath)
@@ -355,6 +357,7 @@ void VMC::write_to_file_onebody_density(std::string fpath)
     outfile << "\n";
     particle_per_bin_count.save(outfile, arma::raw_ascii);
     outfile.close();
+    std::cout << fpath << " written to file." << std::endl;
 }
 
 VMC::~VMC()
