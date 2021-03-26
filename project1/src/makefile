@@ -51,4 +51,4 @@ clean :
 	-rm *.o
 	-rm -r __pycache__/
 	-rm -r run.out.dSYM/
-	-rm generated_data/*.txt
+	# -rm generated_data/*.txt
