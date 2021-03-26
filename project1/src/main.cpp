@@ -44,6 +44,49 @@ void print_parameters(
     std::cout << std::endl;
 }
 
+void generate_filenames(
+    std::string method,
+    std::string &fname_particles,
+    std::string &fname_onebody,
+    std::string &fname_energies,
+    int n_particles,
+    int n_dims,
+    int n_mc_cycles,
+    double importance_or_brute_step,
+    bool numerical_differentiation,
+    bool interaction
+)
+{   /*
+    Generate file names for particles, onebody and energy output files.
+    */
+    fname_particles = "generated_data/output_";
+    fname_particles += method;
+    fname_particles += "_";
+    fname_particles += std::to_string(n_particles);
+    fname_particles += "_";
+    fname_particles += std::to_string(n_dims);
+    fname_particles += "_";
+    fname_particles += std::to_string(n_mc_cycles);
+    fname_particles += "_";
+    fname_particles += std::to_string(importance_or_brute_step);
+    fname_particles += "_";
+    
+    if (numerical_differentiation) {fname_particles += "numerical";}
+    else {fname_particles += "analytical";}
+    fname_particles += "_";
+    if (interaction) {fname_particles += "interaction";}
+    else {fname_particles += "nointeraction";}
+    fname_particles += "_";
+
+    fname_onebody = fname_particles;
+    fname_onebody += "onebody_.txt";
+
+    fname_energies = fname_particles;
+    fname_energies += "energies_.txt";
+
+    fname_particles += "particles_.txt";
+}
+
 int main(int argc, char *argv[])
 {   /*
     TODO: Currently omega_ho and omega_z are equal. Fix. (local_energy.cpp).
@@ -73,8 +116,8 @@ int main(int argc, char *argv[])
 
     // Select methods (choose one at a time):
     const bool gradient_descent = false;
-    const bool importance_sampling = false;
-    const bool brute_force = true;
+    const bool importance_sampling = true;
+    const bool brute_force = false;
     
     #ifdef _OPENMP
         parallel = true;
@@ -315,11 +358,28 @@ int main(int argc, char *argv[])
         t1 = std::chrono::steady_clock::now();
     #endif
 
-    // -----------------------------------------------------------------
-    // Importance:
+    // Importance ------------------------------------------------------
     if (importance_sampling)
     {
         std::cout << "Importance sampling" << std::endl;
+
+        std::string fname_importance_particles;
+        std::string fname_importance_onebody;
+        std::string fname_importance_energies;
+
+        generate_filenames(
+            "importance",
+            fname_importance_particles,
+            fname_importance_onebody,
+            fname_importance_energies,
+            n_particles,
+            n_dims,
+            n_mc_cycles,
+            importance_time_step,
+            numerical_differentiation,
+            interaction
+        );
+
         ImportanceSampling system_1(
             n_dims,                 // Number of spatial dimensions.
             n_variations,           // Number of variational parameters.
@@ -336,8 +396,8 @@ int main(int argc, char *argv[])
         system_1.set_local_energy(interaction);
         system_1.set_seed(seed);
         system_1.solve();
-        system_1.write_to_file_particles("generated_data/output_importance_particles.txt");
-        system_1.write_to_file_onebody_density("generated_data/output_importance_onebody_density.txt");
+        system_1.write_to_file(fname_importance_particles);
+        system_1.write_to_file_onebody_density(fname_importance_onebody);
         
         #ifdef _OPENMP
             t2 = omp_get_wtime();
@@ -350,8 +410,7 @@ int main(int argc, char *argv[])
         #endif
     }
 
-    // -----------------------------------------------------------------
-    // Brute:
+    // Brute -----------------------------------------------------------
     if (brute_force)
     {
         #ifdef _OPENMP
@@ -361,6 +420,23 @@ int main(int argc, char *argv[])
         #endif
 
         std::cout << "Brute force metropolis" << std::endl;
+
+        std::string fname_brute_particles;
+        std::string fname_brute_onebody;
+        std::string fname_brute_energies;
+
+        generate_filenames(
+            "brute",
+            fname_brute_particles,
+            fname_brute_onebody,
+            fname_brute_energies,
+            n_particles,
+            n_dims,
+            n_mc_cycles,
+            brute_force_step_size,
+            numerical_differentiation,
+            interaction
+        );
 
         BruteForce system_2(
             n_dims,                 // Number of spatial dimensions.
@@ -378,7 +454,7 @@ int main(int argc, char *argv[])
         system_2.set_local_energy(interaction);
         system_2.set_seed(seed);
         system_2.solve();
-        system_2.write_to_file_particles("generated_data/output_brute_force_particles.txt");
+        system_2.write_to_file("generated_data/output_brute_force_particles.txt");
         system_2.write_to_file_onebody_density("generated_data/output_brute_force_onebody_density.txt");
         
         #ifdef _OPENMP
@@ -392,8 +468,7 @@ int main(int argc, char *argv[])
         #endif
     }
 
-    // -----------------------------------------------------------------
-    // GD:
+    // GD --------------------------------------------------------------
     if (gradient_descent)
     {
         #ifdef _OPENMP
@@ -403,6 +478,23 @@ int main(int argc, char *argv[])
         #endif
 
         std::cout << "Gradient decent" << std::endl;
+
+        std::string fname_gradient_particles;
+        std::string fname_gradient_onebody;
+        std::string fname_gradient_energies;
+
+        generate_filenames(
+            "gradient",
+            fname_gradient_particles,
+            fname_gradient_onebody,
+            fname_gradient_energies,
+            n_particles,
+            n_dims,
+            n_mc_cycles,
+            importance_time_step,
+            numerical_differentiation,
+            interaction
+        );
 
         GradientDescent system_3(
             n_dims,                 // Number of spatial dimensions.
@@ -421,7 +513,7 @@ int main(int argc, char *argv[])
         system_3.set_local_energy(interaction);
         system_3.set_seed(seed);
         system_3.solve(gd_tolerance);
-        system_3.write_to_file_particles("generated_data/output_gradient_descent_particles.txt");
+        system_3.write_to_file("generated_data/output_gradient_descent_particles.txt");
         system_3.write_to_file_onebody_density("generated_data/output_gradient_descent_onebody_density.txt");
         
         #ifdef _OPENMP
