@@ -77,6 +77,8 @@ class VMC
         std::uniform_real_distribution<double> uniform;  // Continuous uniform distribution.
         std::normal_distribution<double> normal;         // Gaussian distribution
 
+        arma::Col<double> timing;
+
         double (*local_energy_ptr)(
             const arma::Mat<double> &pos,
             const double alpha,
@@ -115,7 +117,6 @@ class VMC
         void set_local_energy(bool interaction);
         void set_wave_function(bool interaction);
         void write_to_file(std::string fname);
-        void write_to_file_particles(std::string fpath);
         void write_energies_to_file(std::string fpath);
         void write_to_file_onebody_density(std::string fpath);
         void solve();

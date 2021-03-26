@@ -58,6 +58,9 @@ VMC::VMC(
     energies.zeros();
     engine.seed(seed);
 
+    timing = arma::Col<double>(n_variations);
+    timing.zeros();
+
     // One-body density parameters.
     n_bins = 50;
     r_bins_end = 3;
@@ -268,47 +271,32 @@ void VMC::solve()
             t2 = omp_get_wtime();
             comp_time = t2 - t1;
             std::cout << ",  time : " << comp_time << "s" << std::endl;
+            timing(variation) = comp_time;
         #else
             t2 = std::chrono::steady_clock::now();
             comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
             std::cout << ",  time : " << comp_time.count() << "s" << std::endl;
+            timing(variation) = comp_time.count();
         #endif
 
     }
 }
 
 void VMC::write_to_file(std::string fpath)
-{
-    outfile.open(fpath, std::ios::out);
-    outfile << "n_particles " << n_particles << "\n";
-    outfile << std::setw(20) << "alpha";
-    outfile << std::setw(20) << "variance_energy";
-    outfile << std::setw(21) << "expected_energy\n";
+{   /*
+    Write data to file. Columns 1, 2, 3 are: alpha, energy variance,
+    energy expectation value.
 
-    int end_iter = n_variations;
-
-    if ( !(n_variations_final == n_variations)){end_iter = n_variations_final;}
-
-    for (int i = 0; i < end_iter; i++)
-    {   /*
-        Write data to file.
-        */
-        outfile << std::setw(20) << std::setprecision(10);
-        outfile << alphas(i);
-        outfile << std::setw(20) << std::setprecision(10);
-        outfile << e_variances(i);
-        outfile << std::setw(20) << std::setprecision(10);
-        outfile << e_expectations(i) << "\n";
-    }
-    outfile.close();
-}
-
-void VMC::write_to_file_particles(std::string fpath)
-{   // Deprecated
+    Parameters
+    ----------
+    fpath : std::string
+        Relative file path and name.
+    */
     outfile.open(fpath, std::ios::out);
     outfile << std::setw(20) << "alpha";
     outfile << std::setw(20) << "variance_energy";
-    outfile << std::setw(21) << "expected_energy\n";
+    outfile << std::setw(21) << "expected_energy";
+    outfile << std::setw(21) << "time\n";
 
     for (int i = 0; i < n_variations_final; i++)
     {   /*
@@ -317,15 +305,24 @@ void VMC::write_to_file_particles(std::string fpath)
         outfile << std::setw(20) << std::setprecision(10);
         outfile << alphas(i);
         outfile << std::setw(20) << std::setprecision(10);
-        outfile << e_variances(i)/n_particles;
+        outfile << e_variances(i);
         outfile << std::setw(20) << std::setprecision(10);
-        outfile << e_expectations(i)/n_particles << "\n";
+        outfile << e_expectations(i);
+        outfile << std::setw(20) << std::setprecision(10);
+        outfile << timing(i) << "\n";
     }
     outfile.close();
 }
 
 void VMC::write_energies_to_file(std::string fpath)
-{
+{   /*
+    Write energy data to file.
+
+    Parameters
+    ----------
+    fpath : std::string
+        Relative file path and name.
+    */
     outfile.open(fpath, std::ios::out);
 
     outfile << "n_particles " << n_particles << "\n";
@@ -339,7 +336,16 @@ void VMC::write_energies_to_file(std::string fpath)
 }
 
 void VMC::write_to_file_onebody_density(std::string fpath)
-{
+{   /*
+    Write one-body density data to file.  Alphas are written as the
+    first row. All following rows are particle occupation per bin data
+    for the given alphas.
+
+    Parameters
+    ----------
+    fpath : std::string
+        Relative file path and name.
+    */
     outfile.open(fpath, std::ios::out);
 
     for (int variation = 0; variation < n_variations; variation++)
@@ -353,5 +359,4 @@ void VMC::write_to_file_onebody_density(std::string fpath)
 
 VMC::~VMC()
 {
-    // acceptances.print();
 }
