@@ -558,6 +558,7 @@ void GradientDescent::solve(const double tol)
         std::cout << ", energy: " << std::setw(10) << energy_expectation;
         std::cout << ", acceptance: " << std::setw(7) << acceptances(variation)/(n_mc_cycles*n_particles);
         std::cout << ",  time : " << comp_time << "s" << std::endl;
+        timing(variation) = comp_time;
 
         if (debug)
         {
