@@ -124,8 +124,6 @@ def read_all_files(
             """
             print(f"File {fnames[i]} skipped!")
             continue
-        
-        data = np.loadtxt(fname = "generated_data/" + fnames[i], skiprows=1)
 
         method = fname[1]
         if (filter_method != method) and (filter_method is not None):
@@ -208,6 +206,8 @@ def read_all_files(
             input.
             """
             continue
+
+        data = np.loadtxt(fname = "generated_data/" + fnames[i], skiprows=1)
         
         data_list.append(Container(
             data,
