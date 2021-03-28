@@ -178,17 +178,20 @@ void VMC::set_wave_function(bool interaction)
     if ((n_dims == 1) and !(interaction))
     {
         wave_function_ptr = &wave_function_1d_no_interaction_with_loop;
+        wave_function_diff_wrt_alpha_ptr = &wave_function_1d_diff_wrt_alpha;
     }
     else if ((n_dims == 2) and !(interaction))
     {
         wave_function_ptr = &wave_function_2d_no_interaction_with_loop;
+        wave_function_diff_wrt_alpha_ptr = &wave_function_2d_diff_wrt_alpha;
     }
     else if ((n_dims == 3) and !(interaction))
     {
         wave_function_ptr = &wave_function_3d_no_interaction_with_loop;
+        wave_function_diff_wrt_alpha_ptr = &wave_function_3d_diff_wrt_alpha;
     }
     else if ((n_dims == 1) and (interaction))
-    {
+    {   
         not_implemented_error("wave function", interaction);
     }
     else if ((n_dims == 2) and (interaction))
@@ -198,6 +201,7 @@ void VMC::set_wave_function(bool interaction)
     else if ((n_dims == 3) and (interaction))
     {
         wave_function_ptr = &wave_function_3d_interaction_with_loop;
+        wave_function_diff_wrt_alpha_ptr = &wave_function_3d_diff_wrt_alpha;
     }
 
     call_set_wave_function = true;

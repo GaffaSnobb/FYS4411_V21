@@ -99,6 +99,11 @@ class VMC
             const int current_particle, 
             const int n_particles
         );
+        double (*wave_function_diff_wrt_alpha_ptr)(
+            const arma::Mat<double> &pos,
+            const double alpha,
+            const double beta
+        );
 
     public:
         arma::Col<double> acceptances;   // Debug.

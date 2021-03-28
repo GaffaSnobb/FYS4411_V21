@@ -47,8 +47,18 @@ double wave_function_3d_interaction_with_loop(
     const int n_particles
 );
 double wave_function_3d_diff_wrt_alpha(
-    arma::Mat<double> pos,
-    double alpha,
-    double beta
+    const arma::Mat<double> &pos,
+    const double alpha,
+    const double beta
+);
+double wave_function_2d_diff_wrt_alpha(
+    const arma::Mat<double> &pos,
+    const double alpha,
+    const double beta
+);
+double wave_function_1d_diff_wrt_alpha(
+    const arma::Mat<double> &pos,
+    const double alpha,
+    const double beta
 );
 #endif

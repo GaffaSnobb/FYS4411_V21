@@ -262,7 +262,6 @@ void ImportanceSampling::one_variation(int variation)
     double particle_distance;
     particle_per_bin_count_thread.zeros();
     // One-body density end.
-
     for (particle = 0; particle < n_particles; particle++)
     {   /*
         Iterate over all particles.  In this loop, all current
@@ -366,7 +365,7 @@ void ImportanceSampling::one_variation(int variation)
                     pos_current.col(particle) = pos_new.col(particle);
                     qforce_current.col(particle) = qforce_new.col(particle);
                     wave_current = wave_new;
-
+                    
                     local_energy = 0;   // Overwrite local energy from previous particle step.
                     for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
                     {   /*
@@ -386,7 +385,7 @@ void ImportanceSampling::one_variation(int variation)
                     {   /*
                         Calculations needed for gradient descent.
                         */
-                        wave_derivative += wave_function_3d_diff_wrt_alpha(
+                        wave_derivative += wave_function_diff_wrt_alpha_ptr(
                             pos_current.col(particle_inner),
                             alpha,
                             beta
