@@ -6,6 +6,6 @@ const double m = 1;
 const double omega = 1;
 const double a = 0.0043;
 const double gamma_ = 2.82843;
-
+const double omega_z = gamma_*omega;
 
 #endif
