@@ -268,7 +268,8 @@ void VMC::solve()
 
         std::cout << "variation : " << std::setw(3) <<  variation;
         std::cout << ", alpha: " << std::setw(10) << alphas(variation);
-        std::cout << ", energy: " << energy_expectation;
+        std::cout << ", energy: " << std::setw(10) << energy_expectation;
+        std::cout << ", variance: " << std::setw(10) << energy_variance;
         std::cout << ", acceptance: " << std::setw(7) << acceptances(variation)/(n_mc_cycles*n_particles);
 
         #ifdef _OPENMP
