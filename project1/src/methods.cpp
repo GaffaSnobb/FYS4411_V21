@@ -180,8 +180,8 @@ void BruteForce::one_variation(int variation)
 
     energy_expectation /= n_mc_cycles;
     energy_expectation_squared /= n_mc_cycles;
-    energy_expectation /= (n_particles*n_particles);
-    energy_expectation_squared /= (n_particles*n_particles);
+    energy_expectation /= n_particles;
+    energy_expectation_squared /= n_particles;
     energy_variance = energy_expectation_squared
         - energy_expectation*energy_expectation;
 
@@ -425,8 +425,8 @@ void ImportanceSampling::one_variation(int variation)
 
     acceptances(variation) = acceptance;    // Debug.
     energy_expectation /= n_mc_cycles;
-    energy_expectation /= (n_particles*n_particles);
-    energy_expectation_squared /= (n_particles*n_particles);
+    energy_expectation /= n_particles;
+    energy_expectation_squared /= n_particles;
     energy_expectation_squared /= n_mc_cycles;
     energy_variance = energy_expectation_squared
         - energy_expectation*energy_expectation;
@@ -555,6 +555,7 @@ void GradientDescent::solve(const double tol)
         std::cout << "variation : " << std::setw(3) <<  variation;
         std::cout << ", alpha: " << std::setw(10) << alphas(variation);
         std::cout << ", energy: " << std::setw(10) << energy_expectation;
+        std::cout << ", variance: " << std::setw(10) << energy_variance;
         std::cout << ", acceptance: " << std::setw(7) << acceptances(variation)/(n_mc_cycles*n_particles);
         std::cout << ",  time : " << comp_time << "s" << std::endl;
         timing(variation) = comp_time;
