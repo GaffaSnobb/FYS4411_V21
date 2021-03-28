@@ -89,8 +89,6 @@ void generate_filenames(
 
 int main(int argc, char *argv[])
 {   /*
-    TODO: Currently omega_ho and omega_z are equal. Fix. (local_energy.cpp).
-    Whats the value of omega_z?
     */
 
     // Parameter definitions.
@@ -106,18 +104,24 @@ int main(int argc, char *argv[])
     arma::Col<double> alphas;
 
     // Global parameters:
-    const int n_dims = 3;           // Number of dimensions.
-    int n_particles = 10;     // Number of particles. NB: May be overwritten later in this function.
+    const int n_dims = 2;           // Number of dimensions.
+    const int n_particles = 500;     // Number of particles.
     const bool interaction = false;
     const bool debug = false;       // Toggle debug print on / off.
     double seed = 1337;       // RNG seed.
     const double gd_tolerance = 1e-3;
-    const bool numerical_differentiation = true;
+    const bool numerical_differentiation = false;
 
     // Select methods (choose one at a time):
     const bool gradient_descent = false;
-    const bool importance_sampling = false;
-    const bool brute_force = true;
+    const bool importance_sampling = true;
+    const bool brute_force = false;
+
+    if ((gradient_descent and importance_sampling) or (gradient_descent and brute_force) or (importance_sampling and brute_force))
+    {
+        std::cout << "Please choose only one method at a time! Exiting..." << std::endl;
+        exit(0);
+    }
     
     #ifdef _OPENMP
         parallel = true;
@@ -169,7 +173,6 @@ int main(int argc, char *argv[])
     {   /*
         Interaction ON, 3D, serial and importance.
         */
-        n_particles = 5;     // Number of particles.
         n_mc_cycles = 1e5;
         n_variations = 20;
         importance_time_step = 0.01;
@@ -181,7 +184,6 @@ int main(int argc, char *argv[])
     {   /*
         Interaction OFF, 3D, serial and importance.
         */
-        n_particles = 10;     // Number of particles.
         n_mc_cycles = 1e5;
         n_variations = 30;
         importance_time_step = 0.01;
@@ -195,16 +197,15 @@ int main(int argc, char *argv[])
         */
         n_mc_cycles = 1e5;
         n_variations = 30;
-        importance_time_step = 0.01;
         beta = 1;
         alphas = arma::linspace(0.1, 1, n_variations);
+        importance_time_step = 0.01;
     }
 
     else if ((!interaction) and (n_dims == 3) and (!parallel) and (brute_force) and (!numerical_differentiation))
     {   /*
         Interaction OFF, 3D, serial and brute force.
         */
-        n_particles = 10;     // Number of particles.
         n_mc_cycles = 5e5;
         n_variations = 10;
         beta = 1;
@@ -227,7 +228,6 @@ int main(int argc, char *argv[])
     {   /*
         Interaction ON, 3D, parallel and brute force.
         */
-        n_particles = 10;     // Number of particles.
         n_mc_cycles = 1e5;
         n_variations = 20;
         beta = 2.82843;
@@ -254,7 +254,6 @@ int main(int argc, char *argv[])
         Interaction OFF, 2D, parallel, brute force and analytical
         differentiation.
         */
-        n_particles = 10;
         n_mc_cycles = 1e5;
         n_variations = 30;
         beta = 1;
@@ -267,7 +266,30 @@ int main(int argc, char *argv[])
         Interaction OFF, 2D, parallel, brute force and numerical
         differentiation.
         */
-        n_particles = 10;
+        n_mc_cycles = 1e5;
+        n_variations = 30;
+        beta = 1;
+        alphas = arma::linspace(0.1, 1, n_variations);
+        brute_force_step_size = 0.2;
+    }
+    
+    else if (!interaction and (n_dims == 2) and parallel and brute_force and !numerical_differentiation)
+    {   /*
+        Interaction OFF, 2D, parallel, brute force and analytical
+        differentiation.
+        */
+        n_mc_cycles = 1e5;
+        n_variations = 30;
+        beta = 1;
+        alphas = arma::linspace(0.1, 1, n_variations);
+        brute_force_step_size = 0.2;
+    }
+
+    else if (!interaction and (n_dims == 2) and parallel and importance_sampling and !numerical_differentiation)
+    {   /*
+        Interaction OFF, 2D, parallel, importance and analytical
+        differentiation.
+        */
         n_mc_cycles = 1e5;
         n_variations = 30;
         beta = 1;
@@ -280,7 +302,6 @@ int main(int argc, char *argv[])
     {   /*
         Interaction OFF, 1D, serial and brute force.
         */
-        n_particles = 10;
         n_mc_cycles = 1e5;
         n_variations = 30;
         beta = 1;
@@ -292,7 +313,6 @@ int main(int argc, char *argv[])
     {   /*
         Interaction OFF, 1D, serial, brute force and numerical differentiation.
         */
-        n_particles = 10;
         n_mc_cycles = 1e5;
         n_variations = 10;
         beta = 1;
@@ -304,7 +324,6 @@ int main(int argc, char *argv[])
     {   /*
         Interaction OFF, 1D, parallel, brute force and numerical differentiation.
         */
-        n_particles = 10;
         n_mc_cycles = 1e5;
         n_variations = 30;
         beta = 1;
