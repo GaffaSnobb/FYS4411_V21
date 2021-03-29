@@ -223,7 +223,16 @@ def read_all_files(
         ))
 
     if not data_list:
-        msg = "No files have been loaded. Generate the data files or try another filter."
+        msg = "No files have been loaded."
+        msg += " Generate the data files or try another filter."
+        msg += f"\n{filter_method=}"
+        msg += f"\n{filter_n_particles=}"
+        msg += f"\n{filter_n_dims=}"
+        msg += f"\n{filter_n_mc_cycles=}"
+        msg += f"\n{filter_step_size=}"
+        msg += f"\n{filter_numerical=}"
+        msg += f"\n{filter_interaction=}"
+        msg += f"\n{filter_data_type=}"
         raise RuntimeError(msg)
     
     return data_list
