@@ -99,60 +99,66 @@ def task_1b():
         filter_n_particles = None,
         filter_n_dims = 3,
         filter_n_mc_cycles = int(2**20),
-        filter_step_size = None,
+        filter_step_size = 0.2,
         filter_numerical = False,
         filter_interaction = False,
-        filter_data_type = "particles"
+        filter_data_type = "particles",
+        directory = "generated_data/task_b/"
     )
     brute_2d = read_all_files(
         filter_method = "brute",
         filter_n_particles = None,
         filter_n_dims = 2,
         filter_n_mc_cycles = int(2**20),
-        filter_step_size = None,
+        filter_step_size = 0.2,
         filter_numerical = False,
         filter_interaction = False,
-        filter_data_type = "particles"
+        filter_data_type = "particles",
+        directory = "generated_data/task_b/"
     )
     brute_1d = read_all_files(
         filter_method = "brute",
         filter_n_particles = None,
         filter_n_dims = 1,
         filter_n_mc_cycles = int(2**20),
-        filter_step_size = None,
+        filter_step_size = 0.2,
         filter_numerical = False,
         filter_interaction = False,
-        filter_data_type = "particles"
+        filter_data_type = "particles",
+        directory = "generated_data/task_b/"
     )
     importance_3d = read_all_files(
         filter_method = "importance",
         filter_n_particles = None,
         filter_n_dims = 3,
         filter_n_mc_cycles = int(2**20),
-        filter_step_size = None,
+        filter_step_size = 0.01,
         filter_numerical = False,
         filter_interaction = False,
-        filter_data_type = "particles"
+        filter_data_type = "particles",
+        directory = "generated_data/task_b/"
     )
     importance_2d = read_all_files(
         filter_method = "importance",
         filter_n_particles = None,
         filter_n_dims = 2,
         filter_n_mc_cycles = int(2**20),
-        filter_step_size = None,
+        filter_step_size = 0.01,
         filter_numerical = False,
         filter_interaction = False,
-        filter_data_type = "particles"
+        filter_data_type = "particles",
+        directory = "generated_data/task_b/"
     )
     importance_1d = read_all_files(
         filter_method = "importance",
         filter_n_particles = None,
         filter_n_dims = 1,
         filter_n_mc_cycles = int(2**20),
-        filter_step_size = None,
+        filter_step_size = 0.01,
         filter_numerical = False,
         filter_interaction = False,
-        filter_data_type = "particles"
+        filter_data_type = "particles",
+        directory = "generated_data/task_b/"
     )
     
     def one_plot(data_3d, data_2d, data_1d):
@@ -223,6 +229,62 @@ def task_1b():
         data_2d = brute_2d[0],
         data_1d = brute_1d[0],
     )
+    one_plot(   # 100 particles.
+        data_3d = brute_3d[1],
+        data_2d = brute_2d[1],
+        data_1d = brute_1d[1],
+    )
+
+
+def task_1c():
+    importance = read_all_files(
+        filter_method = "importance",
+        filter_n_particles = 10,
+        filter_n_dims = 3,
+        filter_n_mc_cycles = int(2**20),
+        filter_step_size = None,
+        filter_numerical = False,
+        filter_interaction = False,
+        filter_data_type = "particles",
+        directory = "generated_data/"
+    )
+
+    importance.sort(key=lambda elem: elem.step_size)
+    
+    n = len(importance)
+    acceptances = np.zeros(n)
+    time_steps = np.zeros(n)
+    for i in range(n):
+        acceptances[i] = np.mean(importance[i].data[:, 4])
+        time_steps[i] = importance[i].step_size
+
+    
+    fig, ax = plt.subplots(figsize=(9, 7))
+    ax.plot(
+        time_steps,
+        acceptances,
+        "o",
+        color = "black"
+    )
+    ax.tick_params(labelsize=13)
+    ax.set_xlabel("Time step size", fontsize=15)
+    ax.set_ylabel("Acceptance rates", fontsize=15)
+    ax.grid()
+
+    fname_out_lst = importance[0].fname.split("_")
+    print(fname_out_lst)
+    fname_out_lst.pop(0)
+    fname_out_lst.pop(-1)
+    fname_out_lst.pop(-1)
+    fname_out = ""
+    
+    for elem in fname_out_lst:
+        fname_out += elem
+        fname_out += "_"
+    fname_out += "acceptance_vs_step.png"
+
+    fig.savefig(fname = "../fig/" + fname_out, dpi=300)
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -241,4 +303,5 @@ if __name__ == "__main__":
     # local_energy_alpha(f"{path}/output_gradient_descent_particles.txt", "GD")
     # tmp_gd()
     # onebody(f_brute_force_onebody)
-    task_1b()
+    # task_1b()
+    task_1c()
