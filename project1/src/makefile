@@ -1,5 +1,5 @@
-# COMPILER = g++
-COMPILER = g++-10
+COMPILER = g++
+# COMPILER = g++-10
 FLAGS = -std=c++17 -O1
 LIBRARIES = -larmadillo -fopenmp
 OBJECTS = VMC.o wave_function.o local_energy.o methods.o quantum_force.o parameters.o
@@ -7,7 +7,7 @@ OBJECTS = VMC.o wave_function.o local_energy.o methods.o quantum_force.o paramet
 all : main.out
 
 test : arma_test.cpp
-	g++-10 arma_test.cpp -o arma_test.out -std=c++17 -larmadillo
+	$(COMPILER) arma_test.cpp -o arma_test.out -std=c++17 -larmadillo
 
 main.out : $(OBJECTS)
 	$(COMPILER) $(FLAGS) $(OBJECTS) $(LIBRARIES) -o run.out main.cpp
@@ -51,4 +51,3 @@ clean :
 	-rm *.o
 	-rm -r __pycache__/
 	-rm -r run.out.dSYM/
-	# -rm generated_data/*.txt
