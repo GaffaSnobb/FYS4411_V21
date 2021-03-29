@@ -70,7 +70,7 @@ void generate_filenames(
     fname_particles += "_";
     fname_particles += std::to_string(importance_or_brute_step);
     fname_particles += "_";
-    
+
     if (numerical_differentiation) {fname_particles += "numerical";}
     else {fname_particles += "analytical";}
     fname_particles += "_";
@@ -98,25 +98,25 @@ int main(int argc, char *argv[])
     // Global parameters:
     double brute_force_step_size = 0.2;
     const double importance_time_step = 0.01;
-    const double initial_alpha_gd = 0.2;  // Initial variational parameter. Only for GD.
+    const double initial_alpha_gd = 0.1;  // Initial variational parameter. Only for GD.
     const double learning_rate = 1e-4;     // GD learning rate.
     const int n_gd_iterations = 200;      // Max. gradient descent iterations.
     double seed = 1337;       // RNG seed.
-    const double gd_tolerance = 1e-3;
+    const double gd_tolerance = 1e-4;
     const bool debug = false;       // Toggle debug print on / off.
-    
+
     const bool interaction = false;
     const bool numerical_differentiation = false;
     const int n_variations = 10;         // Number of variational parameters. Not in use with GD.
-    const int n_mc_cycles = std::pow(2, 20);          // Number of MC cycles, must be a power of 2
-    const int n_dims = 1;           // Number of dimensions.
+    const int n_mc_cycles = std::pow(2, 10);          // Number of MC cycles, must be a power of 2
+    const int n_dims = 3;           // Number of dimensions.
     const int n_particles = 10;     // Number of particles.
     arma::Col<double> alphas = arma::linspace(0.1, 1, n_variations);
 
     // Select methods (choose one at a time):
     const bool gradient_descent = false;
-    const bool importance_sampling = true;
-    const bool brute_force = false;
+    const bool importance_sampling = false;
+    const bool brute_force = true;
 
     if (interaction)
     {
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
         std::cout << "Please choose only one method at a time! Exiting..." << std::endl;
         exit(0);
     }
-    
+
     #ifdef _OPENMP
         parallel = true;
     #else
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
         brute_force,
         numerical_differentiation
     );
-    
+
     #ifdef _OPENMP
         double t1 = omp_get_wtime();
         double t2;
@@ -207,9 +207,7 @@ int main(int argc, char *argv[])
         system_1.set_local_energy(interaction);
         system_1.set_seed(seed);
         system_1.solve();
-        system_1.write_to_file(fname_importance_particles);
-        system_1.write_to_file_onebody_density(fname_importance_onebody);
-        
+
         #ifdef _OPENMP
             t2 = omp_get_wtime();
             comp_time = t2 - t1;
@@ -219,6 +217,9 @@ int main(int argc, char *argv[])
             comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
             std::cout << "total time: " << comp_time.count() << "s\n" << std::endl;
         #endif
+        system_1.write_to_file(fname_importance_particles);
+        system_1.write_energies_to_file(fname_importance_energies);
+        system_1.write_to_file_onebody_density(fname_importance_onebody);
     }
 
     // Brute -----------------------------------------------------------
@@ -265,9 +266,7 @@ int main(int argc, char *argv[])
         system_2.set_local_energy(interaction);
         system_2.set_seed(seed);
         system_2.solve();
-        system_2.write_to_file(fname_brute_particles);
-        system_2.write_to_file_onebody_density(fname_brute_onebody);
-        
+
         #ifdef _OPENMP
             t2 = omp_get_wtime();
             comp_time = t2 - t1;
@@ -277,6 +276,9 @@ int main(int argc, char *argv[])
             comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
             std::cout << "total time: " << comp_time.count() << "s\n" << std::endl;
         #endif
+        system_2.write_to_file(fname_brute_particles);
+        system_2.write_energies_to_file(fname_brute_energies);
+        system_2.write_to_file_onebody_density(fname_brute_onebody);
     }
 
     // GD --------------------------------------------------------------
@@ -324,9 +326,7 @@ int main(int argc, char *argv[])
         system_3.set_local_energy(interaction);
         system_3.set_seed(seed);
         system_3.solve(gd_tolerance);
-        system_3.write_to_file(fname_gradient_particles);
-        system_3.write_to_file_onebody_density(fname_gradient_onebody);
-        
+
         #ifdef _OPENMP
             t2 = omp_get_wtime();
             comp_time = t2 - t1;
@@ -336,6 +336,10 @@ int main(int argc, char *argv[])
             comp_time = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1);
             std::cout << "total time: " << comp_time.count() << "s\n" << std::endl;
         #endif
+
+        system_3.write_to_file(fname_gradient_particles);
+        system_3.write_energies_to_file(fname_gradient_energies);
+        system_3.write_to_file_onebody_density(fname_gradient_onebody);
     }
 
     print_parameters(
@@ -483,7 +487,7 @@ int main(int argc, char *argv[])
     //     alphas = arma::linspace(0.1, 1, n_variations);
     //     brute_force_step_size = 0.2;
     // }
-    
+
     // else if (!interaction and (n_dims == 2) and parallel and brute_force and !numerical_differentiation)
     // {   /*
     //     Interaction OFF, 2D, parallel, brute force and analytical

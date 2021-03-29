@@ -73,13 +73,13 @@ VMC::VMC(
 }
 
 void VMC::set_seed(double seed_input)
-{   
+{
     seed = seed_input;
     engine.seed(seed);
 }
 
 void VMC::set_quantum_force(bool interaction)
-{   
+{
     if ((n_dims == 1) and !interaction)
     {
         quantum_force_ptr = &quantum_force_3d_no_interaction;   // NB!! This might be wrong!
@@ -97,11 +97,11 @@ void VMC::set_quantum_force(bool interaction)
         not_implemented_error("quantum force", interaction);
     }
     else if ((n_dims == 2) and interaction)
-    {   
+    {
         not_implemented_error("quantum force", interaction);
     }
     else if ((n_dims == 3) and interaction)
-    {   
+    {
         quantum_force_ptr = &quantum_force_3d_interaction;
     }
     else
@@ -150,11 +150,11 @@ void VMC::set_local_energy(bool interaction)
         local_energy_ptr = &local_energy_3d_no_interaction;
     }
     else if ((n_dims == 3) and interaction and !numerical_differentiation)
-    {    
-        local_energy_ptr = &local_energy_3d_interaction;        
+    {
+        local_energy_ptr = &local_energy_3d_interaction;
     }
     else if ((n_dims == 3) and !interaction and numerical_differentiation)
-    {    
+    {
         local_energy_ptr = &local_energy_3d_no_interaction_numerical_differentiation;
     }
     else
@@ -191,7 +191,7 @@ void VMC::set_wave_function(bool interaction)
         wave_function_diff_wrt_alpha_ptr = &wave_function_3d_diff_wrt_alpha;
     }
     else if ((n_dims == 1) and (interaction))
-    {   
+    {
         not_implemented_error("wave function", interaction);
     }
     else if ((n_dims == 2) and (interaction))
@@ -208,7 +208,7 @@ void VMC::set_wave_function(bool interaction)
 }
 
 void VMC::not_implemented_error(std::string name, bool interaction)
-{   
+{
     std::cout << "NotImplementedError" << std::endl;
     std::cout << "Cannot set " << name << " for dimensions: " << n_dims;
     std::cout << " and interaction: " << interaction << "." << std::endl;
@@ -331,7 +331,7 @@ void VMC::write_energies_to_file(std::string fpath)
     */
     outfile.open(fpath, std::ios::out);
 
-    outfile << "n_particles " << n_particles << "\n";
+    outfile << "alhas" << "\n";
     for (int i = 0; i < n_variations; i++){
       outfile << std::setw(20) << std::setprecision(10);
       outfile << alphas(i);
