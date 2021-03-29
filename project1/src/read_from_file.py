@@ -69,7 +69,8 @@ def read_all_files(
     filter_step_size = None,
     filter_numerical = None,
     filter_interaction = None,
-    filter_data_type = None
+    filter_data_type = None,
+    directory = "generated_data/"
 ):
     """
     Read all text files in generated_data/ and store all relevant data
@@ -112,7 +113,7 @@ def read_all_files(
         List of Container objects.
     """
 
-    fnames = os.listdir("generated_data/")
+    fnames = os.listdir(directory)
     data_list = []
 
     for i in range(len(fnames)):
@@ -207,7 +208,7 @@ def read_all_files(
             """
             continue
 
-        data = np.loadtxt(fname = "generated_data/" + fnames[i], skiprows=1)
+        data = np.loadtxt(fname = directory + fnames[i], skiprows=1)
         
         data_list.append(Container(
             data,
@@ -233,6 +234,7 @@ def read_all_files(
         msg += f"\n{filter_numerical=}"
         msg += f"\n{filter_interaction=}"
         msg += f"\n{filter_data_type=}"
+        msg += f"\n{directory=}"
         raise RuntimeError(msg)
     
     data_list.sort(key=lambda elem: elem.n_particles)   # Sort elements based on the number of particles.
