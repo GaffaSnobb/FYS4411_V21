@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from read_from_file import read_all_files
-from time import time
+import os
+np.seterr(divide='ignore', invalid='ignore')
 
 def block(x, verbose=True):
     """
@@ -13,7 +14,6 @@ def block(x, verbose=True):
     d = int(np.log2(n))
     s, gamma, error_array = np.zeros(d), np.zeros(d), np.zeros(d)
     mu = np.mean(x)
-    t0 = time()
 
     # Calculate the autocovariance and variance for the data
     gamma[0] = (n)**(-1)*np.sum( (x[0:(n-1)] - mu) * (x[1:n] - mu) )
@@ -30,12 +30,6 @@ def block(x, verbose=True):
 
         # estimate autocovariance of x
         gamma[i] = (n)**(-1)*np.sum( (x[0:(n-1)] - mu) * (x[1:n] - mu) )
-
-        #gam = 0
-        #for j in range(n-1):
-        #    gam += (x[j] - mu)*(x[j+1]- mu)
-
-        #gamma[i] = (n)**(-1) * gam
 
         # estimate variance of x
         s[i] = np.var(x)
@@ -89,85 +83,23 @@ def block(x, verbose=True):
 
 
 
-def mean_var_error(data):
-    mean = np.mean(data)
-    var = np.var(data)
-    error = (var/len(data))**.5
-    return mean, var, error
-
-
-
-def analyze(f_energy, type=""):
-    """
-    print the results of blocking for all alphas.
-    input
-    ----------------------------
-    f_energy: str, filename
-    type:     str, when running for Gradient descent the columns with zero
-                    alpha is removed (the ones that are not filled)
-
-    """
-    print(45*"_"+"\n", type, 45*"_"+"\n", sep="\n")
-
-    alphas, energies, n_particles = read_energy_from_file(f_energy)
-    if type == "GradientDescent":
-        alphas, energies, n_particles = read_energy_from_file(f_energy, clip=True)
-
-    for alpha in range(len(alphas)):
-        print(f"alpha: {alphas[alpha]:.2f}")
-
-        data = energies[:,alpha]
-
-        best_error, error = block(data)
-        iter = np.arange(len(error))
-        best = np.ones(len(error)) * best_error
-
-
-
-def plot_error(f_energy, type="", alpha_value = None):
-    """
-    plot the error as a function of number of iterations
-
-    input
-    ----------------------------
-        f_energy:    str, filename of data
-        type:        str, todo: unprof solution maybe fix later
-        alpha_value: int, where the wanted alpha value is, is no value is
-                            specified, this defaults to the middle alpha.
-
-    """
-    alphas, energies, n_particles = read_energy_from_file(f_energy)
-    if type == "GradientDescent":
-        alphas, energies, n_particles = read_energy_from_file(f_energy, clip=True)
-
-    if alpha_value:
-        alpha = alpha_value
-    else:
-        alpha = int(len(alphas)/2)
-
-    print(45*"_"+"\n", type, 45*"_"+"\n", sep="\n")
-    print(f"alpha: {alphas[alpha]:.2f}")
-
-    data = energies[:,alpha]
-    best_error, error = block(data)
-
-    iter = np.arange(len(error))
-    best = np.ones(len(error)) * best_error
-
-    plt.figure()
-    plt.grid()
-    plt.title(type)
-    plt.plot(iter, error, color="k", label=r"$Error, \alpha=$"+f"{alphas[alpha]}")
-    plt.plot(iter, best, linestyle="dashed", color="tab:red", label="Optimal")
-
-    plt.xticks(np.arange(min(iter), max(iter)+1, 1.0))
-    plt.xlabel("Blocking iterations, k")
-    plt.ylabel(r"Sample Error, $\sqrt{\sigma^2_k \ / \ n_k}$")
-    plt.legend()
-    plt.show()
-
-
 def blocking_analysis(n_particles, n_dims, mc_cycles, method, numerical=False, interaction=False):
+    """
+    """
+    num = "analytic" if not numerical else "numerical"
+    inter = "nointeraction" if not interaction else "interaction"
+    path = f"../fig/blocking_{method}_{n_particles}_{n_dims}_{num}_{inter}/"
+    try:
+        os.mkdir(path)
+    except OSError:
+        print ("Creation of the directory %s failed" % path)
+    else:
+        print ("Successfully created the directory %s " % path)
+
+
+
+
+    print(45*"_"+"\n", method, 45*"_"+"\n", sep="\n")
 
     input = read_all_files(
         filter_method = method,
@@ -187,13 +119,13 @@ def blocking_analysis(n_particles, n_dims, mc_cycles, method, numerical=False, i
     alphas = input[0].data[0,:]
 
     # new filename
-    fname_blocking = f"blocking_{input[0].fname}"
-    file = open("generated_data/" + fname_blocking, "w")
+    #fname_blocking = f"blocking_{input[0].fname}"
+    #file = open("generated_data/" + fname_blocking, "w")
 
-    header = "alpha\tenergy\t\toriginal_error\tblocking_error\titerations"
+    header = "alpha\tenergy\t\tblocking_error\toriginal_error\titerations"
     print(header)
 
-    file.write(header+"\n")
+    #file.write(header+"\n")
 
     for i in range(len(alphas)):
         # Loop over alpha values and do blocking to find error
@@ -201,47 +133,31 @@ def blocking_analysis(n_particles, n_dims, mc_cycles, method, numerical=False, i
         data = input[0].data[1:,i]
         energy, blocking_error, original_error, iterations, error_array = block(data, verbose=False)
 
-        s = f"{alphas[i]:.1f}\t{energy:.6f}\t{original_error:.6f}\t{blocking_error:.6f}\t{iterations}"
+        s = f"{alphas[i]:.1f}\t{energy:.6f}\t{blocking_error:.6f}\t{original_error:.6f}\t{iterations}"
         print(s)
 
-        file.write(s+"\n")
+        #file.write(s+"\n")
 
         iter = np.arange(len(error_array))
         block_line = np.ones(len(error_array)) * blocking_error
         orig_line =  np.ones(len(error_array)) * original_error
 
-        plt.figure()
+        fig = plt.figure()
         plt.grid()
         plt.plot(iter, error_array, ".", color="k", label=r"$Error, \alpha=$"+f"{alphas[i]}")
-        plt.plot(iter, block_line, linestyle="dashed", color="tab:red", label="Optimal")
-        plt.plot(iter, orig_line, linestyle="dashed", color="tab:blue", label="Original")
+        plt.plot(iter, block_line, linestyle="dashed", color="tab:blue", label="Optimal")
 
         plt.xticks(np.arange(min(iter), max(iter)+1, 1.0))
         plt.xlabel("Blocking iterations, k")
         plt.ylabel(r"Sample Error, $\sqrt{\sigma^2_k \ / \ n_k}$")
         plt.legend()
-        plt.show()
+        fig.savefig(f"{path}/alpha_{alphas[i]}.png")
+        #plt.show()
 
-
-#    energy, best_error, original, iterations, error = block(input[0].data[1:,0], verbose=False)
-#    iter = np.arange(len(error))
-#    best = np.ones(len(error)) * best_error
-#
-#    plt.figure()
-#    plt.grid()
-#    plt.plot(iter, error, ".", color="k", label=r"$Error, \alpha=$"+f"{alphas[1]}")
-#    plt.plot(iter, best, linestyle="dashed", color="tab:red", label="Optimal")
-#
-#    plt.xticks(np.arange(min(iter), max(iter)+1, 1.0))
-#    plt.xlabel("Blocking iterations, k")
-#    plt.ylabel(r"Sample Error, $\sqrt{\sigma^2_k \ / \ n_k}$")
-#    plt.legend()
-#    plt.show()
-
-
+    #file.close()
 
 def main():
-    print(45*"_"+"\n", "Brute-Force", 45*"_"+"\n", sep="\n")
+
     blocking_analysis(method = "brute",
                       n_particles = 10,
                       n_dims = 3,

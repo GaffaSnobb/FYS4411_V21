@@ -3,6 +3,8 @@
 
 Install armadillo: https://www.uio.no/studier/emner/matnat/fys/FYS4411/v13/guides/installing-armadillo/
 
+Python 3.8
+
 ## How to use
 ### 1. Compile the main program
 The program is compiled using make. In a terminal write,
@@ -10,9 +12,9 @@ The program is compiled using make. In a terminal write,
 $ make
 ```
 
-To compile, run binary, and plot the results use the command,
+To compile and run use the command
 ```
-$ make plot
+$ make run
 ```
 
 ## Credit
