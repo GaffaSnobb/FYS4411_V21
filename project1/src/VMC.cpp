@@ -301,7 +301,8 @@ void VMC::write_to_file(std::string fpath)
     outfile << std::setw(20) << "alpha";
     outfile << std::setw(20) << "variance_energy";
     outfile << std::setw(21) << "expected_energy";
-    outfile << std::setw(21) << "time\n";
+    outfile << std::setw(21) << "time";
+    outfile << std::setw(21) << "acceptance_rate\n";
 
     for (int i = 0; i < n_variations_final; i++)
     {   /*
@@ -314,7 +315,7 @@ void VMC::write_to_file(std::string fpath)
         outfile << std::setw(20) << std::setprecision(10);
         outfile << e_expectations(i);
         outfile << std::setw(20) << std::setprecision(10);
-        outfile << timing(i) << "\n";
+        outfile << timing(i);
         outfile << std::setw(20) << std::setprecision(10);
         outfile << acceptances(i)/(n_particles*n_mc_cycles) << "\n";
     }
