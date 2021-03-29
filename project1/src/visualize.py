@@ -1,6 +1,4 @@
-import os
 import sys
-from matplotlib import interactive
 import numpy as np
 import matplotlib.pyplot as plt
 from read_from_file import read_from_file, read_energy_from_file, read_all_files
@@ -152,61 +150,69 @@ def task_1b():
     importance_2d.sort(key=lambda elem: elem.n_particles)
     importance_1d.sort(key=lambda elem: elem.n_particles)
     
-    # for elem in brute_3d:
-    #     # Debug.
-    #     print(elem.fname)
-    
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(9, 7))
+    def one_plot(data_3d, data_2d, data_1d):
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(9, 7))
 
-    ax.errorbar(
-        importance_3d[0].data[:, 0],
-        importance_3d[0].data[:, 2],
-        np.sqrt(importance_3d[0].data[:, 1]),
-        fmt = "o",
-        label = f"3D",
-        color = "black",
-        capsize = 5
+        ax.errorbar(
+            data_3d.data[:, 0],
+            data_3d.data[:, 2],
+            np.sqrt(data_3d.data[:, 1]),
+            fmt = "o",
+            label = f"3D",
+            color = "black",
+            capsize = 3
+        )
+        ax.errorbar(
+            data_2d.data[:, 0],
+            data_2d.data[:, 2],
+            np.sqrt(data_2d.data[:, 1]),
+            fmt = "D",
+            label = f"2D",
+            color = "black",
+            capsize = 3
+        )
+        ax.errorbar(
+            data_1d.data[:, 0],
+            data_1d.data[:, 2],
+            np.sqrt(data_1d.data[:, 1]),
+            fmt = "s",
+            label = f"1D",
+            color = "black",
+            capsize = 3
+        )
+        ax.tick_params(labelsize=13)
+        ax.grid()
+        ax.legend(fontsize=15)
+        ax.set_xticks(np.arange(0.1, 1 + 0.1, 0.1))
+        fig.text(x=0.5, y=0.01, s=r"$\alpha$", fontsize=15)
+        fig.text(x=0.005, y=0.42, s=r"Local energy", fontsize=15, rotation="vertical")
+        fig.tight_layout(pad=2)
+        
+        fname_out_lst = data_3d.fname.split("_")
+        fname_out_lst.pop(0)
+        fname_out_lst.pop(2)
+        fname_out_lst.pop(-1)
+        fname_out_lst.pop(-1)
+        fname_out = ""
+        
+        for elem in fname_out_lst:
+            fname_out += elem
+            fname_out += "_"
+        fname_out += "dimension_plot.png"
+        
+        fig.savefig(fname = "../fig/" + fname_out, dpi=300)
+        plt.show()
+
+    # one_plot(   # 10 particles.
+    #     data_3d = importance_3d[0],
+    #     data_2d = importance_2d[0],
+    #     data_1d = importance_1d[0],
+    # )
+    one_plot(   # 100 particles.
+        data_3d = importance_3d[1],
+        data_2d = importance_2d[1],
+        data_1d = importance_1d[1],
     )
-    ax.errorbar(
-        importance_2d[0].data[:, 0],
-        importance_2d[0].data[:, 2],
-        np.sqrt(importance_2d[0].data[:, 1]),
-        fmt = "D",
-        label = f"2D",
-        color = "black",
-        capsize = 5
-    )
-    ax.errorbar(
-        importance_1d[0].data[:, 0],
-        importance_1d[0].data[:, 2],
-        np.sqrt(importance_1d[0].data[:, 1]),
-        fmt = "s",
-        label = f"1D",
-        color = "black",
-        capsize = 5
-    )
-    ax.tick_params(labelsize=13)
-    ax.grid()
-    ax.legend(fontsize=15)
-    ax.set_xticks(np.arange(0.1, 1 + 0.1, 0.1))
-    fig.text(x=0.5, y=0.01, s=r"$\alpha$", fontsize=15)
-    fig.text(x=0.005, y=0.42, s=r"Local energy", fontsize=15, rotation="vertical")
-    fig.tight_layout(pad=2)
-    
-    fname_out_lst = importance_3d[0].fname.split("_")
-    fname_out_lst.pop(0)
-    fname_out_lst.pop(2)
-    fname_out_lst.pop(-1)
-    fname_out_lst.pop(-1)
-    fname_out = ""
-    
-    for elem in fname_out_lst:
-        fname_out += elem
-        fname_out += "_"
-    fname_out += "dimension_plot.png"
-    
-    fig.savefig(fname = "../fig/" + fname_out, dpi=300)
-    plt.show()
     # ax.set_ylabel(r"Energy per particle", fontsize=15)
     # ax.set_xlabel(r"$\alpha$", fontsize=15)
     
