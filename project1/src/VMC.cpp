@@ -331,6 +331,7 @@ void VMC::write_energies_to_file(std::string fpath)
     */
     outfile.open(fpath, std::ios::out);
 
+    outfile << "alhas" << "\n";
     for (int i = 0; i < n_variations; i++){
       outfile << std::setw(20) << std::setprecision(10);
       outfile << alphas(i);
