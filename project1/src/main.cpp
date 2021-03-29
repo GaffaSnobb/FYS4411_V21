@@ -70,7 +70,7 @@ void generate_filenames(
     fname_particles += "_";
     fname_particles += std::to_string(importance_or_brute_step);
     fname_particles += "_";
-    
+
     if (numerical_differentiation) {fname_particles += "numerical";}
     else {fname_particles += "analytical";}
     fname_particles += "_";
@@ -104,12 +104,12 @@ int main(int argc, char *argv[])
     double seed = 1337;       // RNG seed.
     const double gd_tolerance = 1e-3;
     const bool debug = false;       // Toggle debug print on / off.
-    
+
     const bool interaction = false;
     const bool numerical_differentiation = false;
     const int n_variations = 10;         // Number of variational parameters. Not in use with GD.
     const int n_mc_cycles = std::pow(2, 20);          // Number of MC cycles, must be a power of 2
-    const int n_dims = 1;           // Number of dimensions.
+    const int n_dims = 3;           // Number of dimensions.
     const int n_particles = 10;     // Number of particles.
     arma::Col<double> alphas = arma::linspace(0.1, 1, n_variations);
 
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
         std::cout << "Please choose only one method at a time! Exiting..." << std::endl;
         exit(0);
     }
-    
+
     #ifdef _OPENMP
         parallel = true;
     #else
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
         brute_force,
         numerical_differentiation
     );
-    
+
     #ifdef _OPENMP
         double t1 = omp_get_wtime();
         double t2;
@@ -208,8 +208,9 @@ int main(int argc, char *argv[])
         system_1.set_seed(seed);
         system_1.solve();
         system_1.write_to_file(fname_importance_particles);
+        system_1.write_energies_to_file(fname_importance_energies);
         system_1.write_to_file_onebody_density(fname_importance_onebody);
-        
+
         #ifdef _OPENMP
             t2 = omp_get_wtime();
             comp_time = t2 - t1;
@@ -266,8 +267,9 @@ int main(int argc, char *argv[])
         system_2.set_seed(seed);
         system_2.solve();
         system_2.write_to_file(fname_brute_particles);
+        system_2.write_energies_to_file(fname_brute_energies);
         system_2.write_to_file_onebody_density(fname_brute_onebody);
-        
+
         #ifdef _OPENMP
             t2 = omp_get_wtime();
             comp_time = t2 - t1;
@@ -325,8 +327,9 @@ int main(int argc, char *argv[])
         system_3.set_seed(seed);
         system_3.solve(gd_tolerance);
         system_3.write_to_file(fname_gradient_particles);
+        system_3.write_energies_to_file(fname_gradient_energies);
         system_3.write_to_file_onebody_density(fname_gradient_onebody);
-        
+
         #ifdef _OPENMP
             t2 = omp_get_wtime();
             comp_time = t2 - t1;
@@ -483,7 +486,7 @@ int main(int argc, char *argv[])
     //     alphas = arma::linspace(0.1, 1, n_variations);
     //     brute_force_step_size = 0.2;
     // }
-    
+
     // else if (!interaction and (n_dims == 2) and parallel and brute_force and !numerical_differentiation)
     // {   /*
     //     Interaction OFF, 2D, parallel, brute force and analytical
