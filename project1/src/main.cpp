@@ -97,26 +97,27 @@ int main(int argc, char *argv[])
 
     // Global parameters:
     double brute_force_step_size = 0.2;
-    const double importance_time_step = 0.01;
+    const double importance_time_step = 0.025;
     const double initial_alpha_gd = 0.1;  // Initial variational parameter. Only for GD.
     const double learning_rate = 1e-4;     // GD learning rate.
     const int n_gd_iterations = 200;      // Max. gradient descent iterations.
-    double seed = 1337;       // RNG seed.
+    long seed = time_t();
+
     const double gd_tolerance = 1e-4;
     const bool debug = false;       // Toggle debug print on / off.
 
     const bool interaction = false;
     const bool numerical_differentiation = false;
     const int n_variations = 10;         // Number of variational parameters. Not in use with GD.
-    const int n_mc_cycles = std::pow(2, 10);          // Number of MC cycles, must be a power of 2
+    const int n_mc_cycles = std::pow(2, 20);          // Number of MC cycles, must be a power of 2
     const int n_dims = 3;           // Number of dimensions.
     const int n_particles = 10;     // Number of particles.
     arma::Col<double> alphas = arma::linspace(0.1, 1, n_variations);
 
     // Select methods (choose one at a time):
     const bool gradient_descent = false;
-    const bool importance_sampling = false;
-    const bool brute_force = true;
+    const bool importance_sampling = true;
+    const bool brute_force = false;  // JEG TAR BRUTE 500 partikler!!
 
     if (interaction)
     {
@@ -130,6 +131,11 @@ int main(int argc, char *argv[])
     if ((gradient_descent and importance_sampling) or (gradient_descent and brute_force) or (importance_sampling and brute_force))
     {
         std::cout << "Please choose only one method at a time! Exiting..." << std::endl;
+        exit(0);
+    }
+    if (!gradient_descent and !brute_force and !importance_sampling)
+    {
+        std::cout << "No method is chosen. Exiting..." << std::endl;
         exit(0);
     }
 
