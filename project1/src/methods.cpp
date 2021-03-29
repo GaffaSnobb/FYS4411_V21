@@ -88,7 +88,7 @@ void BruteForce::one_variation(int variation)
         beta,
         n_particles
     );
-    
+
     #pragma omp parallel \
         private(mc, particle, dim, particle_inner) \
         private(wave_new) \
@@ -301,7 +301,7 @@ void ImportanceSampling::one_variation(int variation)
         reduction(+:wave_times_energy_expectation, wave_derivative_expectation) \
         firstprivate(wave_derivative, particle_per_bin_count_thread) \
         private(engine)
-    {   
+    {
         #ifdef _OPENMP
             engine.seed(seed + omp_get_thread_num());
         #endif
@@ -324,7 +324,7 @@ void ImportanceSampling::one_variation(int variation)
                         diffusion_coeff*qforce_current(dim, particle)*time_step +
                         normal(engine)*sqrt(time_step);
                 }
-                
+
                 qforce_new.col(particle) = quantum_force_ptr(
                     pos_new,
                     alpha,
@@ -353,10 +353,10 @@ void ImportanceSampling::one_variation(int variation)
                 }
 
                 greens_ratio = exp(greens_ratio);
-                
+
                 double wave_ratio = wave_new/wave_current;
                 wave_ratio *= wave_ratio;   // TODO: Find out why we need wave_ratio**2.
-                
+
                 if (uniform(engine) < greens_ratio*wave_ratio)
                 {   /*
                     Metropolis check.
@@ -365,7 +365,7 @@ void ImportanceSampling::one_variation(int variation)
                     pos_current.col(particle) = pos_new.col(particle);
                     qforce_current.col(particle) = qforce_new.col(particle);
                     wave_current = wave_new;
-                    
+
                     local_energy = 0;   // Overwrite local energy from previous particle step.
                     for (particle_inner = 0; particle_inner < n_particles; particle_inner++)
                     {   /*
@@ -434,7 +434,7 @@ void ImportanceSampling::one_variation(int variation)
     // GD specifics.
     wave_times_energy_expectation /= n_mc_cycles;
     wave_derivative_expectation /= n_mc_cycles;
-    // GD specifics end.    
+    // GD specifics end.
 }
 
 GradientDescent::GradientDescent(
@@ -533,14 +533,14 @@ void GradientDescent::solve(const double tol)
         #else
             t1 = std::chrono::steady_clock::now();
         #endif
-        
+
         one_variation(variation);
         e_expectations(variation) = energy_expectation;
         e_variances(variation) = energy_variance;
 
         energy_derivative = 2*(wave_times_energy_expectation -
-            wave_derivative_expectation*energy_expectation/n_particles);
-        
+            wave_derivative_expectation*energy_expectation);
+
         #ifdef _OPENMP
             t2 = omp_get_wtime();
             comp_time = t2 - t1;
