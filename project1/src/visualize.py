@@ -114,6 +114,16 @@ def task_1b():
         filter_interaction = False,
         filter_data_type = "particles"
     )
+    brute_1d = read_all_files(
+        filter_method = "brute",
+        filter_n_particles = None,
+        filter_n_dims = 1,
+        filter_n_mc_cycles = int(2**20),
+        filter_step_size = None,
+        filter_numerical = False,
+        filter_interaction = False,
+        filter_data_type = "particles"
+    )
     importance_3d = read_all_files(
         filter_method = "importance",
         filter_n_particles = None,
@@ -144,11 +154,6 @@ def task_1b():
         filter_interaction = False,
         filter_data_type = "particles"
     )
-    brute_3d.sort(key=lambda elem: elem.n_particles) # Sort elements based on the number of particles.
-    brute_2d.sort(key=lambda elem: elem.n_particles)
-    importance_3d.sort(key=lambda elem: elem.n_particles)
-    importance_2d.sort(key=lambda elem: elem.n_particles)
-    importance_1d.sort(key=lambda elem: elem.n_particles)
     
     def one_plot(data_3d, data_2d, data_1d):
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(9, 7))
@@ -156,28 +161,28 @@ def task_1b():
         ax.errorbar(
             data_3d.data[:, 0],
             data_3d.data[:, 2],
-            np.sqrt(data_3d.data[:, 1]),
-            fmt = "o",
+            # np.sqrt(data_3d.data[:, 1]),
+            # fmt = "--o",
             label = f"3D",
-            color = "black",
+            # color = "black",
             capsize = 3
         )
         ax.errorbar(
             data_2d.data[:, 0],
             data_2d.data[:, 2],
-            np.sqrt(data_2d.data[:, 1]),
-            fmt = "D",
+            # np.sqrt(data_2d.data[:, 1]),
+            # fmt = "--D",
             label = f"2D",
-            color = "black",
+            # color = "black",
             capsize = 3
         )
         ax.errorbar(
             data_1d.data[:, 0],
             data_1d.data[:, 2],
-            np.sqrt(data_1d.data[:, 1]),
-            fmt = "s",
+            # np.sqrt(data_1d.data[:, 1]),
+            # fmt = "--s",
             label = f"1D",
-            color = "black",
+            # color = "black",
             capsize = 3
         )
         ax.tick_params(labelsize=13)
@@ -203,89 +208,21 @@ def task_1b():
         fig.savefig(fname = "../fig/" + fname_out, dpi=300)
         plt.show()
 
-    # one_plot(   # 10 particles.
-    #     data_3d = importance_3d[0],
-    #     data_2d = importance_2d[0],
-    #     data_1d = importance_1d[0],
-    # )
+    one_plot(   # 10 particles.
+        data_3d = importance_3d[0],
+        data_2d = importance_2d[0],
+        data_1d = importance_1d[0],
+    )
     one_plot(   # 100 particles.
         data_3d = importance_3d[1],
         data_2d = importance_2d[1],
         data_1d = importance_1d[1],
     )
-    # ax.set_ylabel(r"Energy per particle", fontsize=15)
-    # ax.set_xlabel(r"$\alpha$", fontsize=15)
-    
-
-
-    # ax.errorbar(
-    #     brute_3d[0].data[:, 0],
-    #     brute_3d[0].data[:, 2],
-    #     np.sqrt(brute_3d[0].data[:, 1]),
-    #     fmt = "o",
-    #     label = f"Brute force 3d",
-    #     # color = "black"
-    # )
-    # ax.errorbar(
-    #     brute_2d[0].data[:, 0],
-    #     brute_2d[0].data[:, 2],
-    #     np.sqrt(brute_2d[0].data[:, 1]),
-    #     fmt = "o",
-    #     label = f"Brute force 2d"
-    # )
-
-    # ax[0].set_title(f"{brute_3d[0].n_particles} particles")
-
-    # # Place legend in ax[1].
-    # handles, labels = ax[0].get_legend_handles_labels()
-    # ax[1].legend(handles, labels, loc='center', fontsize=15)
-    # ax[1].axis("off")
-
-    # ax[2].plot(
-    #     brute_3d[1].data[:, 0],
-    #     brute_3d[1].data[:, 2],
-    #     "."
-    # )
-    # ax[2].plot(
-    #     importance_3d[1].data[:, 0],
-    #     importance_3d[1].data[:, 2],
-    #     "."
-    # )
-    # ax[2].plot(
-    #     brute_2d[1].data[:, 0],
-    #     brute_2d[1].data[:, 2],
-    #     "."
-    # )
-    # ax[2].plot(
-    #     importance_2d[1].data[:, 0],
-    #     importance_2d[1].data[:, 2],
-    #     "."
-    # )
-    # ax[2].set_title(f"{brute_3d[1].n_particles} particles")
-    
-    # ax[3].plot(
-    #     brute_3d[2].data[:, 0],
-    #     brute_3d[2].data[:, 2],
-    #     "."
-    # )
-    # ax[3].plot(
-    #     importance_3d[2].data[:, 0],
-    #     importance_3d[2].data[:, 2],
-    #     "."
-    # )
-    # ax[3].set_title(f"{brute_3d[2].n_particles} particles")
-
-    # for i in range(len(ax)):
-    #     ax[i].tick_params(labelsize=13)
-    #     ax[i].grid()
-
-
-
-
-
-
-
-
+    one_plot(   # 10 particles.
+        data_3d = brute_3d[0],
+        data_2d = brute_2d[0],
+        data_1d = brute_1d[0],
+    )
 
 
 if __name__ == "__main__":
