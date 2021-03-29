@@ -315,6 +315,8 @@ void VMC::write_to_file(std::string fpath)
         outfile << e_expectations(i);
         outfile << std::setw(20) << std::setprecision(10);
         outfile << timing(i) << "\n";
+        outfile << std::setw(20) << std::setprecision(10);
+        outfile << acceptances(i)/(n_particles*n_mc_cycles) << "\n";
     }
     outfile.close();
     std::cout << fpath << " written to file." << std::endl;
@@ -331,13 +333,14 @@ void VMC::write_energies_to_file(std::string fpath)
     */
     outfile.open(fpath, std::ios::out);
 
-    outfile << "alhas" << "\n";
-    for (int i = 0; i < n_variations; i++){
+    outfile << "alphas" << "\n";
+    for (int i = 0; i < n_variations_final; i++){
       outfile << std::setw(20) << std::setprecision(10);
       outfile << alphas(i);
     }
     outfile << "\n";
-    energies.save(outfile, arma::raw_ascii);
+    arma::Mat<double> energies_subview = energies.cols(0, n_variations_final - 1); 
+    energies_subview.save(outfile, arma::raw_ascii);
     outfile.close();
     std::cout << fpath << " written to file." << std::endl;
 }
