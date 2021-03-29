@@ -1,9 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from read_from_file import read_energy_from_file, read_from_file
+from read_from_file import read_all_files
 from time import time
 
-def block(x):
+def block(x, verbose=True):
     """
     Credit: Marius Jonsson
     Jonsson, M. (2018). Standard error estimation by an automated blocking method. Physical Review E, 98(4), 043304.
@@ -11,14 +11,14 @@ def block(x):
     # preliminaries
     n = len(x)
     d = int(np.log2(n))
-    s, gamma, error = np.zeros(d), np.zeros(d), np.zeros(d)
+    s, gamma, error_array = np.zeros(d), np.zeros(d), np.zeros(d)
     mu = np.mean(x)
     t0 = time()
 
     # Calculate the autocovariance and variance for the data
     gamma[0] = (n)**(-1)*np.sum( (x[0:(n-1)] - mu) * (x[1:n] - mu) )
     s[0] = np.var(x)
-    error[0] = (s[0]/n)**.5
+    error_array[0] = (s[0]/n)**.5
 
     # estimate the auto-covariance and variances for each blocking transformation
     for i in np.arange(1, d):
@@ -41,7 +41,7 @@ def block(x):
         s[i] = np.var(x)
 
         # estimate the error
-        error[i] = (s[i]/n)**.5
+        error_array[i] = (s[i]/n)**.5
 
 
     # generate the test observator M_k from the theorem
@@ -71,17 +71,21 @@ def block(x):
                  110.898, 112.022, 113.145, 114.268, 115.390, 116.511, 117.632,
                  118.752, 119.871, 120.990, 122.108, 123.225, 124.342, 124.342])
 
-
     # use magic to determine when we should have stopped blocking
     for k in np.arange(0, d):
         if(M[k] < q[k]):
             break
     if (k >= d-1):
-        print ("Warning: Use more data")
+        if verbose:
+            print ("Warning: Use more data")
 
-    best_error = error[k]
-    print(f"avg: {mu:.6f}, error(orig): {error[0]:.6f}, error(block): {best_error:.6f}, iterations: {k}\n")
-    return best_error, error
+    best_error = error_array[k]
+    original_error = error_array[0]
+
+    if verbose:
+        print(f"avg: {mu:.6f}, error(orig): {original_error:.6f}, error(block): {best_error:.6f}, iterations: {k}\n")
+
+    return mu, best_error, original_error, k, error_array
 
 
 
@@ -163,14 +167,121 @@ def plot_error(f_energy, type="", alpha_value = None):
     plt.show()
 
 
+def blocking_analysis(n_particles, n_dims, mc_cycles, method, numerical=False, interaction=False):
+
+    input = read_all_files(
+        filter_method = method,
+        filter_n_particles = n_particles,
+        filter_n_dims = n_dims,
+        filter_n_mc_cycles = mc_cycles,
+        filter_step_size = None,
+        filter_numerical = numerical,
+        filter_interaction = interaction,
+        filter_data_type = "energies"
+    )
+
+    # Sort elements based on the number of particles.
+    input.sort(key=lambda elem: elem.n_particles)
+
+    # Get the array of alpha values
+    alphas = input[0].data[0,:]
+
+    # new filename
+    fname_blocking = f"blocking_{input[0].fname}"
+    file = open("generated_data/" + fname_blocking, "w")
+
+    header = "alpha\tenergy\t\toriginal_error\tblocking_error\titerations"
+    print(header)
+
+    file.write(header+"\n")
+
+    for i in range(len(alphas)):
+        # Loop over alpha values and do blocking to find error
+
+        data = input[0].data[1:,i]
+        energy, blocking_error, original_error, iterations, error_array = block(data, verbose=False)
+
+        s = f"{alphas[i]:.1f}\t{energy:.6f}\t{original_error:.6f}\t{blocking_error:.6f}\t{iterations}"
+        print(s)
+
+        file.write(s+"\n")
+
+        iter = np.arange(len(error_array))
+        block_line = np.ones(len(error_array)) * blocking_error
+        orig_line =  np.ones(len(error_array)) * original_error
+
+        plt.figure()
+        plt.grid()
+        plt.plot(iter, error_array, ".", color="k", label=r"$Error, \alpha=$"+f"{alphas[i]}")
+        plt.plot(iter, block_line, linestyle="dashed", color="tab:red", label="Optimal")
+        plt.plot(iter, orig_line, linestyle="dashed", color="tab:blue", label="Original")
+
+        plt.xticks(np.arange(min(iter), max(iter)+1, 1.0))
+        plt.xlabel("Blocking iterations, k")
+        plt.ylabel(r"Sample Error, $\sqrt{\sigma^2_k \ / \ n_k}$")
+        plt.legend()
+        plt.show()
+
+
+#    energy, best_error, original, iterations, error = block(input[0].data[1:,0], verbose=False)
+#    iter = np.arange(len(error))
+#    best = np.ones(len(error)) * best_error
+#
+#    plt.figure()
+#    plt.grid()
+#    plt.plot(iter, error, ".", color="k", label=r"$Error, \alpha=$"+f"{alphas[1]}")
+#    plt.plot(iter, best, linestyle="dashed", color="tab:red", label="Optimal")
+#
+#    plt.xticks(np.arange(min(iter), max(iter)+1, 1.0))
+#    plt.xlabel("Blocking iterations, k")
+#    plt.ylabel(r"Sample Error, $\sqrt{\sigma^2_k \ / \ n_k}$")
+#    plt.legend()
+#    plt.show()
+
+
+
+def main():
+    print(45*"_"+"\n", "Brute-Force", 45*"_"+"\n", sep="\n")
+    blocking_analysis(method = "brute",
+                      n_particles = 10,
+                      n_dims = 3,
+                      mc_cycles= int(2**20),
+                      numerical=False,
+                      interaction=False)
+
+#    print(45*"_"+"\n", "Importance", 45*"_"+"\n", sep="\n")
+#    blocking_analysis(method = "importance",
+#                      n_particles = 10,
+#                      n_dims = 3,
+#                      mc_cycles= int(2**20),
+#                      numerical=False,
+#                      interaction=False)
+
 
 if __name__ == '__main__':
-    f_importance = "generated_data/output_energy_importance.txt"
-    f_brute = "generated_data/output_energy_brute_force.txt"
-    f_gd = "generated_data/output_energy_gradient_descent.txt"
+    main()
 
-    analyze(f_importance, "Importance")
-    analyze(f_brute, "BruteForce")
-    analyze(f_gd, "GradientDescent")
+    """
+    brute_3d = read_all_files(
+        filter_method = "brute",
+        filter_n_particles = None,
+        filter_n_dims = 3,
+        filter_n_mc_cycles = int(2**20),
+        filter_step_size = None,
+        filter_numerical = False,
+        filter_interaction = False,
+        filter_data_type = "particles"
+    )
 
-    plot_error(f_importance, "Importance", alpha_value=30)
+    variance = brute_3d[0].data[:, 1]
+    energy = brute_3d[0].data[:,2]
+    n_particles = brute_3d[0].n_particles
+    n_mc_cycles = brute_3d[0].n_mc_cycles
+    alphas = brute_3d[0].data[:, 0]
+
+    error = (variance/n_mc_cycles)**0.5
+
+    for i in range(len(alphas)):
+        print(f"alpha: {alphas[i]:.2f}")
+        print(f"avg: {energy[i]:.6f}, variance: {variance[i]:.6f}, error: {error[i]:.6f}\n")
+    """
