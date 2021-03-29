@@ -235,6 +235,7 @@ def read_all_files(
         msg += f"\n{filter_data_type=}"
         raise RuntimeError(msg)
     
+    data_list.sort(key=lambda elem: elem.n_particles)   # Sort elements based on the number of particles.
     return data_list
 
 
