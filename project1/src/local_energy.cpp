@@ -37,7 +37,7 @@ double local_energy_3d_interaction(
     double x = pos(0, current_particle);
     double y = pos(1, current_particle);
     double z = pos(2, current_particle);
-    
+
     // Term 1.
     double term_1 = -2*alpha;
     term_1 *= (2 - 2*alpha*(x*x + y*y + beta*beta*z*z) + beta*beta);
@@ -106,7 +106,7 @@ double local_energy_3d_interaction(
     double u_diff_1;
     double u_diff_2;
     arma::Col<double> particle_diff_vector_2(3);
-    
+
     for (particle = 0; particle < current_particle; particle++)
     {
         particle_diff_vector_1 =
@@ -126,7 +126,7 @@ double local_energy_3d_interaction(
         {
             u_diff_1 = 0;
         }
-        
+
         for (particle_inner = 0; particle_inner < current_particle; particle_inner++)
         {
             particle_diff_vector_2 =
@@ -197,7 +197,7 @@ double local_energy_3d_interaction(
         {
             u_diff_1 = 0;
         }
-        
+
         for (particle_inner = 0; particle_inner < current_particle; particle_inner++)
         {
             particle_diff_vector_2 =
@@ -253,7 +253,7 @@ double local_energy_3d_interaction(
     // Term 4.
     double term_4 = 0;
     for (particle = 0; particle < current_particle; particle++)
-    {   
+    {
         particle_distance_1 =
             arma::norm((pos.col(current_particle) - pos.col(particle)), 2);
 
@@ -279,7 +279,6 @@ double local_energy_3d_interaction(
 
     // double res = -hbar*hbar/(2*m)*(term_1 + term_2 + term_3 + term_4);
     double res = 0.5*(-(term_1 + term_2 + term_3 + term_4) + x*x + y*y + z*z*gamma_*gamma_);
-    res += 0.5*m*(omega*omega*(x*x + y*y) + omega_z*omega_z*z*z);   // V_ext.
 
     return res;
 }
