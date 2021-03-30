@@ -81,14 +81,14 @@ def block(x, verbose=True):
 
     return mu, best_error, original_error, k, error_array
 
-
-
-def blocking_analysis(n_particles, n_dims, mc_cycles, method, numerical=False, interaction=False):
+def create_folder(path):
     """
+    creates a folder
+    ---------------
+    path: str, the path you want to create
+    ---------------
     """
-    num = "analytic" if not numerical else "numerical"
-    inter = "nointeraction" if not interaction else "interaction"
-    path = f"../fig/blocking_{method}_{n_particles}_{n_dims}_{num}_{inter}/"
+
     try:
         os.mkdir(path)
     except OSError:
@@ -97,11 +97,24 @@ def blocking_analysis(n_particles, n_dims, mc_cycles, method, numerical=False, i
         print ("Successfully created the directory %s " % path)
 
 
+def blocking_analysis(n_particles, n_dims, mc_cycles, method, numerical=False, interaction=False):
+    """
+    ---------------
+    ---------------
+    """
+
+    # Create folder for the figures to be stored
+
+    num = "analytic" if not numerical else "numerical"
+    inter = "nointeraction" if not interaction else "interaction"
+    path = f"../fig/blocking_{method}_{n_particles}_{n_dims}_{num}_{inter}/"
+
+    create_folder(path)
 
 
     print(45*"_"+"\n", method, 45*"_"+"\n", sep="\n")
 
-    input = read_all_files(
+    input_energies = read_all_files(
         filter_method = method,
         filter_n_particles = n_particles,
         filter_n_dims = n_dims,
@@ -112,31 +125,40 @@ def blocking_analysis(n_particles, n_dims, mc_cycles, method, numerical=False, i
         filter_data_type = "energies"
     )
 
-    # Sort elements based on the number of particles.
-    input.sort(key=lambda elem: elem.n_particles)
+    input_particles = read_all_files(
+        filter_method = method,
+        filter_n_particles = n_particles,
+        filter_n_dims = n_dims,
+        filter_n_mc_cycles = mc_cycles,
+        filter_step_size = None,
+        filter_numerical = numerical,
+        filter_interaction = interaction,
+        filter_data_type = "particles"
+    )
+
+    print(input_energies[0].fname)
+    print(input_energies[0].fname)
+    print()
 
     # Get the array of alpha values
-    alphas = input[0].data[0,:]
+    alphas = input_energies[0].data[0,:]
 
-    # new filename
-    #fname_blocking = f"blocking_{input[0].fname}"
-    #file = open("generated_data/" + fname_blocking, "w")
+    #header = "alpha\tenergy\t\tblocking_error\toriginal_error\tCPU\tacceptance"
+    header = "alpha\tenergy\t\tblocking_error\tCPU"
 
-    header = "alpha\tenergy\t\tblocking_error\toriginal_error\titerations"
     print(header)
-
-    #file.write(header+"\n")
 
     for i in range(len(alphas)):
         # Loop over alpha values and do blocking to find error
 
-        data = input[0].data[1:,i]
+        data = input_energies[0].data[1:,i]
         energy, blocking_error, original_error, iterations, error_array = block(data, verbose=False)
 
-        s = f"{alphas[i]:.1f}\t{energy:.6f}\t{blocking_error:.6f}\t{original_error:.6f}\t{iterations}"
-        print(s)
+#        s = f"{alphas[i]:.1f}\t{energy:.6f}\t{blocking_error:.6f}\t{original_error:.6f}\t{iterations}\t{input_particles[0].data[i, 3]}"
+#        s = f"{alphas[i]:.1f}\t{energy:.6f}\t{blocking_error:.6f}\t{original_error:.6f}\t{input_particles[0].data[i, 3]}\t{input_particles[0].data[i, 4]}"
 
-        #file.write(s+"\n")
+        s = f"{alphas[i]:.1f}\t{energy:.6f}\t{blocking_error:.6f}\t{input_particles[0].data[i, 3]}"
+        print(s)
 
         iter = np.arange(len(error_array))
         block_line = np.ones(len(error_array)) * blocking_error
@@ -152,26 +174,17 @@ def blocking_analysis(n_particles, n_dims, mc_cycles, method, numerical=False, i
         plt.ylabel(r"Sample Error, $\sqrt{\sigma^2_k \ / \ n_k}$")
         plt.legend()
         fig.savefig(f"{path}/alpha_{alphas[i]}.png")
-        #plt.show()
 
-    #file.close()
+
 
 def main():
 
     blocking_analysis(method = "brute",
-                      n_particles = 10,
+                      n_particles = 500,
                       n_dims = 3,
                       mc_cycles= int(2**20),
-                      numerical=False,
+                      numerical=True,
                       interaction=False)
-
-#    print(45*"_"+"\n", "Importance", 45*"_"+"\n", sep="\n")
-#    blocking_analysis(method = "importance",
-#                      n_particles = 10,
-#                      n_dims = 3,
-#                      mc_cycles= int(2**20),
-#                      numerical=False,
-#                      interaction=False)
 
 
 if __name__ == '__main__':
