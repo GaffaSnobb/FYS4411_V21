@@ -170,7 +170,7 @@ double wave_function_2d_no_interaction_with_loop(
     double y;
 
     for (int particle = 0; particle < n_particles; particle++)
-    {   
+    {
         x = pos(0, particle);
         y = pos(1, particle);
         res += -alpha*(x*x + y*y);
@@ -240,6 +240,9 @@ double wave_function_3d_no_interaction_with_loop(
     return wave_function;
 }
 
+
+
+
 double wave_function_3d_interaction_with_loop(
     arma::Mat<double> pos,
     double alpha,
@@ -268,7 +271,7 @@ double wave_function_3d_interaction_with_loop(
     wave_function*wave_function_inner : double
         The total wavefunction.
     */
-    
+
     double a = 0.0043;  // Prob. not right, so fix this.
     double wave_function = 1;       // Non-interaction term.
     double wave_function_inner = 1; // Interaction term.
@@ -287,6 +290,7 @@ double wave_function_3d_interaction_with_loop(
             pos(2, particle)*pos(2, particle)*beta
         ));
     }
+
     for (particle = 0; particle < n_particles; particle++)
     {   /*
         Interaction term.
@@ -306,6 +310,10 @@ double wave_function_3d_interaction_with_loop(
                 */
                 wave_function_inner *= 1 - a/particle_distance;
             }
+            else
+            {
+              wave_function_inner *= 1;
+            }
         }
     }
     return wave_function*wave_function_inner;
@@ -318,7 +326,7 @@ double wave_function_3d_diff_wrt_alpha(
 )
 {   /*
     CORRECTION: This is only the factor in front of the wave function
-    after differentiation. 
+    after differentiation.
 
     Parameters
     ----------
@@ -347,7 +355,7 @@ double wave_function_2d_diff_wrt_alpha(
 )
 {   /*
     CORRECTION: This is only the factor in front of the wave function
-    after differentiation. 
+    after differentiation.
 
     Parameters
     ----------
@@ -376,7 +384,7 @@ double wave_function_1d_diff_wrt_alpha(
 )
 {   /*
     CORRECTION: This is only the factor in front of the wave function
-    after differentiation. 
+    after differentiation.
 
     Parameters
     ----------

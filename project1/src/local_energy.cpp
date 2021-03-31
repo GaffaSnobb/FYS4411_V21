@@ -39,12 +39,13 @@ double local_energy_3d_interaction(
     double z = pos(2, current_particle);
 
     // Term 1.
-    double term_1 = -2*alpha;
-    term_1 *= (2 - 2*alpha*(x*x + y*y + beta*beta*z*z) + beta*beta);
+    double term_1 = 2*alpha;
+    term_1 *= (2*alpha*(x*x + y*y + beta*beta*z*z) - 2 - beta*beta);
     // Term 1 end.
 
     // Term 2.
     double term_2 = -2*2*alpha;
+
     double particle_distance_1;   // |r_k - r_j|.
     arma::Col<double> term_2_vector(3);
     term_2_vector.zeros();
@@ -56,14 +57,13 @@ double local_energy_3d_interaction(
             arma::norm((pos.col(current_particle) - pos.col(particle)), 2);
 
         particle_diff_vector_1 =
-            (pos.col(current_particle) - pos.col(particle))/particle_distance_1;
+            (pos.col(current_particle) - pos.col(particle));   // /particle_distance_1;
 
         if (particle_distance_1 > a)
         {   /*
             Interaction if the particle spacing is greater than 'a'.
             */
-            particle_diff_vector_1 *=
-                a/(1 - a/particle_distance_1)*1/(particle_distance_1*particle_distance_1);
+            particle_diff_vector_1 *= a / (particle_distance_1*particle_distance_1*(particle_distance_1 - a)); // a/(1 - a/particle_distance_1)*1/(particle_distance_1*particle_distance_1);
         }
         else
         {
@@ -79,14 +79,13 @@ double local_energy_3d_interaction(
             arma::norm((pos.col(current_particle) - pos.col(particle)), 2);
 
         particle_diff_vector_1 =
-            (pos.col(current_particle) - pos.col(particle))/particle_distance_1;
+            (pos.col(current_particle) - pos.col(particle));  //  /particle_distance_1;
 
         if (particle_distance_1 > a)
         {   /*
             Interaction if the particle spacing is greater than 'a'.
             */
-            particle_diff_vector_1 *=
-                a/(1 - a/particle_distance_1)*1/(particle_distance_1*particle_distance_1);
+            particle_diff_vector_1 *= a / (particle_distance_1*particle_distance_1*(particle_distance_1 - a));
         }
         else
         {
@@ -100,6 +99,7 @@ double local_energy_3d_interaction(
     term_2 *= arma::dot(term_2_vector, particle_diff_vector_1);
     // Term 2 end.
 
+
     // Term 3.
     double term_3 = 0;
     double particle_distance_2;
@@ -111,6 +111,7 @@ double local_energy_3d_interaction(
     {
         particle_diff_vector_1 =
             pos.col(current_particle) - pos.col(particle);
+
         particle_distance_1 =
             arma::norm((pos.col(current_particle) - pos.col(particle)), 2);
 
@@ -119,8 +120,8 @@ double local_energy_3d_interaction(
         {   /*
             Interaction if the particle spacing is greater than 'a'.
             */
-            u_diff_1 =
-                a/(1 - a/particle_distance_1)*1/(particle_distance_1*particle_distance_1);
+            u_diff_1 = a/(particle_distance_1*(particle_distance_1 - a));
+                //a/(1 - a/particle_distance_1)*1/(particle_distance_1*particle_distance_1);
         }
         else
         {
@@ -138,18 +139,15 @@ double local_energy_3d_interaction(
             {   /*
                 Interaction if the particle spacing is greater than 'a'.
                 */
-                u_diff_2 =
-                    a/(1 - a/particle_distance_2)*1/(particle_distance_2*particle_distance_2);
+                u_diff_2 = a/(particle_distance_2*(particle_distance_2 - a));
+                    //a/(1 - a/particle_distance_2)*1/(particle_distance_2*particle_distance_2);
             }
             else
             {
                 u_diff_2 = 0;
             }
 
-            term_3 += arma::dot(
-                particle_diff_vector_1,
-                particle_diff_vector_2
-            )/(particle_distance_1*particle_distance_2)*u_diff_1*u_diff_2;
+            term_3 += u_diff_1*u_diff_2*arma::dot(particle_diff_vector_1, particle_diff_vector_2)/(particle_distance_1*particle_distance_2);
         }
 
         for (particle_inner = current_particle + 1; particle_inner < n_particles; particle_inner++)
@@ -163,18 +161,15 @@ double local_energy_3d_interaction(
             {   /*
                 Interaction if the particle spacing is greater than 'a'.
                 */
-                u_diff_2 =
-                    a/(1 - a/particle_distance_2)*1/(particle_distance_2*particle_distance_2);
+                u_diff_2 = a/(particle_distance_2*(particle_distance_2 - a));
+                    //a/(1 - a/particle_distance_2)*1/(particle_distance_2*particle_distance_2);
             }
             else
             {
                 u_diff_2 = 0;
             }
 
-            term_3 += arma::dot(
-                particle_diff_vector_1,
-                particle_diff_vector_2
-            )/(particle_distance_1*particle_distance_2)*u_diff_1*u_diff_2;
+            term_3 += arma::dot(particle_diff_vector_1, particle_diff_vector_2) / (particle_distance_1*particle_distance_2)*u_diff_1*u_diff_2;
         }
     }
 
@@ -190,8 +185,8 @@ double local_energy_3d_interaction(
         {   /*
             Interaction if the particle spacing is greater than 'a'.
             */
-            u_diff_1 =
-                a/(1 - a/particle_distance_1)*1/(particle_distance_1*particle_distance_1);
+            u_diff_1 = a/(particle_distance_1*(particle_distance_1 - a));
+                //a/(1 - a/particle_distance_1)*1/(particle_distance_1*particle_distance_1);
         }
         else
         {
@@ -209,18 +204,15 @@ double local_energy_3d_interaction(
             {   /*
                 Interaction if the particle spacing is greater than 'a'.
                 */
-                u_diff_2 =
-                    a/(1 - a/particle_distance_2)*1/(particle_distance_2*particle_distance_2);
+                u_diff_2 = a/(particle_distance_2*(particle_distance_2 - a));
+                    //a/(1 - a/particle_distance_2)*1/(particle_distance_2*particle_distance_2);
             }
             else
             {
                 u_diff_2 = 0;
             }
 
-            term_3 += arma::dot(
-                particle_diff_vector_1,
-                particle_diff_vector_2
-            )/(particle_distance_1*particle_distance_2)*u_diff_1*u_diff_2;
+            term_3 += u_diff_1*u_diff_2*arma::dot(particle_diff_vector_1, particle_diff_vector_2)/(particle_distance_1*particle_distance_2);
         }
 
         for (particle_inner = current_particle + 1; particle_inner < n_particles; particle_inner++)
@@ -234,18 +226,15 @@ double local_energy_3d_interaction(
             {   /*
                 Interaction if the particle spacing is greater than 'a'.
                 */
-                u_diff_2 =
-                    a/(1 - a/particle_distance_2)*1/(particle_distance_2*particle_distance_2);
+                u_diff_2 = a/(particle_distance_2*(particle_distance_2 - a));
+                    //a/(1 - a/particle_distance_2)*1/(particle_distance_2*particle_distance_2);
             }
             else
             {
                 u_diff_2 = 0;
             }
 
-            term_3 += arma::dot(
-                particle_diff_vector_1,
-                particle_diff_vector_2
-            )/(particle_distance_1*particle_distance_2)*u_diff_1*u_diff_2;
+            term_3 += u_diff_1*u_diff_2*arma::dot(particle_diff_vector_1, particle_diff_vector_2)/(particle_distance_1*particle_distance_2);
         }
     }
     // Term 3 end.
@@ -261,24 +250,20 @@ double local_energy_3d_interaction(
         {   /*
             Interaction if the particle spacing is greater than 'a'.
             */
-            u_diff_1 =
-                a/(1 - a/particle_distance_1)*1/(particle_distance_1*particle_distance_1);
-            u_diff_1 *= 2/particle_distance_1;
-
-            u_diff_2 = (a*a - 2*a*particle_distance_1)/(particle_distance_1*particle_distance_1*(particle_distance_1 - a)*(particle_distance_1 - a));
+            u_diff_1 = a/(particle_distance_1*particle_distance_1*(particle_distance_1 - a));
+            u_diff_1 *= (2 + ((a - 2*particle_distance_1)/(particle_distance_1 - a)));
         }
         else
         {
             u_diff_1 = 0;
-            u_diff_2 = 0;
         }
 
-        term_4 += u_diff_1 + u_diff_2;
+        term_4 += u_diff_1;
     }
     // Term 4 end.
 
-    // double res = -hbar*hbar/(2*m)*(term_1 + term_2 + term_3 + term_4);
     double res = 0.5*(-(term_1 + term_2 + term_3 + term_4) + x*x + y*y + z*z*gamma_*gamma_);
+    //std::cout << res <<std::endl;
 
     return res;
 }
