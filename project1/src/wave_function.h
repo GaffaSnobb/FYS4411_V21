@@ -2,6 +2,7 @@
 #define WAVE
 
 #include "VMC.h"
+#include "parameters.h"
 double wave_function_1d_no_interaction_with_loop(
     arma::Mat<double> pos,
     double alpha,
