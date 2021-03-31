@@ -13,7 +13,8 @@ class Container:
         numerical,
         interaction,
         data_type,
-        fname
+        fname,
+        a
     ):
         """
         Parameters
@@ -48,6 +49,9 @@ class Container:
 
         fname : string
             Original file name.
+
+        a : float
+            Interaction parameter.
         """
         self.data = data
         self.method = method
@@ -59,6 +63,7 @@ class Container:
         self.interaction = interaction
         self.data_type = data_type
         self.fname = fname
+        self.a = a
 
 
 def read_all_files(
@@ -70,6 +75,7 @@ def read_all_files(
     filter_numerical = None,
     filter_interaction = None,
     filter_data_type = None,
+    filter_a = None,
     directory = "generated_data/"
 ):
     """
@@ -107,6 +113,14 @@ def read_all_files(
         'particle', 'onebody', 'energies'. If None, no filter is
         applied.
 
+    filter_a : NoneType, float
+        Filter for only reading a certain value for the interaction
+        parameter.
+    
+    directory : string
+        Location of data files. Path relative to the placement of this
+        script.
+
     Returns
     -------
     data_list : list
@@ -118,7 +132,7 @@ def read_all_files(
 
     for i in range(len(fnames)):
         fname = fnames[i].split("_")
-        if len(fname) != 10:
+        if len(fname) < 10:
             """
             Skip 'README.md' (or other files which do not match the
             naming convention).
@@ -207,6 +221,14 @@ def read_all_files(
             input.
             """
             continue
+        
+        try:
+            a = float(fname[9])
+        except ValueError:
+            a = None    # For old data files without 'a' in the filename.
+
+        if (filter_a != a) and (filter_a is not None) and (a is not None):
+            continue
 
         data = np.loadtxt(fname = directory + fnames[i], skiprows=1)
         
@@ -220,7 +242,8 @@ def read_all_files(
             numerical,
             interaction,
             data_type,
-            fnames[i]
+            fnames[i],
+            a
         ))
 
     if not data_list:
@@ -234,8 +257,9 @@ def read_all_files(
         msg += f"\n{filter_numerical=}"
         msg += f"\n{filter_interaction=}"
         msg += f"\n{filter_data_type=}"
+        msg += f"\n{filter_a=}"
         msg += f"\n{directory=}"
-        raise RuntimeError(msg)
+        raise FileNotFoundError(msg)
     
     data_list.sort(key=lambda elem: elem.n_particles)   # Sort elements based on the number of particles.
     return data_list
