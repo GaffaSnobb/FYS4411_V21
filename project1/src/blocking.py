@@ -85,7 +85,7 @@ def create_folder(path):
     """
     creates a folder
     ---------------
-    path: str, the path you want to create
+        path: str, the path you want to create
     ---------------
     """
 
@@ -99,7 +99,15 @@ def create_folder(path):
 
 def blocking_analysis(n_particles, n_dims, mc_cycles, method, numerical=False, interaction=False):
     """
+    Do the blocking analysis on one of the datasets named output_*_energy_.txt
+    generated using the main script.
     ---------------
+        n_particles:    int, number of particles
+        n_dims:         int, number of dimensions
+        mc_cycles:      int, number of monte carlo cycles
+        method:         str, options are "brute", "importance" or "gradient"
+        numerical:      bool, if numerical differentiation is used
+        interaction:    bool, if there are interaction between particles
     ---------------
     """
 
@@ -152,12 +160,11 @@ def blocking_analysis(n_particles, n_dims, mc_cycles, method, numerical=False, i
         # Loop over alpha values and do blocking to find error
 
         data = input_energies[0].data[1:,i]
+        #energy, blocking_error, original_error, iterations, error_array = block(data, verbose=True)
         energy, blocking_error, original_error, iterations, error_array = block(data, verbose=False)
-
-#        s = f"{alphas[i]:.1f}\t{energy:.6f}\t{blocking_error:.6f}\t{original_error:.6f}\t{iterations}\t{input_particles[0].data[i, 3]}"
 #        s = f"{alphas[i]:.1f}\t{energy:.6f}\t{blocking_error:.6f}\t{original_error:.6f}\t{input_particles[0].data[i, 3]}\t{input_particles[0].data[i, 4]}"
 
-        s = f"{alphas[i]:.1f}\t{energy:.6f}\t{blocking_error:.6f}\t{input_particles[0].data[i, 3]}"
+        s = f"{alphas[i]:.1f}\t{energy:.4f}\t{blocking_error:.4f}\t{input_particles[0].data[i, 3]:.2f}"
         print(s)
 
         iter = np.arange(len(error_array))
@@ -179,7 +186,7 @@ def blocking_analysis(n_particles, n_dims, mc_cycles, method, numerical=False, i
 
 def main():
 
-    blocking_analysis(method = "brute",
+    blocking_analysis(method = "importance",
                       n_particles = 500,
                       n_dims = 3,
                       mc_cycles= int(2**20),
@@ -189,28 +196,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-    """
-    brute_3d = read_all_files(
-        filter_method = "brute",
-        filter_n_particles = None,
-        filter_n_dims = 3,
-        filter_n_mc_cycles = int(2**20),
-        filter_step_size = None,
-        filter_numerical = False,
-        filter_interaction = False,
-        filter_data_type = "particles"
-    )
-
-    variance = brute_3d[0].data[:, 1]
-    energy = brute_3d[0].data[:,2]
-    n_particles = brute_3d[0].n_particles
-    n_mc_cycles = brute_3d[0].n_mc_cycles
-    alphas = brute_3d[0].data[:, 0]
-
-    error = (variance/n_mc_cycles)**0.5
-
-    for i in range(len(alphas)):
-        print(f"alpha: {alphas[i]:.2f}")
-        print(f"avg: {energy[i]:.6f}, variance: {variance[i]:.6f}, error: {error[i]:.6f}\n")
-    """
