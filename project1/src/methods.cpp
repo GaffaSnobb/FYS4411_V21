@@ -170,7 +170,12 @@ void BruteForce::one_variation(int variation)
                 energy_expectation += local_energy;
                 energy_expectation_squared += local_energy*local_energy;
             }
+
+            //energies(mc, variation) = energy_expectation*energy_expectation/(n_mc_cycles*n_mc_cycles*n_particles*n_particles); //local_energy;
+            //variances(mc, variation) = energy_expectation_squared/(n_mc_cycles*n_particles);
+
             energies(mc, variation) = local_energy;
+            variances(mc, variation) = (energy_expectation_squared - energy_expectation*energy_expectation/(n_mc_cycles*n_particles))/(n_mc_cycles*n_particles);
         }
         #pragma omp critical
         {
@@ -416,6 +421,7 @@ void ImportanceSampling::one_variation(int variation)
                 energy_expectation_squared += local_energy*local_energy;
             }
             energies(mc, variation) = local_energy;
+            variances(mc, variation) = (energy_expectation_squared - energy_expectation*energy_expectation/(n_mc_cycles*n_particles))/(n_mc_cycles*n_particles);
         }
         #pragma omp critical
         {

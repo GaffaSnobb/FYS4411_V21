@@ -46,6 +46,8 @@ VMC::VMC(
     qforce_new = arma::Mat<double>(n_dims, n_particles);      // New quantum force.
     test_local = arma::Row<double>(n_mc_cycles);              // Temporary
     energies = arma::Mat<double>(n_mc_cycles, n_variations);
+    variances = arma::Mat<double>(n_mc_cycles, n_variations);
+
     alphas = alphas_input;
     n_variations_final = n_variations;  // If stop condition is not reached.
     numerical_differentiation = numerical_differentiation_input;
@@ -56,6 +58,7 @@ VMC::VMC(
 
     e_expectations.zeros(); // Array must be zeroed since values will be added to it.
     energies.zeros();
+    variances.zeros();
     engine.seed(seed);
 
     timing = arma::Col<double>(n_variations);
@@ -340,7 +343,7 @@ void VMC::write_energies_to_file(std::string fpath)
       outfile << alphas(i);
     }
     outfile << "\n";
-    arma::Mat<double> energies_subview = energies.cols(0, n_variations_final - 1); 
+    arma::Mat<double> energies_subview = energies.cols(0, n_variations_final - 1);
     energies_subview.save(outfile, arma::raw_ascii);
     outfile.close();
     std::cout << fpath << " written to file." << std::endl;
@@ -368,6 +371,32 @@ void VMC::write_to_file_onebody_density(std::string fpath)
     outfile.close();
     std::cout << fpath << " written to file." << std::endl;
 }
+
+void VMC::write_variances_to_file(std::string fpath)
+{   /*
+    Write energy data to file.
+
+    Parameters
+    ----------
+    fpath : std::string
+        Relative file path and name.
+    */
+    outfile.open(fpath, std::ios::out);
+
+    outfile << "alphas" << "\n";
+    for (int i = 0; i < n_variations_final; i++){
+      outfile << std::setw(20) << std::setprecision(10);
+      outfile << alphas(i);
+    }
+    outfile << "\n";
+    arma::Mat<double> variances_subview = variances.cols(0, n_variations_final - 1);
+    variances_subview.save(outfile, arma::raw_ascii);
+    outfile.close();
+    std::cout << fpath << " written to file." << std::endl;
+}
+
+
+
 
 VMC::~VMC()
 {

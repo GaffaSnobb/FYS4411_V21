@@ -72,6 +72,7 @@ class VMC
 
         arma::Row<double> test_local;    // Temporary. TODO: Remove?
         arma::Mat<double> energies;
+        arma::Mat<double> variances;
 
         std::mt19937 engine;      // Mersenne Twister RNG.
         std::uniform_real_distribution<double> uniform;  // Continuous uniform distribution.
@@ -96,7 +97,7 @@ class VMC
             const arma::Mat<double> &pos,
             const double alpha,
             const double beta,
-            const int current_particle, 
+            const int current_particle,
             const int n_particles
         );
         double (*wave_function_diff_wrt_alpha_ptr)(
@@ -123,6 +124,7 @@ class VMC
         void set_wave_function(bool interaction);
         void write_to_file(std::string fname);
         void write_energies_to_file(std::string fpath);
+        void write_variances_to_file(std::string fpath);
         void write_to_file_onebody_density(std::string fpath);
         void solve();
         virtual void one_variation(int variation);
