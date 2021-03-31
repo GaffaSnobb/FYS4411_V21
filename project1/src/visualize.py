@@ -93,7 +93,7 @@ def onebody(fname):
     plt.show()
 
 
-def task_1b():
+def task_b():
     brute_3d = read_all_files(
         filter_method = "brute",
         filter_n_particles = None,
@@ -191,12 +191,12 @@ def task_1b():
             # color = "black",
             capsize = 3
         )
-        ax.tick_params(labelsize=13)
+        ax.tick_params(labelsize=18)
         ax.grid()
-        ax.legend(fontsize=15)
+        ax.legend(fontsize=20)
         ax.set_xticks(np.arange(0.1, 1 + 0.1, 0.1))
-        fig.text(x=0.5, y=0.01, s=r"$\alpha$", fontsize=15)
-        fig.text(x=0.005, y=0.42, s=r"Local energy", fontsize=15, rotation="vertical")
+        fig.text(x=0.5, y=0.01, s=r"$\alpha$", fontsize=20)
+        fig.text(x=0.00, y=0.42, s=r"Local energy", fontsize=20, rotation="vertical")
         fig.tight_layout(pad=2)
         
         fname_out_lst = data_3d.fname.split("_")
@@ -214,6 +214,22 @@ def task_1b():
         fig.savefig(fname = "../fig/" + fname_out, dpi=300)
         plt.show()
 
+    print(f"Importance 10 particles 1d calculation time: {np.sum(importance_1d[0].data[:, 3]):.2f} s, avg. var: {np.mean(importance_1d[0].data[:, 1]):.2f}")
+    print(f"Importance 10 particles 2d calculation time: {np.sum(importance_2d[0].data[:, 3]):.2f} s, avg. var: {np.mean(importance_2d[0].data[:, 1]):.2f}")
+    print(f"Importance 10 particles 3d calculation time: {np.sum(importance_3d[0].data[:, 3]):.2f} s, avg. var: {np.mean(importance_3d[0].data[:, 1]):.2f}")
+
+    print(f"Importance 100 particles 1d calculation time: {np.sum(importance_1d[1].data[:, 3]):.2f} s, avg. var: {np.mean(importance_1d[1].data[:, 1]):.2f}")
+    print(f"Importance 100 particles 2d calculation time: {np.sum(importance_2d[1].data[:, 3]):.2f} s, avg. var: {np.mean(importance_2d[1].data[:, 1]):.2f}")
+    print(f"Importance 100 particles 3d calculation time: {np.sum(importance_3d[1].data[:, 3]):.2f} s, avg. var: {np.mean(importance_3d[1].data[:, 1]):.2f}")
+
+    print(f"Brute 10 particles 1d calculation time: {np.sum(brute_1d[0].data[:, 3]):.2f} s, avg. var: {np.mean(brute_1d[0].data[:, 1]):.2f}")
+    print(f"Brute 10 particles 2d calculation time: {np.sum(brute_2d[0].data[:, 3]):.2f} s, avg. var: {np.mean(brute_2d[0].data[:, 1]):.2f}")
+    print(f"Brute 10 particles 3d calculation time: {np.sum(brute_3d[0].data[:, 3]):.2f} s, avg. var: {np.mean(brute_3d[0].data[:, 1]):.2f}")
+
+    print(f"Brute 100 particles 1d calculation time: {np.sum(brute_1d[1].data[:, 3]):.2f} s, avg. var: {np.mean(brute_1d[1].data[:, 1]):.2f}")
+    print(f"Brute 100 particles 2d calculation time: {np.sum(brute_2d[1].data[:, 3]):.2f} s, avg. var: {np.mean(brute_2d[1].data[:, 1]):.2f}")
+    print(f"Brute 100 particles 3d calculation time: {np.sum(brute_3d[1].data[:, 3]):.2f} s, avg. var: {np.mean(brute_3d[1].data[:, 1]):.2f}")
+    
     one_plot(   # 10 particles.
         data_3d = importance_3d[0],
         data_2d = importance_2d[0],
@@ -236,7 +252,7 @@ def task_1b():
     )
 
 
-def task_1c():
+def task_c():
     importance = read_all_files(
         filter_method = "importance",
         filter_n_particles = 10,
@@ -246,30 +262,8 @@ def task_1c():
         filter_numerical = False,
         filter_interaction = False,
         filter_data_type = "particles",
-        directory = "generated_data/"
+        directory = "generated_data/task_c/"
     )
-
-    importance.sort(key=lambda elem: elem.step_size)
-    
-    n = len(importance)
-    acceptances = np.zeros(n)
-    time_steps = np.zeros(n)
-    for i in range(n):
-        acceptances[i] = np.mean(importance[i].data[:, 4])
-        time_steps[i] = importance[i].step_size
-
-    
-    fig, ax = plt.subplots(figsize=(9, 7))
-    ax.plot(
-        time_steps,
-        acceptances,
-        "o",
-        color = "black"
-    )
-    ax.tick_params(labelsize=13)
-    ax.set_xlabel("Time step size", fontsize=15)
-    ax.set_ylabel("Acceptance rates", fontsize=15)
-    ax.grid()
 
     fname_out_lst = importance[0].fname.split("_")
     print(fname_out_lst)
@@ -283,7 +277,172 @@ def task_1c():
         fname_out += "_"
     fname_out += "acceptance_vs_step.png"
 
+    importance.sort(key=lambda elem: elem.step_size)    # Sort by importance step size.
+    
+    n = len(importance)
+    acceptances = np.zeros(n)
+    time_steps = np.zeros(n)
+    for i in range(n):
+        acceptances[i] = np.mean(importance[i].data[:, 4])
+        time_steps[i] = importance[i].step_size
+
+    fig, ax = plt.subplots(figsize=(9, 7))
+    ax.plot(
+        time_steps,
+        acceptances,
+        "o",
+        color = "black"
+    )
+    ax.tick_params(labelsize=13)
+    ax.set_xlabel("Time step size", fontsize=15)
+    ax.set_ylabel("Acceptance rates", fontsize=15)
+    ax.grid()
+
+    fig.tight_layout(pad=2)
     fig.savefig(fname = "../fig/" + fname_out, dpi=300)
+    plt.show()
+
+
+def task_d():
+    gradient = read_all_files(
+        filter_method = "gradient",
+        filter_n_particles = 10,
+        filter_n_dims = 3,
+        filter_n_mc_cycles = int(2**20),
+        filter_step_size = 0.01,
+        filter_numerical = False,
+        filter_interaction = False,
+        filter_data_type = "particles",
+        directory = "generated_data/task_d/"
+    )
+
+    fname_out_lst = gradient[0].fname.split("_")
+    fname_out_lst.pop(0)
+    fname_out_lst.pop(-1)
+    fname_out_lst.pop(-1)
+    fname_out = ""
+    
+    for elem in fname_out_lst:
+        fname_out += elem
+        fname_out += "_"
+    fname_error_out = fname_out
+    fname_error_out += "best_alpha_search_error.png"
+    fname_out += "best_alpha_search.png"
+
+    fig, ax = plt.subplots(figsize=(9, 7))
+    ax.errorbar(
+        gradient[0].data[:, 0],
+        gradient[0].data[:, 2],
+        # np.sqrt(gradient[0].data[:, 1]/gradient[0].n_mc_cycles),
+        fmt = "o",
+        color = "black"
+    )
+    axins = ax.inset_axes([0.5, 0.5, 0.47, 0.47])
+    axins.errorbar(
+        gradient[0].data[:, 0],
+        gradient[0].data[:, 2],
+        # np.sqrt(gradient[0].data[:, 1]/gradient[0].n_mc_cycles),
+        fmt = "o",
+        color = "black"
+    )
+    axins.set_xticklabels("")
+    axins.set_yticklabels("")
+
+    x1, x2, y1, y2 = 0.49, 0.498, 14.997, 15.005
+    axins.set_xlim(x1, x2)
+    axins.set_ylim(y1, y2)
+    ax.indicate_inset_zoom(axins, edgecolor="black")
+    ax.tick_params(labelsize=13)
+    ax.set_xlabel(r"$\alpha$", fontsize=15)
+    ax.set_ylabel("Local energy", fontsize=15)
+    ax.grid()
+
+    fig.tight_layout(pad=2)
+    fig.savefig(fname = "../fig/" + fname_out, dpi=300)
+    plt.show()
+
+    fig, ax = plt.subplots(figsize=(9, 7))
+    ax.plot(
+        gradient[0].data[:, 0],
+        np.sqrt(gradient[0].data[:, 1]/gradient[0].n_mc_cycles),
+        color = "black"
+    )
+
+    ax.tick_params(labelsize=13)
+    ax.set_xlabel(r"$\alpha$", fontsize=15)
+    ax.set_ylabel("Standard error", fontsize=15)
+    ax.grid()
+
+    fig.tight_layout(pad=2)
+    fig.savefig(fname = "../fig/" + fname_error_out, dpi=300)
+    plt.show()
+
+
+def task_g():
+    # alphas = np.loadtxt(fname, max_rows=1)
+    # data = np.loadtxt(fname, skiprows=1)
+
+    # print(f"{alphas=}")
+    # plt.bar(bins, data[:, 4]/np.trapz(data[:, 4])) # Halfway.
+    # plt.bar(bins, data[:, -1]/np.trapz(data[:, -1]), alpha=0.5)
+    # plt.xlabel("bins")
+    # plt.ylabel("scaled counts")
+    # plt.show()
+    importance = read_all_files(
+        filter_method = "importance",
+        filter_n_particles = 10,
+        filter_n_dims = 3,
+        filter_n_mc_cycles = int(2**20),
+        filter_step_size = None,
+        filter_numerical = False,
+        filter_interaction = True,
+        filter_data_type = "onebody",
+        directory = "generated_data/task_g/"
+    )
+    
+    importance.sort(key=lambda elem: elem.a)
+    for elem in importance:
+        print(f"{elem.fname=}")
+        print(f"{elem.data.shape[0]=}")
+
+    bins = np.arange(0, importance[0].data.shape[0], 1)
+
+
+    fig, ax = plt.subplots(figsize=(9, 7))
+    ax.bar(bins, importance[0].data/np.trapz(importance[0].data), label=f"a = {importance[0].a}", alpha=0.5)
+    # ax.bar(bins, importance[1].data/np.trapz(importance[1].data), label=f"a = {importance[1].a}", alpha=0.5)
+    # ax.bar(bins, importance[2].data/np.trapz(importance[2].data), label=f"a = {importance[2].a}", alpha=0.5)
+    ax.bar(bins, importance[3].data/np.trapz(importance[3].data), label=f"a = {importance[3].a}", alpha=0.5)
+    ax.tick_params(labelsize=15)
+    ax.legend()
+    ax.set_xlabel("", fontsize=20)
+    ax.set_xlabel("", fontsize=20)
+    fig.tight_layout(pad=2)
+
+    plt.show()
+
+
+def debug():
+    data = read_all_files(
+        filter_method = "importance",
+        filter_n_particles = 10,
+        filter_n_dims = 3,
+        filter_n_mc_cycles = int(2**20),
+        filter_step_size = None,
+        filter_numerical = False,
+        filter_interaction = True,
+        filter_data_type = "particles",
+        directory = "generated_data/task_g/"
+    )
+
+    for elem in data:
+        plt.plot(
+            elem.data[0],
+            elem.data[2],
+            "o",
+            label=f"a = {elem.a}"
+        )
+    plt.legend()
     plt.show()
 
 
@@ -303,5 +462,8 @@ if __name__ == "__main__":
     # local_energy_alpha(f"{path}/output_gradient_descent_particles.txt", "GD")
     # tmp_gd()
     # onebody(f_brute_force_onebody)
-    # task_1b()
-    task_1c()
+    # task_b()
+    # task_c()
+    # task_d()
+    # task_g()
+    debug()
