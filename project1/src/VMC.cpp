@@ -270,7 +270,7 @@ void VMC::solve()
         std::cout << ", alpha: " << std::setw(10) << alphas(variation);
         std::cout << ", energy: " << std::setw(10) << energy_expectation;
         std::cout << ", variance: " << std::setw(10) << energy_variance;
-        std::cout << ", acceptance: " << std::setw(7) << acceptances(variation)/(n_mc_cycles*n_particles);
+        std::cout << ", acceptance: " << std::setw(10) << acceptances(variation)/(n_mc_cycles*n_particles);
 
         #ifdef _OPENMP
             t2 = omp_get_wtime();
