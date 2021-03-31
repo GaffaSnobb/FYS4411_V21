@@ -49,6 +49,7 @@ void generate_filenames(
     std::string &fname_particles,
     std::string &fname_onebody,
     std::string &fname_energies,
+    std::string &fname_variances,
     int n_particles,
     int n_dims,
     int n_mc_cycles,
@@ -84,6 +85,9 @@ void generate_filenames(
     fname_energies = fname_particles;
     fname_energies += "energies_.txt";
 
+    fname_variances = fname_particles;
+    fname_variances += "variances_.txt";
+
     fname_particles += "particles_.txt";
 }
 
@@ -97,7 +101,7 @@ int main(int argc, char *argv[])
 
     // Global parameters:
     double brute_force_step_size = 0.2;
-    const double importance_time_step = 0.01;
+    const double importance_time_step = 0.1;
     const double initial_alpha_gd = 0.1;  // Initial variational parameter. Only for GD.
     const double learning_rate = 1e-4;     // GD learning rate.
     const int n_gd_iterations = 200;      // Max. gradient descent iterations.
@@ -105,18 +109,18 @@ int main(int argc, char *argv[])
     const double gd_tolerance = 1e-4;
     const bool debug = false;       // Toggle debug print on / off.
 
-    const bool interaction = false;
+    const bool interaction = true;
     const bool numerical_differentiation = false;
     const int n_variations = 10;         // Number of variational parameters. Not in use with GD.
     const int n_mc_cycles = std::pow(2, 10);          // Number of MC cycles, must be a power of 2
     const int n_dims = 3;           // Number of dimensions.
-    const int n_particles = 10;     // Number of particles.
-    arma::Col<double> alphas = arma::linspace(0.1, 1, n_variations);
+    const int n_particles = 50;     // Number of particles.
+    arma::Col<double> alphas = arma::linspace(0.3, 0.5, n_variations);
 
     // Select methods (choose one at a time):
     const bool gradient_descent = false;
-    const bool importance_sampling = false;
-    const bool brute_force = true;
+    const bool importance_sampling = true;
+    const bool brute_force = false;
 
     if (interaction)
     {
@@ -177,12 +181,14 @@ int main(int argc, char *argv[])
         std::string fname_importance_particles;
         std::string fname_importance_onebody;
         std::string fname_importance_energies;
+        std::string fname_importance_variances;
 
         generate_filenames(
             "importance",
             fname_importance_particles,
             fname_importance_onebody,
             fname_importance_energies,
+            fname_importance_variances,
             n_particles,
             n_dims,
             n_mc_cycles,
@@ -219,6 +225,7 @@ int main(int argc, char *argv[])
         #endif
         system_1.write_to_file(fname_importance_particles);
         system_1.write_energies_to_file(fname_importance_energies);
+        system_1.write_variances_to_file(fname_importance_variances);
         system_1.write_to_file_onebody_density(fname_importance_onebody);
     }
 
@@ -236,12 +243,14 @@ int main(int argc, char *argv[])
         std::string fname_brute_particles;
         std::string fname_brute_onebody;
         std::string fname_brute_energies;
+        std::string fname_brute_variances;
 
         generate_filenames(
             "brute",
             fname_brute_particles,
             fname_brute_onebody,
             fname_brute_energies,
+            fname_brute_variances,
             n_particles,
             n_dims,
             n_mc_cycles,
@@ -278,6 +287,7 @@ int main(int argc, char *argv[])
         #endif
         system_2.write_to_file(fname_brute_particles);
         system_2.write_energies_to_file(fname_brute_energies);
+        system_2.write_variances_to_file(fname_brute_variances);
         system_2.write_to_file_onebody_density(fname_brute_onebody);
     }
 
@@ -295,12 +305,14 @@ int main(int argc, char *argv[])
         std::string fname_gradient_particles;
         std::string fname_gradient_onebody;
         std::string fname_gradient_energies;
+        std::string fname_gradient_variances;
 
         generate_filenames(
             "gradient",
             fname_gradient_particles,
             fname_gradient_onebody,
             fname_gradient_energies,
+            fname_gradient_variances,
             n_particles,
             n_dims,
             n_mc_cycles,
@@ -339,6 +351,7 @@ int main(int argc, char *argv[])
 
         system_3.write_to_file(fname_gradient_particles);
         system_3.write_energies_to_file(fname_gradient_energies);
+        //system_3.write_variances_to_file(fname_gradient_variances);
         system_3.write_to_file_onebody_density(fname_gradient_onebody);
     }
 
