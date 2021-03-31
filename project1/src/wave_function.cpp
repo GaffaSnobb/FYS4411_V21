@@ -269,8 +269,8 @@ double wave_function_3d_interaction_with_loop(
         The total wavefunction.
     */
     
-    double a = 0.0043;  // Prob. not right, so fix this.
     double wave_function = 1;       // Non-interaction term.
+    // double wave_function = 0;
     double wave_function_inner = 1; // Interaction term.
     double particle_distance;       // Condition for the interaction term of the wavefunction.
 
@@ -286,6 +286,11 @@ double wave_function_3d_interaction_with_loop(
             pos(1, particle)*pos(1, particle) +
             pos(2, particle)*pos(2, particle)*beta
         ));
+        // wave_function += (-alpha*(
+        //     pos(0, particle)*pos(0, particle) +
+        //     pos(1, particle)*pos(1, particle) +
+        //     pos(2, particle)*pos(2, particle)*beta
+        // ));
     }
     for (particle = 0; particle < n_particles; particle++)
     {   /*
@@ -309,6 +314,8 @@ double wave_function_3d_interaction_with_loop(
         }
     }
     return wave_function*wave_function_inner;
+    // return std::exp(wave_function)*wave_function_inner;
+    // return wave_function + std::log(wave_function_inner);
 }
 
 double wave_function_3d_diff_wrt_alpha(
