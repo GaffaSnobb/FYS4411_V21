@@ -279,7 +279,7 @@ double local_energy_3d_interaction(
 
     // double res = -hbar*hbar/(2*m)*(term_1 + term_2 + term_3 + term_4);
     double res = 0.5*(-(term_1 + term_2 + term_3 + term_4) + x*x + y*y + z*z*gamma_*gamma_);
-    res += 0.5*m*(omega*omega*(x*x + y*y) + omega_z*omega_z*z*z);   // V_ext.
+    // res += 0.5*m*(omega*omega*(x*x + y*y) + omega_z*omega_z*z*z);   // V_ext.
 
     return res;
 }
