@@ -353,11 +353,30 @@ void ImportanceSampling::one_variation(int variation)
                 }
 
                 greens_ratio = exp(greens_ratio);
+                // greens_ratio = greens_ratio;
 
                 double wave_ratio = wave_new/wave_current;
                 wave_ratio *= wave_ratio;   // TODO: Find out why we need wave_ratio**2.
+                // double exponential_diff = 2*(std::log(wave_new) - std::log(wave_current));
+                // double exponential_diff = 2*((wave_new) - (wave_current));
+                // if (omp_get_thread_num() == 1)
+                // {
+                //     std::cout << "greens_ratio: " << greens_ratio << std::endl;
+                //     // std::cout << "wave_ratio: " << wave_ratio << std::endl;
+                //     std::cout << "exponential_diff: " << exponential_diff << std::endl;
+                //     std::cout << "std::exp(exponential_diff): " << std::exp(exponential_diff) << std::endl;
+                //     std::cout << "wave_new: " << wave_new << std::endl;
+                //     std::cout << "wave_current: " << wave_current << std::endl;
+                //     std::cout << "qforce_new.col(particle): " << qforce_new.col(particle) << std::endl;
+                //     std::cout << "qforce_current.col(particle): " << qforce_current.col(particle) << std::endl;
+                //     std::cout << "pos_new.col(particle): " << pos_new.col(particle) << std::endl;
+                //     std::cout << "pos_current.col(particle): " << pos_current.col(particle) << std::endl;
+                //     std::cout << std::endl;   
+                //     // exit(0);                 
+                // }
 
                 if (uniform(engine) < greens_ratio*wave_ratio)
+                // if (uniform(engine) < std::exp(greens_ratio + exponential_diff))
                 {   /*
                     Metropolis check.
                     */
@@ -564,7 +583,7 @@ void GradientDescent::solve(const double tol)
         {
             std::cout << "energy_expectation: " << energy_expectation << std::endl;
             std::cout << "wave_derivative_expectation: " << wave_derivative_expectation << std::endl;
-            std::cout << "wave_derivative_expectation*energy_expectation/n_particles: " << wave_derivative_expectation*energy_expectation/n_particles << std::endl;
+            std::cout << "wave_derivative_expectation*energy_expectation: " << wave_derivative_expectation*energy_expectation << std::endl;
             std::cout << "wave_times_energy_expectation: " << wave_times_energy_expectation << std::endl;
             std::cout << "energy_derivative: " << energy_derivative << std::endl;
             std::cout << "\n";
@@ -573,7 +592,7 @@ void GradientDescent::solve(const double tol)
         {   /*
             Run at least a few variations before breaking.
             */
-            if (std::abs(alphas(variation + 1) - alphas(variation - 4)) < tol)
+            if (std::abs(alphas(variation + 1) - alphas(variation)) < tol)
             {
                 n_variations_final = variation;
                 std::cout << "End of gradient descent reached at iteration ";
