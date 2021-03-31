@@ -1,5 +1,6 @@
 #include "VMC.h"
 #include "methods.h"
+#include "parameters.h"
 
 void print_parameters(
     bool parallel,
@@ -8,6 +9,7 @@ void print_parameters(
     int n_mc_cycles,
     int n_variations,
     int n_gd_iterations,
+    int n_particles,
     double learning_rate,
     double initial_alpha_gd,
     double beta,
@@ -34,12 +36,14 @@ void print_parameters(
     std::cout << "n_mc_cycles: " << n_mc_cycles << std::endl;
     std::cout << "n_variations: " << n_variations << std::endl;
     std::cout << "n_gd_iterations: " << n_gd_iterations << std::endl;
+    std::cout << "n_particles: " << n_particles << std::endl;
     std::cout << "learning_rate: " << learning_rate << std::endl;
     std::cout << "initial_alpha_gd: " << initial_alpha_gd << std::endl;
     std::cout << "beta: " << beta << std::endl;
     std::cout << "importance_time_step: " << importance_time_step << std::endl;
     std::cout << "gd_tolerance: " << gd_tolerance << std::endl;
     std::cout << "brute_force_step_size: " << brute_force_step_size << std::endl;
+    std::cout << "a: " << a << std::endl;
     std::cout << "--------------------------" << std::endl;
     std::cout << std::endl;
 }
@@ -79,45 +83,57 @@ void generate_filenames(
     fname_particles += "_";
 
     fname_onebody = fname_particles;
-    fname_onebody += "onebody_.txt";
+    fname_onebody += "onebody_";
+    fname_onebody += std::to_string(a);
+    fname_onebody += "_.txt";
 
     fname_energies = fname_particles;
-    fname_energies += "energies_.txt";
+    fname_energies += "energies_";
+    fname_energies += std::to_string(a);
+    fname_energies += "_.txt";
 
-    fname_particles += "particles_.txt";
+    fname_particles += "particles_";
+    fname_particles += std::to_string(a);
+    fname_particles += "_.txt";
 }
 
 int main(int argc, char *argv[])
 {   /*
-    */
 
+    const double importance_time_step = 0.04; funker best med mange
+    partikler.
+
+    litt over 0.28
+    */
     // Parameter definitions.
     bool parallel;
     double beta;
 
     // Global parameters:
     double brute_force_step_size = 0.2;
-    const double importance_time_step = 0.025;
-    const double initial_alpha_gd = 0.1;  // Initial variational parameter. Only for GD.
+    const double importance_time_step = 0.01;
+    const double initial_alpha_gd = 0.2;  // Initial variational parameter. Only for GD.
     const double learning_rate = 1e-4;     // GD learning rate.
     const int n_gd_iterations = 200;      // Max. gradient descent iterations.
     long seed = time_t();
 
     const double gd_tolerance = 1e-4;
-    const bool debug = false;       // Toggle debug print on / off.
+    const bool debug = true;       // Toggle debug print on / off.
 
-    const bool interaction = false;
+    const bool interaction = true;
     const bool numerical_differentiation = false;
-    const int n_variations = 10;         // Number of variational parameters. Not in use with GD.
+    const int n_variations = 1;         // Number of variational parameters. Not in use with GD.
     const int n_mc_cycles = std::pow(2, 20);          // Number of MC cycles, must be a power of 2
     const int n_dims = 3;           // Number of dimensions.
     const int n_particles = 10;     // Number of particles.
-    arma::Col<double> alphas = arma::linspace(0.1, 1, n_variations);
+    // arma::Col<double> alphas = arma::linspace(0.25, 0.6, n_variations);
+    arma::Col<double> alphas = arma::linspace(0.28, 0.28, n_variations);
+    // arma::Col<double> alphas = {0.28, 0.28, 0.28};
 
     // Select methods (choose one at a time):
     const bool gradient_descent = false;
     const bool importance_sampling = true;
-    const bool brute_force = false;  // JEG TAR BRUTE 500 partikler!!
+    const bool brute_force = false;
 
     if (interaction)
     {
@@ -152,6 +168,7 @@ int main(int argc, char *argv[])
         n_mc_cycles,
         n_variations,
         n_gd_iterations,
+        n_particles,
         learning_rate,
         initial_alpha_gd,
         beta,
@@ -355,6 +372,7 @@ int main(int argc, char *argv[])
         n_mc_cycles,
         n_variations,
         n_gd_iterations,
+        n_particles,
         learning_rate,
         initial_alpha_gd,
         beta,
