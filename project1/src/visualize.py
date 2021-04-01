@@ -471,7 +471,29 @@ if __name__ == "__main__":
     # tmp_gd()
     # onebody(f_brute_force_onebody)
     # task_b()
-    task_c()
+    #task_c()
     # task_d()
     # task_g()
     # debug()
+
+    input = read_all_files(
+        filter_method = "importance",
+        filter_n_particles = 10,
+        filter_n_dims = 3,
+        filter_n_mc_cycles = int(2**20),
+        filter_step_size = 0.01,
+        filter_numerical = False,
+        filter_interaction = True,
+        filter_data_type = "particles"
+    )[0]
+
+    plt.plot(input.data[:,0], input.data[:,2])
+    plt.fill_between(
+        input.data[:,0],
+        input.data[:,2] - np.sqrt(input.data[:,1]),
+        input.data[:,2] + np.sqrt(input.data[:,1]),
+        color="k",
+        alpha=0.2,
+        label="std"
+    )
+    plt.show()

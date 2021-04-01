@@ -121,12 +121,12 @@ int main(int argc, char *argv[])
 
     const bool interaction = true;
     const bool numerical_differentiation = false;
-    const int n_variations = 10;         // Number of variational parameters. Not in use with GD.
-    const int n_mc_cycles = std::pow(2, 14);          // Number of MC cycles, must be a power of 2
+    const int n_variations = 6;         // Number of variational parameters. Not in use with GD.
+    const int n_mc_cycles = std::pow(2, 16);          // Number of MC cycles, must be a power of 2
     const int n_dims = 3;           // Number of dimensions.
     const int n_particles = 10;     // Number of particles.
     // arma::Col<double> alphas = arma::linspace(0.25, 0.6, n_variations);
-    arma::Col<double> alphas = arma::linspace(0.1, 1, n_variations);
+    arma::Col<double> alphas = arma::linspace(0.1, 0.6, n_variations);
     // arma::Col<double> alphas = {0.28, 0.28, 0.28};
 
     // Select methods (choose one at a time):
@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
             std::cout << "total time: " << comp_time.count() << "s\n" << std::endl;
         #endif
         system_1.write_to_file(fname_importance_particles);
-        system_1.write_energies_to_file(fname_importance_energies);
+        //system_1.write_energies_to_file(fname_importance_energies);
         system_1.write_to_file_onebody_density(fname_importance_onebody);
     }
 
