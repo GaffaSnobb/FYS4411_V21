@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from read_from_file import read_all_files
 import matplotlib as mpl
 mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=["tab:blue", "tab:green", "tab:purple","tab:red", "tab:orange", "tab:brown", "tab:pink", "tab:gray", "tab:olive", "tab:cyan"])
+mpl.rcParams.update({'font.size': 15})
 
 def read_all_dimensions(method, n_particles, n_mc_cycles, step_size, numerical, interaction, data_type):
     """
@@ -165,7 +166,7 @@ def plot_variance_MC(cycle_list, n_particles, n_dims, step_size_brute, step_size
 
     plt.show()
 
-def plot_energy_MC(cycle_list, n_particles, n_dims, step_size_brute, step_size_importance, numerical, interaction, alpha_place):
+def plot_energy_MC_old(cycle_list, n_particles, n_dims, step_size_brute, step_size_importance, numerical, interaction, alpha_place):
     # uinteressant
     energies_brute = []
     energies_importance = []
@@ -225,10 +226,166 @@ def plot_energy_MC(cycle_list, n_particles, n_dims, step_size_brute, step_size_i
     plt.show()
 
 
+def plot_energy_MC(method, n_particles, n_dims, n_mc_cycles, step_size, numerical, interaction, alpha_place):
+
+    input_energies = read_all_files(
+        filter_method = method,
+        filter_n_particles = n_particles,
+        filter_n_dims = n_dims,
+        filter_n_mc_cycles = n_mc_cycles,
+        filter_step_size = step_size,
+        filter_numerical = numerical,
+        filter_interaction = interaction,
+        filter_data_type = "energies")[0]
+
+    input_particles = read_all_files(
+        filter_method = method,
+        filter_n_particles = n_particles,
+        filter_n_dims = n_dims,
+        filter_n_mc_cycles = n_mc_cycles,
+        filter_step_size = step_size,
+        filter_numerical = numerical,
+        filter_interaction = interaction,
+        filter_data_type = "particles")[0]
+
+    alphas = input_energies.data[0, :]
+    energies = input_energies.data[1:, alpha_place]
+
+    exp_energy_ = input_particles.data[alpha_place, 2]
+
+    mc_cycles = np.arange(n_mc_cycles)
+
+    exp_energy = exp_energy_*np.ones(n_mc_cycles)
+
+    fig = plt.figure(figsize=(9, 7))
+    plt.grid()
+    plt.plot(mc_cycles, energies, label = r"Brute-force, $\alpha=$"+f"{alphas[alpha_place]}")
+    plt.plot(mc_cycles, exp_energy, linestyle="dashed", label="Expectation energy")
+    plt.legend()
+    #plt.xticks(mc_cycles)
+    plt.xlabel(r"Number of MC-cycles")
+    plt.ylabel(r"Local energy")
+    plt.show()
+
+
+def plot_acceptance_step_size_v1(method, n_particles, n_dims, n_mc_cycles, step_sizes, numerical, interaction):
+
+    avg_acceptance = []
+    std_acceptance = []
+    acceptance = []
+    labels = []
+    for step in step_sizes:
+
+        input = read_all_files(
+            filter_method = method,
+            filter_n_particles = n_particles,
+            filter_n_dims = n_dims,
+            filter_n_mc_cycles = n_mc_cycles,
+            filter_step_size = step,
+            filter_numerical = numerical,
+            filter_interaction = interaction,
+            filter_data_type = "particles")[0]
+
+        avg = np.mean(input.data[:,4])
+        std = np.std(input.data[:,4])
+        avg_acceptance.append(avg)
+        std_acceptance.append(std)
+        acceptance.append(input.data[:,4])
+        labels.append(r"$\alpha = $" + f"{step}")
+
+    acceptance = np.array(acceptance)
+    avg_acceptance = np.array(avg_acceptance)
+    std_acceptance = np.array(std_acceptance)
+    step_sizes = np.array(step_sizes)
+
+    fig = plt.figure(figsize=(9, 7))
+    plt.grid()
+    #plt.errorbar(step_sizes, avg_acceptance, std_acceptance, fmt = "o", color= "k", capsize=3)
+    #plt.fill_between(step_sizes,
+    #                 avg_acceptance - std_acceptance,
+    #                 avg_acceptance + std_acceptance,
+    #                 color="k",
+    #                 alpha=0.2)
+
+    plt.plot(step_sizes, acceptance, alpha=0.2)
+    plt.plot(step_sizes, avg_acceptance, label="avg")
+    plt.legend(labels) #fontsize=10)
+    plt.xticks(step_sizes)
+    plt.xlabel(r"step size, $\Delta \eta$")
+    plt.ylabel("Acceptance rate")
+
+    fname_out = f"{method}_{n_particles}_{n_dims}_acceptance_step_size.png"
+    #fig.savefig(fname = "../fig/" + fname_out, dpi=300)
+    plt.show()
+
+
+
+def plot_acceptance_step_size(method, n_particles, n_dims, n_mc_cycles, step_sizes, numerical, interaction):
+
+    avg_acceptance = []
+    std_acceptance = []
+    acceptance = []
+    labels = []
+    for step in step_sizes:
+
+        input = read_all_files(
+            filter_method = method,
+            filter_n_particles = n_particles,
+            filter_n_dims = n_dims,
+            filter_n_mc_cycles = n_mc_cycles,
+            filter_step_size = step,
+            filter_numerical = numerical,
+            filter_interaction = interaction,
+            filter_data_type = "particles")[0]
+
+        avg = np.mean(input.data[:,4])
+        std = np.std(input.data[:,4])
+        avg_acceptance.append(avg)
+        std_acceptance.append(std)
+        acceptance.append(input.data[:,4])
+        labels.append(r"$\alpha = $" + f"{step}")
+
+    acceptance = np.array(acceptance)
+    avg_acceptance = np.array(avg_acceptance)
+    std_acceptance = np.array(std_acceptance)
+    step_sizes = np.array(step_sizes)
+
+    fig = plt.figure(figsize=(9, 7))
+    plt.grid()
+    plt.plot(step_sizes, avg_acceptance, color="k", label="average")
+    plt.fill_between(step_sizes,
+                     avg_acceptance - std_acceptance,
+                     avg_acceptance + std_acceptance,
+                     color="k",
+                     alpha=0.2,
+                     label = "Standard Deviation")
+
+    plt.legend()
+    plt.xticks(step_sizes)
+    plt.xlabel(r"step size, $\Delta \eta$")
+    plt.ylabel("Acceptance rate")
+
+    fname_out = f"{method}_{n_particles}_{n_dims}_acceptance_step_size.png"
+    #fig.savefig(fname = "../fig/" + fname_out, dpi=300)
+    plt.show()
+
+
 
 
 if __name__ == '__main__':
-    plot_variance_MC(cycle_list           = [8, 10, 12, 14, 16, 18, 20],
+
+    plot_acceptance_step_size(method      ="brute",
+                              n_particles =10,
+                              n_dims      =3,
+                              n_mc_cycles =2**20,
+                              step_sizes  = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+                              numerical   = False,
+                              interaction =False)
+
+
+
+    """
+    plot_variance_MC(cycle_list           = [8,10,12,14,16,18,20],
                      n_particles          = 10,
                      n_dims               = 3,
                      step_size_brute      = 0.2,
@@ -238,22 +395,20 @@ if __name__ == '__main__':
                      alpha_place          = 4
                      )
 
-
-    """
     plot_energy(method      = "brute",
-                n_particles = 10,
+                n_particles = 100,
                 n_mc_cycles = 2**20,
                 step_size   = 0.2,
                 numerical   = False,
                 interaction = False
                 )
 
-    plot_energy_MC(method      = "brute",
+    plot_energy_MC(method = "brute",
                    n_particles = 10,
-                   n_dims      = 3,
-                   n_mc_cycles = 2**10,
-                   step_size   = 0.2,
-                   numerical   = False,
-                   interaction = False
-                   )
+                   n_dims=3,
+                   n_mc_cycles=2**20,
+                   step_size=0.2,
+                   numerical=False,
+                   interaction=False,
+                   alpha_place=4)
     """

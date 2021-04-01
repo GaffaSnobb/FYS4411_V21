@@ -100,8 +100,8 @@ int main(int argc, char *argv[])
     double beta;
 
     // Global parameters:
-    double brute_force_step_size = 0.2;
-    const double importance_time_step = 0.1;
+    double brute_force_step_size = 1.0;
+    const double importance_time_step = 0.01;
     const double initial_alpha_gd = 0.1;  // Initial variational parameter. Only for GD.
     const double learning_rate = 1e-4;     // GD learning rate.
     const int n_gd_iterations = 200;      // Max. gradient descent iterations.
@@ -114,8 +114,8 @@ int main(int argc, char *argv[])
     const int n_variations = 10;         // Number of variational parameters. Not in use with GD.
     const int n_mc_cycles = std::pow(2, 10);          // Number of MC cycles, must be a power of 2
     const int n_dims = 3;           // Number of dimensions.
-    const int n_particles = 50;     // Number of particles.
-    arma::Col<double> alphas = arma::linspace(0.3, 0.5, n_variations);
+    const int n_particles = 10;     // Number of particles.
+    arma::Col<double> alphas = arma::linspace(0.1, 1, n_variations);
 
     // Select methods (choose one at a time):
     const bool gradient_descent = false;
@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
         #endif
         system_1.write_to_file(fname_importance_particles);
         system_1.write_energies_to_file(fname_importance_energies);
-        system_1.write_variances_to_file(fname_importance_variances);
+        //system_1.write_variances_to_file(fname_importance_variances);
         system_1.write_to_file_onebody_density(fname_importance_onebody);
     }
 
@@ -287,7 +287,7 @@ int main(int argc, char *argv[])
         #endif
         system_2.write_to_file(fname_brute_particles);
         system_2.write_energies_to_file(fname_brute_energies);
-        system_2.write_variances_to_file(fname_brute_variances);
+        //system_2.write_variances_to_file(fname_brute_variances);
         system_2.write_to_file_onebody_density(fname_brute_onebody);
     }
 
