@@ -246,6 +246,12 @@ void ImportanceSampling::one_variation(int variation)
 
     double alpha = alphas(variation);
     int acceptance = 0;  // Debug. Count the number of accepted steps.
+    bool safe_distance = false;
+    pos_current.zeros();
+    // pos_current.print();
+    // pos_new.zeros();
+    qforce_current.zeros();
+    qforce_new.zeros();
 
     // Reset values for each variation.
     energy_expectation = 0;
@@ -262,20 +268,59 @@ void ImportanceSampling::one_variation(int variation)
     double particle_distance;
     particle_per_bin_count_thread.zeros();
     // One-body density end.
+
+    int not_safe_counter = 0;
     for (particle = 0; particle < n_particles; particle++)
     {   /*
-        Iterate over all particles.  In this loop, all current
-        positions are calulated along with the current wave
-        functions.
+        Iterate over all particles.  In this loop, all initial
+        positions are calulated.
         */
-
-        for (dim = 0; dim < n_dims; dim++)
+        
+        safe_distance = false;
+        while (!safe_distance)
         {   /*
-            Set initial values.
+            Make sure no particles initially are closer than 'a'.
             */
-            pos_current(dim, particle) = normal(engine)*sqrt(time_step);
+            not_safe_counter++;
+            for (dim = 0; dim < n_dims; dim++)
+            {   /*
+                Set initial values.
+                */
+                pos_current(dim, particle) = 2*normal(engine)*sqrt(time_step);
+            }
+            for (particle_inner = 0; particle_inner <= particle; particle_inner++)
+            {
+                if (particle_inner == particle)
+                {   /*
+                    Particle distance from itself is always 0. Exclude.
+                    */
+                    safe_distance = true;
+                    continue;
+                }
+                particle_distance =
+                    arma::norm((pos_current.col(particle) - pos_current.col(particle_inner)));
+                if (particle_distance > a)
+                {   /*
+                    Check with the next particle if the distance is
+                    greater than 'a'.
+                    */
+                    continue;
+                }
+                else if (particle_distance <= a)
+                {   /*
+                    If the distance between particle 'particle' and
+                    'particle_inner' is less than 'a', redraw the
+                    position of particle 'particle' and check again with
+                    all particles.
+                    */
+                    break;
+                }
+                safe_distance = true;
+            }
         }
-
+    }
+    for (particle = 0; particle < n_particles; particle++)
+    {
         qforce_current.col(particle) = quantum_force_ptr(
             pos_current,
             alpha,
@@ -353,30 +398,11 @@ void ImportanceSampling::one_variation(int variation)
                 }
 
                 greens_ratio = exp(greens_ratio);
-                // greens_ratio = greens_ratio;
 
                 double wave_ratio = wave_new/wave_current;
-                wave_ratio *= wave_ratio;   // TODO: Find out why we need wave_ratio**2.
-                // double exponential_diff = 2*(std::log(wave_new) - std::log(wave_current));
-                // double exponential_diff = 2*((wave_new) - (wave_current));
-                // if (omp_get_thread_num() == 1)
-                // {
-                //     std::cout << "greens_ratio: " << greens_ratio << std::endl;
-                //     // std::cout << "wave_ratio: " << wave_ratio << std::endl;
-                //     std::cout << "exponential_diff: " << exponential_diff << std::endl;
-                //     std::cout << "std::exp(exponential_diff): " << std::exp(exponential_diff) << std::endl;
-                //     std::cout << "wave_new: " << wave_new << std::endl;
-                //     std::cout << "wave_current: " << wave_current << std::endl;
-                //     std::cout << "qforce_new.col(particle): " << qforce_new.col(particle) << std::endl;
-                //     std::cout << "qforce_current.col(particle): " << qforce_current.col(particle) << std::endl;
-                //     std::cout << "pos_new.col(particle): " << pos_new.col(particle) << std::endl;
-                //     std::cout << "pos_current.col(particle): " << pos_current.col(particle) << std::endl;
-                //     std::cout << std::endl;   
-                //     // exit(0);                 
-                // }
+                wave_ratio *= wave_ratio;
 
                 if (uniform(engine) < greens_ratio*wave_ratio)
-                // if (uniform(engine) < std::exp(greens_ratio + exponential_diff))
                 {   /*
                     Metropolis check.
                     */
