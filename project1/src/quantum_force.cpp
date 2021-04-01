@@ -56,10 +56,16 @@ arma::Mat<double> quantum_force_3d_interaction(
     // Term 1 end.
 
     // Term 2.
-    double term_2 = 1;  // Product, not sum, thus 1.
+    // double term_2 = 1;  // Product, not sum, thus 1.
+    double term_2 = 0;  // Sum, not product, thus 1.
     for (particle = 0; particle < current_particle; particle++)
     {
-        term_2 *= std::exp(-alpha*(
+        // term_2 *= std::exp(-alpha*(
+        //     pos(0, particle)*pos(0, particle) + 
+        //     pos(1, particle)*pos(1, particle) + 
+        //     pos(2, particle)*pos(2, particle)*beta
+        // ));
+        term_2 += (-alpha*(
             pos(0, particle)*pos(0, particle) + 
             pos(1, particle)*pos(1, particle) + 
             pos(2, particle)*pos(2, particle)*beta
@@ -68,7 +74,12 @@ arma::Mat<double> quantum_force_3d_interaction(
     
     for (particle = current_particle + 1; particle < n_particles; particle++)
     {
-        term_2 *= std::exp(-alpha*(
+        // term_2 *= std::exp(-alpha*(
+        //     pos(0, particle)*pos(0, particle) + 
+        //     pos(1, particle)*pos(1, particle) + 
+        //     pos(2, particle)*pos(2, particle)*beta
+        // ));
+        term_2 += (-alpha*(
             pos(0, particle)*pos(0, particle) + 
             pos(1, particle)*pos(1, particle) + 
             pos(2, particle)*pos(2, particle)*beta
@@ -155,6 +166,6 @@ arma::Mat<double> quantum_force_3d_interaction(
         n_particles
     );
 
-    return 2*(term_1*term_2*term_3 + term_4*term_5*term_6)/wave_function;
+    return 2*(term_1*std::exp(term_2)*term_3 + term_4*term_5*term_6)/wave_function;
     // return 2*(term_1*term_2*term_3 + term_4*term_5*term_6)/std::exp(wave_function);
 }
