@@ -170,7 +170,7 @@ double wave_function_2d_no_interaction_with_loop(
     double y;
 
     for (int particle = 0; particle < n_particles; particle++)
-    {   
+    {
         x = pos(0, particle);
         y = pos(1, particle);
         res += -alpha*(x*x + y*y);
@@ -268,7 +268,7 @@ double wave_function_3d_interaction_with_loop(
     wave_function*wave_function_inner : double
         The total wavefunction.
     */
-    
+
     double wave_function = 0;   // Non-interaction term.
     double wave_function_inner = 1; // Interaction term.
     double particle_distance;       // Condition for the interaction term of the wavefunction.
@@ -293,7 +293,7 @@ double wave_function_3d_interaction_with_loop(
         Interaction term.
         */
         for (particle_inner = particle + 1; particle_inner < n_particles; particle_inner++)
-        {   
+        {
             particle_distance =
                 arma::norm(pos.col(particle) - pos.col(particle_inner));
 
@@ -323,7 +323,7 @@ double wave_function_3d_diff_wrt_alpha(
 )
 {   /*
     CORRECTION: This is only the factor in front of the wave function
-    after differentiation. 
+    after differentiation.
 
     Parameters
     ----------
@@ -352,7 +352,7 @@ double wave_function_2d_diff_wrt_alpha(
 )
 {   /*
     CORRECTION: This is only the factor in front of the wave function
-    after differentiation. 
+    after differentiation.
 
     Parameters
     ----------
@@ -381,7 +381,7 @@ double wave_function_1d_diff_wrt_alpha(
 )
 {   /*
     CORRECTION: This is only the factor in front of the wave function
-    after differentiation. 
+    after differentiation.
 
     Parameters
     ----------

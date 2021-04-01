@@ -249,7 +249,7 @@ void ImportanceSampling::one_variation(int variation)
     bool safe_distance = false;
     pos_current.zeros();
     // pos_current.print();
-    // pos_new.zeros();
+    pos_new.zeros();
     qforce_current.zeros();
     qforce_new.zeros();
 
@@ -275,7 +275,7 @@ void ImportanceSampling::one_variation(int variation)
         Iterate over all particles.  In this loop, all initial
         positions are calulated.
         */
-        
+
         safe_distance = false;
         while (!safe_distance)
         {   /*
@@ -298,7 +298,7 @@ void ImportanceSampling::one_variation(int variation)
                     continue;
                 }
                 particle_distance =
-                    arma::norm((pos_current.col(particle) - pos_current.col(particle_inner)));
+                    arma::norm((pos_current.col(particle) - pos_current.col(particle_inner)), 2);
                 if (particle_distance > a)
                 {   /*
                     Check with the next particle if the distance is
@@ -319,6 +319,7 @@ void ImportanceSampling::one_variation(int variation)
             }
         }
     }
+
     for (particle = 0; particle < n_particles; particle++)
     {
         qforce_current.col(particle) = quantum_force_ptr(
@@ -457,6 +458,7 @@ void ImportanceSampling::one_variation(int variation)
                     }
                 }
                 // One-body density end.
+
                 energy_expectation += local_energy;
                 energy_expectation_squared += local_energy*local_energy;
             }

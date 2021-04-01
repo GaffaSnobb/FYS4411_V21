@@ -52,8 +52,7 @@ arma::Mat<double> quantum_force_3d_interaction(
     const double z = pos(2, current_particle);
 
     // Term 1.
-    term_1 = {x, y, z*beta};
-    term_1 *= -4*alpha;
+    term_1 = -4*alpha*pos.col(current_particle);
     // Term 1 end.
 
     // Term 2.
@@ -61,7 +60,7 @@ arma::Mat<double> quantum_force_3d_interaction(
     term_2.zeros();
     double particle_distance_1;   // |r_k - r_j|.
     arma::Col<double> particle_diff_vector_1(3);  // r_k - r_j.
-    
+
     for (particle = 0; particle < current_particle; particle++)
     {
         particle_distance_1 =
@@ -71,7 +70,7 @@ arma::Mat<double> quantum_force_3d_interaction(
             (pos.col(current_particle) - pos.col(particle));   // /particle_distance_1;
 
         if (particle_distance_1 > a)
-        { 
+        {
             particle_diff_vector_1 *= a / (particle_distance_1*particle_distance_1*(particle_distance_1 - a));
         }
         else
@@ -81,7 +80,7 @@ arma::Mat<double> quantum_force_3d_interaction(
 
         term_2 += particle_diff_vector_1;
     }
-    
+
     for (particle = current_particle + 1; particle < n_particles; particle++)
     {
         particle_distance_1 =
@@ -91,7 +90,7 @@ arma::Mat<double> quantum_force_3d_interaction(
             (pos.col(current_particle) - pos.col(particle));  //  /particle_distance_1;
 
         if (particle_distance_1 > a)
-        {  
+        {
             particle_diff_vector_1 *= a / (particle_distance_1*particle_distance_1*(particle_distance_1 - a));
         }
         else
@@ -103,7 +102,7 @@ arma::Mat<double> quantum_force_3d_interaction(
     }
 
     term_2 *= 2;
-    
+
     // Term 2 end.
 
     return term_1 + term_2;
