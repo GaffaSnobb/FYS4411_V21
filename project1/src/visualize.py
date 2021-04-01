@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from read_from_file import read_from_file, read_energy_from_file, read_all_files
 import matplotlib as mpl
-mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=["tab:blue", "tab:green", "tab:red", "tab:purple", "tab:orange", "tab:brown", "tab:pink", "tab:gray", "tab:olive", "tab:cyan"]) 
+mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=["tab:blue", "tab:green", "tab:red", "tab:purple", "tab:orange", "tab:brown", "tab:pink", "tab:gray", "tab:olive", "tab:cyan"])
 
 def brute_and_importance(fname_brute, fname_importance):
     alpha_brute, var_brute, exp_brute, n_brute = read_from_file(fname_brute)
@@ -160,7 +160,7 @@ def task_b():
         filter_data_type = "particles",
         directory = "generated_data/task_b/"
     )
-    
+
     def one_plot(data_3d, data_2d, data_1d):
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(9, 7))
 
@@ -198,19 +198,19 @@ def task_b():
         fig.text(x=0.5, y=0.01, s=r"$\alpha$", fontsize=20)
         fig.text(x=0.00, y=0.42, s=r"Local energy", fontsize=20, rotation="vertical")
         fig.tight_layout(pad=2)
-        
+
         fname_out_lst = data_3d.fname.split("_")
         fname_out_lst.pop(0)
         fname_out_lst.pop(2)
         fname_out_lst.pop(-1)
         fname_out_lst.pop(-1)
         fname_out = ""
-        
+
         for elem in fname_out_lst:
             fname_out += elem
             fname_out += "_"
         fname_out += "dimension_plot.png"
-        
+
         fig.savefig(fname = "../fig/" + fname_out, dpi=300)
         plt.show()
 
@@ -229,7 +229,7 @@ def task_b():
     print(f"Brute 100 particles 1d calculation time: {np.sum(brute_1d[1].data[:, 3]):.2f} s, avg. var: {np.mean(brute_1d[1].data[:, 1]):.2f}")
     print(f"Brute 100 particles 2d calculation time: {np.sum(brute_2d[1].data[:, 3]):.2f} s, avg. var: {np.mean(brute_2d[1].data[:, 1]):.2f}")
     print(f"Brute 100 particles 3d calculation time: {np.sum(brute_3d[1].data[:, 3]):.2f} s, avg. var: {np.mean(brute_3d[1].data[:, 1]):.2f}")
-    
+
     one_plot(   # 10 particles.
         data_3d = importance_3d[0],
         data_2d = importance_2d[0],
@@ -271,14 +271,14 @@ def task_c():
     fname_out_lst.pop(-1)
     fname_out_lst.pop(-1)
     fname_out = ""
-    
+
     for elem in fname_out_lst:
         fname_out += elem
         fname_out += "_"
     fname_out += "acceptance_vs_step.png"
 
     importance.sort(key=lambda elem: elem.step_size)    # Sort by importance step size.
-    
+
     n = len(importance)
     acceptances = np.zeros(n)
     time_steps = np.zeros(n)
@@ -321,7 +321,7 @@ def task_d():
     fname_out_lst.pop(-1)
     fname_out_lst.pop(-1)
     fname_out = ""
-    
+
     for elem in fname_out_lst:
         fname_out += elem
         fname_out += "_"
@@ -399,7 +399,7 @@ def task_g():
         filter_data_type = "onebody",
         directory = "generated_data/task_g/"
     )
-    
+
     importance.sort(key=lambda elem: elem.a)
     for elem in importance:
         print(f"{elem.fname=}")
@@ -480,7 +480,7 @@ if __name__ == "__main__":
         filter_method = "importance",
         filter_n_particles = 10,
         filter_n_dims = 3,
-        filter_n_mc_cycles = int(2**20),
+        filter_n_mc_cycles = int(2**17),
         filter_step_size = 0.01,
         filter_numerical = False,
         filter_interaction = True,

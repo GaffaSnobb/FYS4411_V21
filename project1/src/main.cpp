@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
 
     // Global parameters:
     double brute_force_step_size = 0.2;
-    const double importance_time_step = 0.01;
+    const double importance_time_step = 0.001;
     const double initial_alpha_gd = 0.2;  // Initial variational parameter. Only for GD.
     const double learning_rate = 1e-4;     // GD learning rate.
     const int n_gd_iterations = 200;      // Max. gradient descent iterations.
@@ -121,12 +121,12 @@ int main(int argc, char *argv[])
 
     const bool interaction = true;
     const bool numerical_differentiation = false;
-    const int n_variations = 6;         // Number of variational parameters. Not in use with GD.
-    const int n_mc_cycles = std::pow(2, 16);          // Number of MC cycles, must be a power of 2
+    const int n_variations = 10;         // Number of variational parameters. Not in use with GD.
+    const int n_mc_cycles = std::pow(2, 17);          // Number of MC cycles, must be a power of 2
     const int n_dims = 3;           // Number of dimensions.
     const int n_particles = 10;     // Number of particles.
     // arma::Col<double> alphas = arma::linspace(0.25, 0.6, n_variations);
-    arma::Col<double> alphas = arma::linspace(0.1, 0.6, n_variations);
+    arma::Col<double> alphas = arma::linspace(0.1, 1, n_variations);
     // arma::Col<double> alphas = {0.28, 0.28, 0.28};
 
     // Select methods (choose one at a time):
