@@ -430,20 +430,28 @@ def debug():
         filter_n_mc_cycles = int(2**20),
         filter_step_size = None,
         filter_numerical = False,
-        filter_interaction = True,
+        filter_interaction = False,
         filter_data_type = "particles",
-        directory = "generated_data/task_g/"
+        directory = "generated_data/"
     )
-
+    # data.sort(key=lambda elem: elem.a)
+    bins = np.arange(0, data[0].data.shape[0], 1)
     for elem in data:
         plt.plot(
-            elem.data[0],
-            elem.data[2],
+            elem.data[:, 0],
+            elem.data[:, 2],
             "o",
             label=f"a = {elem.a}"
         )
+        # plt.bar(
+        #     bins,
+        #     elem.data/np.trapz(elem.data),
+        #     label = f"a = {elem.a}",
+        #     alpha = 0.5
+        # )
     plt.legend()
     plt.show()
+
 
 
 if __name__ == "__main__":
@@ -463,7 +471,7 @@ if __name__ == "__main__":
     # tmp_gd()
     # onebody(f_brute_force_onebody)
     # task_b()
-    # task_c()
+    task_c()
     # task_d()
     # task_g()
-    debug()
+    # debug()
