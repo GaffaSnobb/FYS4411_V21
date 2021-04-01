@@ -1,7 +1,7 @@
 #include "wave_function.h"
 
 double wave_function_1d_no_interaction_with_loop(
-    arma::Mat<double> pos,
+    const arma::Mat<double> &pos,
     double alpha,
     double beta,
     const int n_particles
@@ -139,7 +139,7 @@ autodiff::HigherOrderDual<2> wave_function_3d_no_interaction(
 }
 
 double wave_function_2d_no_interaction_with_loop(
-    arma::Mat<double> pos,
+    const arma::Mat<double> &pos,
     double alpha,
     double beta,
     const int n_particles
@@ -179,7 +179,7 @@ double wave_function_2d_no_interaction_with_loop(
 }
 
 double wave_function_exponent_3d_no_interaction(
-    arma::Mat<double> pos,
+    const arma::Mat<double> &pos,
     double alpha,
     double beta
 )
@@ -204,7 +204,7 @@ double wave_function_exponent_3d_no_interaction(
 }
 
 double wave_function_3d_no_interaction_with_loop(
-    arma::Mat<double> pos,
+    const arma::Mat<double> &pos,
     double alpha,
     double beta,
     const int n_particles
@@ -241,7 +241,7 @@ double wave_function_3d_no_interaction_with_loop(
 }
 
 double wave_function_3d_interaction_with_loop(
-    arma::Mat<double> pos,
+    const arma::Mat<double> &pos,
     double alpha,
     double beta,
     const int n_particles
@@ -269,8 +269,7 @@ double wave_function_3d_interaction_with_loop(
         The total wavefunction.
     */
     
-    double wave_function = 1;       // Non-interaction term.
-    // double wave_function = 0;
+    double wave_function = 0;   // Non-interaction term.
     double wave_function_inner = 1; // Interaction term.
     double particle_distance;       // Condition for the interaction term of the wavefunction.
 
@@ -281,26 +280,22 @@ double wave_function_3d_interaction_with_loop(
     {   /*
         No interaction term.
         */
-        wave_function *= std::exp(-alpha*(
+        wave_function += (-alpha*(
             pos(0, particle)*pos(0, particle) +
             pos(1, particle)*pos(1, particle) +
             pos(2, particle)*pos(2, particle)*beta
         ));
-        // wave_function += (-alpha*(
-        //     pos(0, particle)*pos(0, particle) +
-        //     pos(1, particle)*pos(1, particle) +
-        //     pos(2, particle)*pos(2, particle)*beta
-        // ));
     }
+
+
     for (particle = 0; particle < n_particles; particle++)
     {   /*
         Interaction term.
         */
-
         for (particle_inner = particle + 1; particle_inner < n_particles; particle_inner++)
-        {
+        {   
             particle_distance =
-                arma::norm(pos.col(particle) - pos.col(particle_inner), 2);
+                arma::norm(pos.col(particle) - pos.col(particle_inner));
 
             if (particle_distance > a)
             {   /*
@@ -311,11 +306,14 @@ double wave_function_3d_interaction_with_loop(
                 */
                 wave_function_inner *= 1 - a/particle_distance;
             }
+            else
+            {
+                wave_function_inner = 0;
+                break;  // Entire term is zero anyway.
+            }
         }
     }
-    return wave_function*wave_function_inner;
-    // return std::exp(wave_function)*wave_function_inner;
-    // return wave_function + std::log(wave_function_inner);
+    return std::exp(wave_function)*wave_function_inner;
 }
 
 double wave_function_3d_diff_wrt_alpha(
