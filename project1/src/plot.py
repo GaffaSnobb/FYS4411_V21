@@ -313,7 +313,7 @@ def plot_acceptance_step_size_v1(method, n_particles, n_dims, n_mc_cycles, step_
     plt.xticks(step_sizes)
     plt.xlabel(r"step size, $\Delta \eta$")
     plt.ylabel("Acceptance rate")
-
+    plt.ylim(0, 1)
     fname_out = f"{method}_{n_particles}_{n_dims}_acceptance_step_size.png"
     #fig.savefig(fname = "../fig/" + fname_out, dpi=300)
     plt.show()
@@ -356,6 +356,7 @@ def plot_acceptance_step_size(method, n_particles, n_dims, n_mc_cycles, step_siz
     plt.xticks(step_sizes)
     plt.xlabel(r"step size")
     plt.ylabel("Acceptance rate")
+    plt.ylim(0.4, 1.1)
 
     fname_out = f"{method}_{n_particles}_{n_dims}_acceptance_step_size.png"
     fig.tight_layout(pad=2)
@@ -363,20 +364,18 @@ def plot_acceptance_step_size(method, n_particles, n_dims, n_mc_cycles, step_siz
     plt.show()
 
 
-
-
 if __name__ == '__main__':
-    """
-    plot_acceptance_step_size(method      ="brute",
-                              n_particles =10,
-                              n_dims      =3,
-                              n_mc_cycles =2**20,
+
+    plot_acceptance_step_size(method = "brute",
+                              n_particles = 10,
+                              n_dims      = 3,
+                              n_mc_cycles = 2**20,
                               step_sizes  = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
                               numerical   = False,
-                              interaction =False)
+                              interaction = False)
     """
-    met = "importance"
-    step = 0.01
+    met = "brute"
+    step = 0.2
     plot_energy(method      = met,
                 n_particles = 10,
                 n_mc_cycles = 2**20,
@@ -399,7 +398,7 @@ if __name__ == '__main__':
                 interaction = False
                 )
 
-
+    """
     """
     plot_variance_MC(cycle_list           = [8,10,12,14,16,18,20],
                      n_particles          = 10,

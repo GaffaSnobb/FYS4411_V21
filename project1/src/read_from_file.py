@@ -18,34 +18,25 @@ class Container:
         """
         Parameters
         ----------
-
         data : numpy.ndarray
             Array with data from data file.
-        
+
         method : string
             'brute', 'importance', or 'gradient'.
-
         n_particles : integer
             Total number of particles.
-
         n_dims : integer
             Number of spatial dimensions.
-
         n_mc_cycles : integer
             Number of Monte Carlo cycles.
-
         step_size : float
             Either importance time step or brute force step size.
-
         numerical : boolean
             True if numerical differentiation, False if analytical.
-
         interaction : boolean
             Interaction term on / off.
-
         data_type : string
             'particles', 'onebody', or 'energies'.
-
         fname : string
             Original file name.
         """
@@ -74,38 +65,29 @@ def read_all_files(
     """
     Read all text files in generated_data/ and store all relevant data
     in 'Container' objects. See Container docstring for details.
-
     Parameters
     ----------
     filter_method : NoneType, string
         Filter for only reading certain data files. Valid filters are
         'brute', 'importance', 'gradient'. If None, no filter is
         applied.
-
     filter_n_particles : NoneType, int
         Filter for choosing a certain amount of particles.
-
     filter_n_dims : NoneType, int
         Filter for choosing a certain number of dimensions.
-
     filter_n_mc_cycles : NoneType, int
         Filter for choosing a certain number of Monte Carlo cycles.
-
     filter_step_size : NoneType, float
         Filter for choosing a certain brute force or importance step
         size.
-
     filter_numerical : NoneType, boolean
         Filter for choosing numerical or analytical differentiation.
-
     filter_interaction : NoneType, boolean
         Filter for choosing interacting or non-interacting case.
-
     filter_data_type : NoneType, string
         Filter for only reading certain data types. Valid filters are
         'particle', 'onebody', 'energies'. If None, no filter is
         applied.
-
     Returns
     -------
     data_list : list
@@ -132,7 +114,7 @@ def read_all_files(
             input.
             """
             continue
-        
+
         n_particles = int(fname[2])
         if (filter_n_particles != n_particles) and (filter_n_particles is not None):
             """
@@ -208,7 +190,7 @@ def read_all_files(
             continue
 
         data = np.loadtxt(fname = "generated_data/" + fnames[i], skiprows=1)
-        
+
         data_list.append(Container(
             data,
             method,
@@ -234,7 +216,7 @@ def read_all_files(
         msg += f"\n{filter_interaction=}"
         msg += f"\n{filter_data_type=}"
         raise RuntimeError(msg)
-    
+
     data_list.sort(key=lambda elem: elem.n_particles)   # Sort elements based on the number of particles.
     return data_list
 

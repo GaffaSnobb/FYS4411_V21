@@ -109,10 +109,10 @@ int main(int argc, char *argv[])
     const double gd_tolerance = 1e-4;
     const bool debug = false;       // Toggle debug print on / off.
 
-    const bool interaction = true;
+    const bool interaction = false;
     const bool numerical_differentiation = false;
     const int n_variations = 10;         // Number of variational parameters. Not in use with GD.
-    const int n_mc_cycles = std::pow(2, 10);          // Number of MC cycles, must be a power of 2
+    const int n_mc_cycles = std::pow(2, 20);          // Number of MC cycles, must be a power of 2
     const int n_dims = 3;           // Number of dimensions.
     const int n_particles = 10;     // Number of particles.
     arma::Col<double> alphas = arma::linspace(0.1, 1, n_variations);
