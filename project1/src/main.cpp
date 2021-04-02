@@ -110,29 +110,29 @@ int main(int argc, char *argv[])
     double beta;
 
     // Global parameters:
-    double brute_force_step_size = 0.2;
+    double brute_force_step_size      = 0.2;
     const double importance_time_step = 0.01;
-    const double initial_alpha_gd = 0.2;  // Initial variational parameter. Only for GD.
-    const double learning_rate = 1e-4;     // GD learning rate.
-    const int n_gd_iterations = 200;      // Max. gradient descent iterations.
-    long seed = time(NULL);
-    const double gd_tolerance = 1e-4;
-    const bool debug = true;       // Toggle debug print on / off.
+    const double initial_alpha_gd     = 0.2;  // Initial variational parameter. Only for GD.
+    const double learning_rate        = 1e-4;     // GD learning rate.
+    const int n_gd_iterations         = 200;      // Max. gradient descent iterations.
+    long seed                         = time(NULL);
+    const double gd_tolerance         = 1e-4;
+    const bool debug                  = true;       // Toggle debug print on / off.
 
-    const bool interaction = true;
+    const bool interaction               = true;
     const bool numerical_differentiation = false;
-    const int n_variations = 10;         // Number of variational parameters. Not in use with GD.
-    const int n_mc_cycles = std::pow(2, 14);          // Number of MC cycles, must be a power of 2
-    const int n_dims = 3;           // Number of dimensions.
-    const int n_particles = 10;     // Number of particles.
+    const int n_variations               = 10;         // Number of variational parameters. Not in use with GD.
+    const int n_mc_cycles                = std::pow(2, 14);          // Number of MC cycles, must be a power of 2
+    const int n_dims                     = 3;           // Number of dimensions.
+    const int n_particles                = 10;     // Number of particles.
     // arma::Col<double> alphas = arma::linspace(0.25, 0.6, n_variations);
-    arma::Col<double> alphas = arma::linspace(0.1, 1, n_variations);
+    arma::Col<double> alphas             = arma::linspace(0.1, 1, n_variations);
     // arma::Col<double> alphas = {0.28, 0.28, 0.28};
 
     // Select methods (choose one at a time):
-    const bool gradient_descent = false;
+    const bool gradient_descent    = false;
     const bool importance_sampling = true;
-    const bool brute_force = false;
+    const bool brute_force         = false;
 
     if (interaction)
     {
