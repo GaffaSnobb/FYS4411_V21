@@ -101,7 +101,7 @@ def plot_energy(method, n_particles, n_mc_cycles, step_size, numerical, interact
         fname_out += elem
         fname_out += "_"
     fname_out += "dimension_plot.png"
-
+    fig.tight_layout(pad=2)
     fig.savefig(fname = "../fig/" + fname_out, dpi=300)
     plt.show()
 
@@ -161,7 +161,7 @@ def plot_variance_MC(cycle_list, n_particles, n_dims, step_size_brute, step_size
     fname_out += f"{step_size_importance}_{step_size_brute}_"
     fname_out += f"{fname_brute[6]}_{fname_brute[7]}_"
     fname_out += "std_mc_plot.png"
-
+    fig.tight_layout(pad=2)
     fig.savefig(fname = "../fig/" + fname_out, dpi=300)
 
     plt.show()
@@ -352,28 +352,21 @@ def plot_acceptance_step_size(method, n_particles, n_dims, n_mc_cycles, step_siz
 
     fig = plt.figure(figsize=(9, 7))
     plt.grid()
-    plt.plot(step_sizes, avg_acceptance, color="k", label="average")
-    plt.fill_between(step_sizes,
-                     avg_acceptance - std_acceptance,
-                     avg_acceptance + std_acceptance,
-                     color="k",
-                     alpha=0.2,
-                     label = "Standard Deviation")
-
-    plt.legend()
+    plt.plot(step_sizes, avg_acceptance, "o", color="k")
     plt.xticks(step_sizes)
-    plt.xlabel(r"step size, $\Delta \eta$")
+    plt.xlabel(r"step size")
     plt.ylabel("Acceptance rate")
 
     fname_out = f"{method}_{n_particles}_{n_dims}_acceptance_step_size.png"
-    #fig.savefig(fname = "../fig/" + fname_out, dpi=300)
+    fig.tight_layout(pad=2)
+    fig.savefig(fname = "../fig/" + fname_out, dpi=300)
     plt.show()
 
 
 
 
 if __name__ == '__main__':
-
+    """
     plot_acceptance_step_size(method      ="brute",
                               n_particles =10,
                               n_dims      =3,
@@ -381,7 +374,30 @@ if __name__ == '__main__':
                               step_sizes  = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
                               numerical   = False,
                               interaction =False)
-
+    """
+    met = "importance"
+    step = 0.01
+    plot_energy(method      = met,
+                n_particles = 10,
+                n_mc_cycles = 2**20,
+                step_size   = step,
+                numerical   = False,
+                interaction = False
+                )
+    plot_energy(method      = met,
+                n_particles = 100,
+                n_mc_cycles = 2**20,
+                step_size   = step,
+                numerical   = False,
+                interaction = False
+                )
+    plot_energy(method      = met,
+                n_particles = 500,
+                n_mc_cycles = 2**20,
+                step_size   = step,
+                numerical   = False,
+                interaction = False
+                )
 
 
     """
