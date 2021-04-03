@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 from read_from_file import read_all_files
 import os
 np.seterr(divide='ignore', invalid='ignore')
+import matplotlib as mpl
+mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=["tab:blue", "tab:green", "tab:purple","tab:red", "tab:orange", "tab:brown", "tab:pink", "tab:gray", "tab:olive", "tab:cyan"])
+mpl.rcParams.update({'font.size': 15})
 
 def block(x, verbose=True):
     """
@@ -182,17 +185,232 @@ def blocking_analysis(n_particles, n_dims, mc_cycles, method, numerical=False, i
         plt.legend()
         fig.savefig(f"{path}/alpha_{alphas[i]}.png")
 
+def plot_variance_MC(cycle_list, n_particles, n_dims, step_size_brute, step_size_importance, numerical, interaction, alpha_place):
+
+    variances_brute = []
+    variances_importance = []
+
+    blocking_brute = []
+    blocking_importance = []
+
+    for n_mc_cycles_exponent in cycle_list:
+
+        print("MC: ", n_mc_cycles_exponent)
+        n_mc_cycles = 2**n_mc_cycles_exponent
+
+        brute = read_all_files(
+            filter_method = "brute",
+            filter_n_particles = n_particles,
+            filter_n_dims = n_dims,
+            filter_n_mc_cycles = n_mc_cycles,
+            filter_step_size = step_size_brute,
+            filter_numerical = numerical,
+            filter_interaction = interaction,
+            filter_data_type = "particles")[0]
+
+        brute_energies = read_all_files(
+            filter_method = "brute",
+            filter_n_particles = n_particles,
+            filter_n_dims = n_dims,
+            filter_n_mc_cycles = n_mc_cycles,
+            filter_step_size = step_size_brute,
+            filter_numerical = numerical,
+            filter_interaction = interaction,
+            filter_data_type = "energies")[0]
+
+        importance = read_all_files(
+            filter_method = "importance",
+            filter_n_particles = n_particles,
+            filter_n_dims = n_dims,
+            filter_n_mc_cycles = n_mc_cycles,
+            filter_step_size = step_size_importance,
+            filter_numerical = numerical,
+            filter_interaction = interaction,
+            filter_data_type = "particles")[0]
+
+        importance_energies = read_all_files(
+            filter_method = "importance",
+            filter_n_particles = n_particles,
+            filter_n_dims = n_dims,
+            filter_n_mc_cycles = n_mc_cycles,
+            filter_step_size = step_size_importance,
+            filter_numerical = numerical,
+            filter_interaction = interaction,
+            filter_data_type = "energies")[0]
+
+        variances_brute.append((brute.data[:, 1][alpha_place]/n_mc_cycles)**0.5)
+        variances_importance.append((importance.data[:, 1][alpha_place]/n_mc_cycles)**0.5)
+
+        data_brute = brute_energies.data[1:, alpha_place]
+        data_importance = importance_energies.data[1:, alpha_place]
+
+        energy, blocking_error_brute, original_error, iterations, error_array = block(data_brute, verbose=True)
+        energy, blocking_error_importance, original_error_importance, iterations, error_array = block(data_importance, verbose=True)
+
+        blocking_brute.append(blocking_error_brute)
+        blocking_importance.append(blocking_error_importance)
+
+        alpha = brute.data[:,0][alpha_place]
+
+    variances_brute = np.array(variances_brute)
+    variances_importance = np.array(variances_importance)
+
+    blocking_brute = np.array(blocking_brute)
+    blocking_importance = np.array(blocking_importance)
+
+
+    mc_cycles = np.array(cycle_list)
+
+    fig = plt.figure(figsize=(9, 7))
+    plt.grid()
+    plt.plot(mc_cycles, variances_brute, color = "tab:blue",  linestyle="dashed", label = "Brute-force original error")
+    plt.plot(mc_cycles, variances_importance, color = "tab:green",  linestyle="dashed", label= "Importance original error")
+    plt.plot(mc_cycles, blocking_brute, color="tab:blue", label = "Brute-force blocking error")
+    plt.plot(mc_cycles, blocking_importance, color="tab:green", label= "Importance blocking error")
+
+    plt.legend()
+    plt.xticks(mc_cycles)
+    plt.xlabel(r"Number of MC-cycles")
+    plt.ylabel(r"Error,  $\sigma(m)$")
+
+    fname_importance = importance.fname.split("_")
+    fname_brute = brute.fname.split("_")
+
+    fname_out = f"brute_importance_{n_particles}_{n_dims}_"
+    fname_out += f"{step_size_importance}_{step_size_brute}_"
+    fname_out += f"{fname_brute[6]}_{fname_brute[7]}_"
+    fname_out += "error_mc_plot.png"
+    fig.tight_layout(pad=2)
+    fig.savefig(fname = "../fig/" + fname_out, dpi=300)
+
+    plt.show()
+
+
+
+
+
+
+
+def plot_error_MC(cycle_list, n_particles, n_dims, step_size_brute, step_size_importance, numerical, interaction, alpha_place):
+
+    error_brute = []
+    error_importance = []
+
+    original_brute = []
+    original_importance = []
+
+    for n_mc_cycles_exponent in cycle_list:
+
+        print("MC: ", n_mc_cycles_exponent)
+        n_mc_cycles = 2**n_mc_cycles_exponent
+
+        brute = read_all_files(
+            filter_method = "brute",
+            filter_n_particles = n_particles,
+            filter_n_dims = n_dims,
+            filter_n_mc_cycles = n_mc_cycles,
+            filter_step_size = step_size_brute,
+            filter_numerical = numerical,
+            filter_interaction = interaction,
+            filter_data_type = "energies")[0]
+
+        importance = read_all_files(
+            filter_method = "importance",
+            filter_n_particles = n_particles,
+            filter_n_dims = n_dims,
+            filter_n_mc_cycles = n_mc_cycles,
+            filter_step_size = step_size_importance,
+            filter_numerical = numerical,
+            filter_interaction = interaction,
+            filter_data_type = "energies")[0]
+
+        alphas = importance.data[0,:]
+
+        tmp_brute = np.zeros(len(alphas))
+        tmp_importance = np.zeros(len(alphas))
+
+        tmp_brute_original = np.zeros(len(alphas))
+        tmp_importance_original = np.zeros(len(alphas))
+
+        for i in range(len(alphas)):
+
+            data_brute = brute.data[1:,i]
+            data_importance = importance.data[1:,i]
+
+            blocking_error_brute, original_error_brute = block(data_brute, verbose=False)[1:3]
+            blocking_error_importance, original_error_importance = block(data_importance, verbose=False)[1:3]
+
+            tmp_brute[i] = blocking_error_brute
+            tmp_importance[i] = blocking_error_importance
+
+            tmp_brute_original[i] = original_error_brute
+            tmp_importance_original[i] = original_error_importance
+
+
+        error_brute.append(np.mean(tmp_brute))
+        error_importance.append(np.mean(tmp_importance))
+
+        original_brute.append(np.mean(tmp_brute_original))
+        original_importance.append(np.mean(tmp_importance_original))
+
+
+    error_brute = np.array(error_brute)
+    error_importance = np.array(error_importance)
+
+    original_brute = np.array(original_brute)
+    original_importance = np.array(original_importance)
+
+    mc_cycles = np.array(cycle_list)
+
+    fig = plt.figure(figsize=(9, 7))
+    plt.grid()
+
+    plt.plot(mc_cycles, error_brute, color="tab:blue", label = r"$\sigma_b$ brute-force")
+    plt.plot(mc_cycles, original_brute, color="tab:blue", linestyle="dashed", label=r"$\sigma$, brute-force")
+    plt.plot(mc_cycles, error_importance, color="tab:green", label=r"$\sigma_b$, importance")
+    plt.plot(mc_cycles, original_importance, color="tab:green", linestyle="dashed", label=r"$\sigma$, importance")
+
+    plt.legend()
+    plt.xticks(mc_cycles)
+    plt.xlabel(r"Number of MC-cycles")
+    plt.ylabel(r"Error,  $\sigma(m)$")
+
+    fname_importance = importance.fname.split("_")
+    fname_brute = brute.fname.split("_")
+
+    fname_out = f"brute_importance_{n_particles}_{n_dims}_"
+    fname_out += f"{step_size_importance}_{step_size_brute}_"
+    fname_out += f"{fname_brute[6]}_{fname_brute[7]}_"
+    fname_out += "error_blocking_mc_plot.png"
+    fig.tight_layout(pad=2)
+    fig.savefig(fname = "../fig/" + fname_out, dpi=300)
+
+    plt.show()
+
+
+
+
 
 
 def main():
-
+    """
     blocking_analysis(method = "importance",
                       n_particles = 500,
                       n_dims = 3,
                       mc_cycles= int(2**20),
                       numerical=True,
                       interaction=False)
+    """
 
+    plot_error_MC(cycle_list = [6,8,10,12,14,16,18,20],
+                      n_particles=10,
+                      n_dims=3,
+                      step_size_brute=0.2,
+                      step_size_importance=0.01,
+                      numerical=False,
+                      interaction=False,
+                      alpha_place=5
+                      )
 
 if __name__ == '__main__':
     main()
