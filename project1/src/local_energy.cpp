@@ -2,6 +2,112 @@
 #include "parameters.h"
 #include "omp.h"
 
+double local_energy_3d_interaction_vala(
+    const arma::Mat<double> &pos,
+    const double alpha,
+    const double beta,
+    const int current_particle,
+    const int n_particles
+)
+{   
+    const int n_dims = 3;
+    double ekin = 0;
+    double epot = 0;
+    double eloc = 0;
+    double radsq = 0;
+    double r_ij = 0;
+    double r_ik = 0;
+    double ekin_1 = 0;
+    double ekin_2 = 0;
+    double ekin_3 = 0;
+    double ekin_4 = 0;
+
+    // This is the first term of kinetic energy which works fine!
+    for(int particle = 0; particle < n_particles; particle++)
+    {
+        ekin_1 += -4*alpha-2*alpha*beta+4*alpha*alpha*(pos(0, particle)*pos(0, particle) + pos(1, particle)*pos(1, particle) + beta*beta*pos(2, particle)*pos(2, particle));
+    }
+    //This is the second term
+    for (int particle = 0; particle < n_particles; particle++)
+    {
+        for (int particle_inner = 0; particle_inner < n_particles; particle_inner++)
+        {
+            if (particle_inner != particle)
+            {
+                for (int dim = 0; dim < n_dims; dim++)
+                {
+                    r_ij += (pos(dim, particle) - pos(dim, particle_inner))*(pos(dim, particle) - pos(dim, particle_inner));
+                }
+                r_ij = std::sqrt(r_ij);
+                ekin_2 += 2*a /(r_ij*r_ij+a*r_ij)/r_ij*(-2*alpha*pos(0, particle)*(pos(0, particle) - pos(0, particle_inner)) - 2*alpha*pos(1, particle)*(pos(1, particle) - pos(1, particle_inner)) - 2*alpha*beta*pos(2, particle)*(pos(2, particle) - pos(2, particle_inner)));
+                r_ij = 0;
+            }
+        }
+    }
+    //This is the third term
+    for (int particle = 0; particle < n_particles; particle++)
+    {
+        for (int particle_inner = 0; particle_inner < n_particles; particle_inner++)
+        {
+            if (particle_inner != particle)
+            {
+                for (int k = 0; k < n_particles; k++)
+                {
+                    if (k != particle)
+                    {
+                        for (int dim = 0; dim < n_dims; dim++)
+                        {
+                            r_ij += (pos(dim, particle) - pos(dim, particle_inner))*(pos(dim, particle) - pos(dim, particle_inner));
+                            r_ik += (pos(dim, particle) - pos(dim, k))*(pos(dim, particle) - pos(dim, k));
+                        }
+                    r_ij = sqrt(r_ij);
+                    r_ik = sqrt(r_ik);
+                    ekin_3 += a*a/((r_ij*r_ij+a*r_ij)*(r_ik*r_ik+a*r_ik)*r_ij*r_ik)*((pos(0, particle) - pos(0, particle_inner))*(pos(0, particle) - pos(0, k)) + (pos(1, particle) - pos(1, particle_inner))*(pos(1, particle)-pos(1, k))+(pos(2, particle)-pos(2, particle_inner))*(pos(2, particle)-pos(2, k)));
+                    r_ik = 0;
+                    r_ij = 0;
+                }
+            }
+            }
+        }
+    }
+ 
+    //This is the fourth term
+    for (int particle = 0; particle < n_particles; particle++)
+    {
+        for (int particle_inner = 0; particle_inner < n_particles; particle_inner++)
+        {
+            if (particle_inner != particle)
+            {
+                for (int dim = 0; dim < n_dims; dim++)
+                {
+                    r_ij += (pos(dim, particle) - pos(dim, particle_inner))*(pos(dim, particle) - pos(dim, particle_inner));
+                }
+                r_ij = sqrt(r_ij);
+                ekin_4 += -a*(2*r_ij+a)/((r_ij*r_ij+a*r_ij)*(r_ij*r_ij+a*r_ij))+2/r_ij*a/(r_ij*r_ij+a*r_ij);
+                r_ij = 0;
+            }
+        }
+    }
+    for (int particle = 0; particle < n_particles; particle++)
+    {
+        for (int dim = 0; dim < n_dims; dim++)
+        {
+            if (dim == 2)
+            {
+                radsq  += beta*beta*pos(dim, particle)*pos(dim, particle);
+            }
+            else
+            {
+                radsq += pos(dim, particle)*pos(dim, particle);
+            }
+        }
+    }
+    ekin = -(ekin_1 + ekin_2 + ekin_3 + ekin_4)/2;
+    epot = radsq/2;
+    eloc = epot + ekin;
+    return eloc;
+}
+
 double local_energy_3d_interaction(
     const arma::Mat<double> &pos,
     const double alpha,
@@ -68,6 +174,7 @@ double local_energy_3d_interaction(
         else
         {
             particle_diff_vector_1 = {0, 0, 0};
+            // Maybe break here?
         }
 
         term_2_vector += particle_diff_vector_1;
@@ -91,6 +198,7 @@ double local_energy_3d_interaction(
         else
         {
             particle_diff_vector_1 = {0, 0, 0};
+            // Maybe break here?
         }
 
         term_2_vector += particle_diff_vector_1;
@@ -313,7 +421,6 @@ double local_energy_3d_no_interaction(
     n_particles : constant integer
         The total number of particles.
     */
-
     const double x = pos(0, current_particle);
     const double y = pos(1, current_particle);
     const double z = pos(2, current_particle);
