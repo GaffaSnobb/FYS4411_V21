@@ -294,7 +294,7 @@ void ImportanceSampling::one_variation(int variation)
                 {   /*
                     Particle distance from itself is always 0. Exclude.
                     */
-                    safe_distance = true;
+                    safe_distance = true;   // Can probably be removed.
                     continue;
                 }
                 particle_distance =
