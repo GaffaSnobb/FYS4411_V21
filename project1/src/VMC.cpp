@@ -152,6 +152,7 @@ void VMC::set_local_energy(bool interaction)
     else if ((n_dims == 3) and interaction and !numerical_differentiation)
     {
         local_energy_ptr = &local_energy_3d_interaction;
+        // local_energy_ptr = &local_energy_3d_interaction_vala;
     }
     else if ((n_dims == 3) and !interaction and numerical_differentiation)
     {
