@@ -111,23 +111,21 @@ int main(int argc, char *argv[])
 
     // Global parameters:
     double brute_force_step_size      = 0.2;
-    const double importance_time_step = 0.01;
-    const double initial_alpha_gd     = 0.2;  // Initial variational parameter. Only for GD.
-    const double learning_rate        = 1e-4;     // GD learning rate.
-    const int n_gd_iterations         = 200;      // Max. gradient descent iterations.
+    const double importance_time_step = 0.1;
+    const double initial_alpha_gd     = 0.2;                // Initial variational parameter. Only for GD.
+    const double learning_rate        = 1e-4;               // GD learning rate.
+    const int n_gd_iterations         = 200;                // Max. gradient descent iterations.
     long seed                         = time(NULL);
     const double gd_tolerance         = 1e-4;
-    const bool debug                  = true;       // Toggle debug print on / off.
+    const bool debug                  = true;               // Toggle debug print on / off.
 
-    const bool interaction               = true;
+    const bool interaction               = false;
     const bool numerical_differentiation = false;
-    const int n_variations               = 10;         // Number of variational parameters. Not in use with GD.
-    const int n_mc_cycles                = std::pow(2, 14);          // Number of MC cycles, must be a power of 2
-    const int n_dims                     = 3;           // Number of dimensions.
-    const int n_particles                = 10;     // Number of particles.
-    // arma::Col<double> alphas = arma::linspace(0.25, 0.6, n_variations);
-    arma::Col<double> alphas             = arma::linspace(0.1, 1, n_variations);
-    // arma::Col<double> alphas = {0.28, 0.28, 0.28};
+    const int n_variations               = 1;               // Number of variational parameters. Not in use with GD.
+    const int n_mc_cycles                = std::pow(2, 20); // Number of MC cycles, must be a power of 2
+    const int n_dims                     = 3;               // Number of dimensions.
+    const int n_particles                = 10;              // Number of particles.
+    arma::Col<double> alphas             = arma::linspace(0.5, 0.5, n_variations);
 
     // Select methods (choose one at a time):
     const bool gradient_descent    = false;
@@ -387,188 +385,3 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-
-
-
-
-    // // 3D --------------------------------------------------------------
-    // if ((interaction) and (n_dims == 3) and (parallel) and (gradient_descent) and (!numerical_differentiation))
-    // {   /*
-    //     Interaction ON, 3D and parallelized.
-    //     */
-    //     n_gd_iterations = 200;
-    //     learning_rate = 1e-4;
-    //     initial_alpha_gd = 0.2;
-    //     importance_time_step = 0.01;
-    //     beta = 2.82843;
-    //     alphas = arma::linspace(0.1, 1, n_variations);
-    // }
-
-    // else if ((!interaction) and (n_dims == 3) and (parallel) and (gradient_descent) and (!numerical_differentiation))
-    // {   /*
-    //     Interaction OFF, 3D and parallelized.
-    //     */
-    //     n_gd_iterations = 500;
-    //     learning_rate = 1e-4;
-    //     initial_alpha_gd = 0.2;
-    //     importance_time_step = 0.1;
-    //     beta = 1;
-    //     alphas = arma::linspace(0.1, 1, n_variations);
-    // }
-
-    // else if ((interaction) and (n_dims == 3) and (parallel) and (importance_sampling) and (!numerical_differentiation))
-    // {   /*
-    //     Interaction ON, 3D, parallelized and importance.
-    //     */
-    //     importance_time_step = 0.01;
-    //     beta = 2.82843;
-    //     alphas = arma::linspace(0.1, 0.6, n_variations);
-    // }
-
-    // else if ((interaction) and (n_dims == 3) and (!parallel) and (importance_sampling) and (!numerical_differentiation))
-    // {   /*
-    //     Interaction ON, 3D, serial and importance.
-    //     */
-    //     importance_time_step = 0.01;
-    //     beta = 2.82843;
-    //     alphas = arma::linspace(0.3, 0.7, n_variations);
-    // }
-
-    // else if ((!interaction) and (n_dims == 3) and (!parallel) and (importance_sampling) and (!numerical_differentiation))
-    // {   /*
-    //     Interaction OFF, 3D, serial and importance.
-    //     */
-    //     importance_time_step = 0.01;
-    //     beta = 1;
-    //     alphas = arma::linspace(0.4, 0.6, n_variations);
-    // }
-
-    // else if ((!interaction) and (n_dims == 3) and (parallel) and (importance_sampling) and (!numerical_differentiation))
-    // {   /*
-    //     Interaction OFF, 3D, parallel and importance.
-    //     */
-    //     beta = 1;
-    //     alphas = arma::linspace(0.1, 1, n_variations);
-    //     importance_time_step = 0.01;
-    // }
-
-    // else if ((!interaction) and (n_dims == 3) and (!parallel) and (brute_force) and (!numerical_differentiation))
-    // {   /*
-    //     Interaction OFF, 3D, serial and brute force.
-    //     */
-    //     beta = 1;
-    //     alphas = arma::linspace(0.4, 0.6, n_variations);
-    //     brute_force_step_size = 0.2;
-    // }
-
-    // else if ((!interaction) and (n_dims == 3) and (parallel) and (brute_force) and (!numerical_differentiation))
-    // {   /*
-    //     Interaction OFF, 3D, parallel and brute force.
-    //     */
-    //     beta = 1;
-    //     alphas = arma::linspace(0.1, 1, n_variations);
-    //     brute_force_step_size = 0.2;
-    // }
-
-    // else if ((interaction) and (n_dims == 3) and (parallel) and (brute_force) and (!numerical_differentiation))
-    // {   /*
-    //     Interaction ON, 3D, parallel and brute force.
-    //     */
-    //     beta = 2.82843;
-    //     alphas = arma::linspace(0.1, 0.5, n_variations);
-    //     brute_force_step_size = 0.2;
-    // }
-
-    // else if (!interaction and (n_dims == 3) and parallel and brute_force and numerical_differentiation)
-    // {   /*
-    //     Interaction OFF, 3D, parallel, brute force and numerical
-    //     differentiation.
-    //     */
-    //     beta = 1;
-    //     alphas = arma::linspace(0.1, 1, n_variations);
-    //     brute_force_step_size = 0.2;
-    // }
-
-    // // 3D end ----------------------------------------------------------
-    // // 2D --------------------------------------------------------------
-    // else if (!interaction and (n_dims == 2) and parallel and brute_force and !numerical_differentiation)
-    // {   /*
-    //     Interaction OFF, 2D, parallel, brute force and analytical
-    //     differentiation.
-    //     */
-    //     beta = 1;
-    //     alphas = arma::linspace(0.1, 1, n_variations);
-    //     brute_force_step_size = 0.2;
-    // }
-
-    // else if (!interaction and (n_dims == 2) and parallel and brute_force and numerical_differentiation)
-    // {   /*
-    //     Interaction OFF, 2D, parallel, brute force and numerical
-    //     differentiation.
-    //     */
-    //     beta = 1;
-    //     alphas = arma::linspace(0.1, 1, n_variations);
-    //     brute_force_step_size = 0.2;
-    // }
-
-    // else if (!interaction and (n_dims == 2) and parallel and brute_force and !numerical_differentiation)
-    // {   /*
-    //     Interaction OFF, 2D, parallel, brute force and analytical
-    //     differentiation.
-    //     */
-    //     beta = 1;
-    //     alphas = arma::linspace(0.1, 1, n_variations);
-    //     brute_force_step_size = 0.2;
-    // }
-
-    // else if (!interaction and (n_dims == 2) and parallel and importance_sampling and !numerical_differentiation)
-    // {   /*
-    //     Interaction OFF, 2D, parallel, importance and analytical
-    //     differentiation.
-    //     */
-    //     beta = 1;
-    //     alphas = arma::linspace(0.1, 1, n_variations);
-    //     // importance_time_step = 0.01;
-    // }
-    // // 2D end ----------------------------------------------------------
-    // // 1D --------------------------------------------------------------
-    // else if (!interaction and (n_dims == 1) and !parallel and brute_force and !numerical_differentiation)
-    // {   /*
-    //     Interaction OFF, 1D, serial and brute force.
-    //     */
-    //     beta = 1;
-    //     alphas = arma::linspace(0.1, 1, n_variations);
-    //     brute_force_step_size = 0.2;
-    // }
-
-    // else if (!interaction and (n_dims == 1) and !parallel and brute_force and numerical_differentiation)
-    // {   /*
-    //     Interaction OFF, 1D, serial, brute force and numerical differentiation.
-    //     */
-    //     beta = 1;
-    //     alphas = arma::linspace(0.1, 1, n_variations);
-    //     brute_force_step_size = 0.2;
-    // }
-
-    // else if (!interaction and (n_dims == 1) and parallel and brute_force and numerical_differentiation)
-    // {   /*
-    //     Interaction OFF, 1D, parallel, brute force and numerical differentiation.
-    //     */
-    //     beta = 1;
-    //     alphas = arma::linspace(0.1, 1, n_variations);
-    //     brute_force_step_size = 0.2;
-    // }
-    // // 1D end ----------------------------------------------------------
-    // else
-    // {
-    //     std::cout << "No parameters specified for:";
-    //     std::cout << "\nn_dims: " << n_dims;
-    //     std::cout << "\ninteraction: " << interaction;
-    //     std::cout << "\nparallel: " << parallel;
-    //     std::cout << "\ngradient_descent: " << gradient_descent;
-    //     std::cout << "\nimportance_sampling: " << importance_sampling;
-    //     std::cout << "\nbrute_force: " << brute_force;
-    //     std::cout << "\nnumerical_differentiation: " << numerical_differentiation;
-    //     std::cout << "\nExiting...\n" << std::endl;
-    //     exit(0);
-    // }
