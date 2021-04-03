@@ -395,7 +395,7 @@ def task_g():
         filter_n_mc_cycles = int(2**20),
         filter_step_size = None,
         filter_numerical = False,
-        filter_interaction = True,
+        filter_interaction = None,
         filter_data_type = "onebody",
         directory = "generated_data/task_g/"
     )
@@ -407,17 +407,58 @@ def task_g():
 
     bins = np.arange(0, importance[0].data.shape[0], 1)
 
-
     fig, ax = plt.subplots(figsize=(9, 7))
-    ax.bar(bins, importance[0].data/np.trapz(importance[0].data), label=f"a = {importance[0].a}", alpha=0.5)
-    # ax.bar(bins, importance[1].data/np.trapz(importance[1].data), label=f"a = {importance[1].a}", alpha=0.5)
-    # ax.bar(bins, importance[2].data/np.trapz(importance[2].data), label=f"a = {importance[2].a}", alpha=0.5)
-    ax.bar(bins, importance[3].data/np.trapz(importance[3].data), label=f"a = {importance[3].a}", alpha=0.5)
+    print(f"first {importance[1].interaction=}")
+    print(f"first {importance[0].interaction=}")
+
+    xticklabels = [0, 0, 10, 20, 30, 40, 50]
+    xticklabels = [f"{x/(50/3):.1f}" for x in xticklabels]
+
+    ax.bar(bins, importance[0].data/np.trapz(importance[0].data), label=f"Interaction, a = {importance[0].a}", alpha=0.5)
+    ax.bar(bins, importance[1].data/np.trapz(importance[1].data), label=f"Interaction, a = {importance[1].a}", alpha=0.5)
+    ax.bar(bins, importance[2].data/np.trapz(importance[2].data), label=f"Interaction, a = {importance[2].a}", alpha=1)
+    ax.bar(bins, importance[3].data/np.trapz(importance[3].data), label=f"Interaction, a = {importance[3].a}", alpha=0.7)
+    # ax.bar(bins, importance[4].data/np.trapz(importance[4].data), label=f"Interaction, a = {importance[4].a}", alpha=0.7)
     ax.tick_params(labelsize=15)
-    ax.legend()
-    ax.set_xlabel("", fontsize=20)
-    ax.set_xlabel("", fontsize=20)
+    ax.legend(fontsize=15)
+    ax.set_ylabel("Normalized counts", fontsize=20)
+    ax.set_xlabel(r"Radial distance [$a_{ho}$]", fontsize=20)
+    ax.set_xticklabels(xticklabels)
     fig.tight_layout(pad=2)
+    fig.savefig(fname="../fig/onebody.png", dpi=300)
+
+    plt.show()
+
+
+def demo_plot_for_gradient_descent_method():
+    data = read_all_files(
+        filter_method = "importance",
+        filter_n_particles = 10,
+        filter_n_dims = 3,
+        filter_n_mc_cycles = int(2**20),
+        filter_step_size = None,
+        filter_numerical = False,
+        filter_interaction = False,
+        filter_data_type = "particles",
+        directory = "generated_data/demo_plot_for_gradient_descent_method/"
+    )
+    # data.sort(key=lambda elem: elem.a)
+    bins = np.arange(0, data[0].data.shape[0], 1)
+    fig, ax = plt.subplots(figsize=(9, 7))
+    for elem in data:
+        ax.plot(
+            elem.data[:, 0],
+            elem.data[:, 2],
+            color = "black"
+        )
+    ax.set_xlabel(r"$\alpha$", fontsize=20)
+    ax.set_ylabel(r"$\langle E_L \rangle$", fontsize=20)
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    ax.axvline(x=0.5, linestyle="dashed", color="black")
+    fig.tight_layout(pad=2)
+    fig.text(s=r"$\alpha{'}$", x=0.47, y=0.065, fontsize=18)
+    fig.savefig(fname="../fig/local_energy_vs_alpha_demo.png", dpi=300)
 
     plt.show()
 
@@ -430,26 +471,37 @@ def debug():
         filter_n_mc_cycles = int(2**20),
         filter_step_size = None,
         filter_numerical = False,
-        filter_interaction = False,
-        filter_data_type = "particles",
+        filter_interaction = None,
+        filter_data_type = "onebody",
         directory = "generated_data/"
     )
     # data.sort(key=lambda elem: elem.a)
     bins = np.arange(0, data[0].data.shape[0], 1)
+    fig, ax = plt.subplots(figsize=(9, 7))
     for elem in data:
-        plt.plot(
-            elem.data[:, 0],
-            elem.data[:, 2],
-            "o",
-            label=f"a = {elem.a}"
-        )
-        # plt.bar(
-        #     bins,
-        #     elem.data/np.trapz(elem.data),
-        #     label = f"a = {elem.a}",
-        #     alpha = 0.5
+        # ax.plot(
+        #     elem.data[:, 0],
+        #     elem.data[:, 2],
+        #     # "o",
+        #     # label=f"a = {elem.a}"
+        #     color = "black"
         # )
-    plt.legend()
+        ax.bar(
+            bins,
+            elem.data/np.trapz(elem.data),
+            label = f"{elem.a=}",
+            alpha = 0.5
+        )
+    ax.legend()
+    # ax.set_xlabel(r"$\alpha$", fontsize=20)
+    # ax.set_ylabel(r"$\langle E_L \rangle$", fontsize=20)
+    # ax.set_xticklabels([])
+    # ax.set_yticklabels([])
+    # ax.axvline(x=0.5, linestyle="dashed", color="black")
+    # fig.tight_layout(pad=2)
+    # fig.text(s=r"$\alpha{'}$", x=0.47, y=0.065, fontsize=18)
+    # fig.savefig(fname="../fig/local_energy_vs_alpha_demo.png", dpi=300)
+
     plt.show()
 
 
@@ -471,7 +523,9 @@ if __name__ == "__main__":
     # tmp_gd()
     # onebody(f_brute_force_onebody)
     # task_b()
-    task_c()
+    # task_c()
     # task_d()
     # task_g()
-    # debug()
+    # demo_plot_for_gradient_descent_method()
+    debug()
+    pass
