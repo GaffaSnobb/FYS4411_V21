@@ -65,7 +65,6 @@ class Container:
         self.fname = fname
         self.a = a
 
-
 def read_all_files(
     filter_method = None,
     filter_n_particles = None,
@@ -198,10 +197,11 @@ def read_all_files(
             raise ValueError(msg)
 
         interaction = fname[7]
-        if (filter_interaction and (interaction != "interaction")):
+        if (filter_interaction and (interaction != "interaction") and (filter_interaction is not None)):
             continue
 
-        elif ((not filter_interaction) and (interaction != "nointeraction")):
+        elif ((not filter_interaction) and (interaction != "nointeraction") and (filter_interaction is not None)):
+            print("LOL")
             continue
 
         if fname[7] == "interaction":
@@ -264,7 +264,6 @@ def read_all_files(
     data_list.sort(key=lambda elem: elem.n_particles)   # Sort elements based on the number of particles.
     return data_list
 
-
 def get_number_particles(filename):
     """
     DEPRECATED
@@ -278,7 +277,6 @@ def read_from_file(filename):
     # n_particles = get_number_particles(filename)
     alpha, var, exp, time = np.loadtxt(fname=filename, skiprows=2, unpack=True)
     return alpha, var, exp, time#, n_particles
-
 
 def read_energy_from_file_v1(filename, clip = False):
     """
@@ -302,7 +300,6 @@ def read_energy_from_file_v1(filename, clip = False):
             alphas = new_alphas
     return alphas, energies, n_particles
 
-
 def read_energy_from_file(filename, clip = False):
     """
     for files with names: output_energy_*.txt
@@ -321,8 +318,6 @@ def read_energy_from_file(filename, clip = False):
         alphas = new_alphas
 
     return alphas, energies, n_particles
-
-
 
 def first_zero(arr, axis, invalid_val=-1):
     mask = arr==0
