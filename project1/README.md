@@ -2,7 +2,7 @@
 
 The ground state energy of hard-shpere bosons is calculated using Variational Monte Carlo methods. Two applications of the Metropolis sampling method is used, first the so-called brute force metropolis method before adding importance sampling based on the Langevin and Fokker-Planck equations. We will also appply the blocking method for statistical analysis of our results.
 
-Authors are: Jon Kristian Dahl, Alida Hardersen, and Per-Dimitri Sønderland
+Authors: Jon Kristian Dahl, Alida Hardersen, and Per-Dimitri Sønderland
 
 ## Folders
 
