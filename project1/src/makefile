@@ -6,9 +6,6 @@ OBJECTS = VMC.o wave_function.o local_energy.o methods.o quantum_force.o paramet
 
 all : main.out
 
-test : arma_test.cpp
-	$(COMPILER) arma_test.cpp -o arma_test.out -std=c++17 -larmadillo
-
 main.out : $(OBJECTS)
 	$(COMPILER) $(FLAGS) $(OBJECTS) $(LIBRARIES) -o run.out main.cpp
 
@@ -30,20 +27,8 @@ quantum_force.o : quantum_force.h quantum_force.cpp
 parameters.o : parameters.h parameters.cpp
 	$(COMPILER) $(FLAGS) -c parameters.cpp
 
-plot : main.out
-	./run.out
-	python visualize.py
-
-ploit : main.out	# Alias.
-	./run.out
-	python visualize.py
-
 run : main.out
 	./run.out
-
-blocking : main.out
-	./run.out
-	python blocking.py
 
 .PHONY : clean
 clean :
