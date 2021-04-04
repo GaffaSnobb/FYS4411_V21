@@ -22,7 +22,7 @@ class Container:
 
         data : numpy.ndarray
             Array with data from data file.
-        
+
         method : string
             'brute', 'importance', or 'gradient'.
 
@@ -75,7 +75,7 @@ def read_all_files(
     filter_interaction = None,
     filter_data_type = None,
     filter_a = None,
-    directory = "generated_data/"
+    directory = "../src/generated_data/"
 ):
     """
     Read all text files in generated_data/ and store all relevant data
@@ -115,7 +115,7 @@ def read_all_files(
     filter_a : NoneType, float
         Filter for only reading a certain value for the interaction
         parameter.
-    
+
     directory : string
         Location of data files. Path relative to the placement of this
         script.
@@ -146,7 +146,7 @@ def read_all_files(
             input.
             """
             continue
-        
+
         n_particles = int(fname[2])
         if (filter_n_particles != n_particles) and (filter_n_particles is not None):
             """
@@ -221,7 +221,7 @@ def read_all_files(
             input.
             """
             continue
-        
+
         try:
             a = float(fname[9])
         except ValueError:
@@ -231,7 +231,7 @@ def read_all_files(
             continue
 
         data = np.loadtxt(fname = directory + fnames[i], skiprows=1)
-        
+
         data_list.append(Container(
             data,
             method,
@@ -260,72 +260,21 @@ def read_all_files(
         msg += f"\n{filter_a=}"
         msg += f"\n{directory=}"
         raise FileNotFoundError(msg)
-    
+
     data_list.sort(key=lambda elem: elem.n_particles)   # Sort elements based on the number of particles.
     return data_list
 
-def get_number_particles(filename):
-    """
-    DEPRECATED
-    """
-    f = open(filename)
-    n_particles = (f.readline()).split()[1]
-    f.close()
-    return float(n_particles)
-
-def read_from_file(filename):
-    # n_particles = get_number_particles(filename)
-    alpha, var, exp, time = np.loadtxt(fname=filename, skiprows=2, unpack=True)
-    return alpha, var, exp, time#, n_particles
-
-def read_energy_from_file_v1(filename, clip = False):
-    """
-    DEPRECATED
-    for files with names: output_energy_*.txt
-    """
-    n_particles = get_number_particles(filename)
-    data = np.loadtxt(filename, skiprows=1)
-    alphas = data[0,:]
-    energies = data[1:,:]
-
-    if clip:
-        first_zero_elm = first_zero(energies[0,:], axis=0)
-        if first_zero_elm < 0:
-            pass
-        else:
-            new_alphas = alphas[:first_zero_elm]
-            new_energies = energies[:,:first_zero_elm]
-
-            energies = new_energies
-            alphas = new_alphas
-    return alphas, energies, n_particles
-
-def read_energy_from_file(filename, clip = False):
-    """
-    for files with names: output_energy_*.txt
-    """
-    n_particles = get_number_particles(filename)
-    data = np.loadtxt(filename, skiprows=1)
-    alphas = data[0,:]
-    energies = data[1:,:]
-
-    if clip:
-        first_zero_elm = first_zero(alphas, axis=0)
-        new_alphas = alphas[:first_zero_elm]
-        new_energies = energies[:,:first_zero_elm]
-
-        energies = new_energies
-        alphas = new_alphas
-
-    return alphas, energies, n_particles
-
-def first_zero(arr, axis, invalid_val=-1):
-    mask = arr==0
-    return np.where(mask.any(axis=axis), mask.argmax(axis=axis), invalid_val)
-
 
 if __name__ == "__main__":
-    filename = "generated_data/output_energy_gradient_descent.txt"
-    alphas, energies, n_particles = read_energy_from_file(filename, clip=True)
-
-    print(alphas)
+    input = read_all_files(
+        filter_method = "brute",
+        filter_n_particles = 10,
+        filter_n_dims = 3,
+        filter_n_mc_cycles = 2**10,
+        filter_step_size = 0.2,
+        filter_numerical = False,
+        filter_interaction = False,
+        filter_data_type = "particles",
+        filter_a = None,
+        directory = "../src/generated_data/"
+        )
