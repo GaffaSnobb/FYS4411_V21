@@ -58,8 +58,8 @@ The block() function in `src/blocking.py` is based on the blocking code written 
 
 The autodiff c++ library is used for numerical differentiation.
 
-MIT License\
-Copyright © 2018–2021 Allan Leal
+- MIT License\
+  Copyright © 2018–2021 Allan Leal
 
 The Armadillo c++ library is exstensively used   
 
