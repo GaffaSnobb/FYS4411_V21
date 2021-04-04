@@ -19,11 +19,12 @@ Python version 3.8
 
 ## How to use
 ### 1. Compile and run
-The program uses make to compile and run. Make sure that the 'COMPILER' in 'src/makefile' is correct. Then, to compile, in a terminal write,
+The program uses make to compile and run. Make sure that the 'COMPILER' in 'src/makefile' is correct. Then, move to the src folder and compile by writing in a terminal window,
 
 ```
 $ make
 ```
+
 Or you can compile and run by writing
 
 ```
@@ -40,7 +41,13 @@ const bool brute_force         = false;
 
 ```
 
-To vary the parameters such as step size (brute force) and time step (importance), number of variations, number of mc-cycles etc. edit the global parameters in `main.cpp` lines 113 - 130.
+To vary other parameters such as step size (brute force) and time step (importance), number of variations, number of mc-cycles etc. edit the global parameters in `main.cpp` lines 113 - 130.
+
+To recompile the programs it may be useful to first remove the old compilation files, this can easily be done by the command,
+
+```
+$ make clean
+```
 
 ## Credit
 The block() function in `src/blocking.py` is based on the blocking code written by Marius Jonsson for the paper:
