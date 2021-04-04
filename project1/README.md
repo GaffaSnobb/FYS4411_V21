@@ -4,7 +4,7 @@ The ground state energy of hard-shpere bosons is calculated using Variational Mo
 
 Authors: Jon Kristian Dahl, Alida Hardersen, and Per-Dimitri Sønderland
 
-## Folders
+## Directories
 
 - src: contains c++ code and header files, as well as the makefile for compiling and running.
 - scripts: contains python scripts for plotting and a statistical analysis using the blocking method.
@@ -18,7 +18,7 @@ Install armadillo: http://arma.sourceforge.net/
 Python version 3.8
 
 
-## How to use
+## Usage
 ### 1. Compile and run
 The program uses make to compile and run. Make sure that the 'COMPILER' in 'src/makefile' is correct. Then, move to the src folder and compile by writing in a terminal window,
 
