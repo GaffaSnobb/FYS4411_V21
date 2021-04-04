@@ -1,9 +1,21 @@
+# A Variational Monte Carlo Analysis of Bose-Einstein Condensation
+
+The ground state energy of hard-shpere bosons is calculated using Variational Monte Carlo methods. Two applications of the Metropolis sampling method is used, first the so-called brute force metropolis method before adding importance sampling based on the Langevin and Fokker-Planck equations. We will also appply the blocking method for statistical analysis of our results.
+
+Authors are: Jon Kristian Dahl, Alida Hardersen, and Per-Dimitri Sønderland
+
+## Folders
+
+- src: contains c++ code and header files, as well as the makefile for compiling and running.
+- scripts: contains python scripts for plotting and a statistical analysis using the blocking method.
+- fig: contains figures generated.
 
 ## Dependencies
 
-Install armadillo: https://www.uio.no/studier/emner/matnat/fys/FYS4411/v13/guides/installing-armadillo/
+Install armadillo: http://arma.sourceforge.net/
 
 Python version 3.8
+
 
 ## How to use
 ### 1. Compile and run
