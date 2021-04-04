@@ -9,6 +9,7 @@ Authors: Jon Kristian Dahl, Alida Hardersen, and Per-Dimitri Sønderland
 - src: contains c++ code and header files, as well as the makefile for compiling and running.
 - scripts: contains python scripts for plotting and a statistical analysis using the blocking method.
 - fig: contains figures generated.
+- doc: contains a report describing our analysis
 
 ## Dependencies
 
