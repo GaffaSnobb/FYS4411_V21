@@ -1,11 +1,23 @@
-# 2-electron VMC code for 2dim quantum dot with importance sampling
-# Using gaussian rng for new positions and Metropolis- Hastings 
-# Added restricted boltzmann machine method for dealing with the wavefunction
-# RBM code based heavily off of:
-# https://github.com/CompPhysics/ComputationalPhysics2/tree/gh-pages/doc/Programs/BoltzmannMachines/MLcpp/src/CppCode/ob
+"""
+2-electron VMC code for 2dim quantum dot with importance sampling
+Using gaussian rng for new positions and Metropolis- Hastings 
+Added restricted boltzmann machine method for dealing with the wavefunction
+RBM code based heavily off of:
+https://github.com/CompPhysics/ComputationalPhysics2/tree/gh-pages/doc/Programs/BoltzmannMachines/MLcpp/src/CppCode/ob
+
+Cheat sheet:
+x: visible layer
+a: visible bias
+h: hidden layer
+b: hidden bias
+W: interaction weights
+"""
+
 import sys, time, timeit
 import numpy as np
+import numba
 
+@numba.njit
 def wave_function(r, a, biases, weights):
     """
     Trial wave function for the 2-electron quantum dot in two dims.
@@ -17,7 +29,7 @@ def wave_function(r, a, biases, weights):
     
     for iq in range(n_particles):
         for ix in range(n_dims):
-            psi_1 += (r[iq,ix] - a[iq,ix])**2
+            psi_1 += (r[iq, ix] - a[iq, ix])**2
             
     for ih in range(n_hidden):
         psi_2 *= (1.0 + np.exp(Q[ih]))
@@ -26,6 +38,7 @@ def wave_function(r, a, biases, weights):
 
     return psi_1*psi_2
 
+@numba.njit
 def local_energy(r, a, biases, weights):
     """
     Local energy  for the 2-electron quantum dot in two dims, using
@@ -55,21 +68,37 @@ def local_energy(r, a, biases, weights):
                 
     return energy
 
-# Derivate of wave function ansatz as function of variational parameters
-def DerivativeWFansatz(r,a,biases,weights):
+# @numba.njit
+def wave_function_derivative(pos, visible_layer, hidden_biases, weights):
+    """
+    Derivate of wave function as a function of variational parameters.
+
+    Parameters
+    ----------
+    pos : numpy.ndarray
+        Array of particle positions. Dimension: n_particles x n_dims.
+
+    visible_layer : numpy.ndarray
+        The nodes of the visible layer. Dimension: n_particles x n_dims.
     
+    hidden_biases : numpy.ndarray
+        The biases of the hidden nodes. Dimension: n_hidden.
+
+    weights : numpy.ndarray
+        Dimension: n_particles x n_dims x n_hidden
+    """
     sigma = 1.0
     sigma_squared = sigma**2
     
-    Q = q_fac(r, biases, weights)
+    Q = q_fac(pos, hidden_biases, weights)
     
     WfDer = [None, None, np.zeros_like(weights)]
     
-    WfDer[0] = (r - a)/sigma_squared
-    WfDer[1] = 1 / (1 + np.exp(-Q))
+    WfDer[0] = (pos - visible_layer)/sigma_squared
+    WfDer[1] = 1/(1 + np.exp(-Q))
     
     for ih in range(n_hidden):
-        WfDer[2][:, :, ih] = weights[:, :, ih] / (sigma_squared*(1 + np.exp(-Q[ih])))
+        WfDer[2][:, :, ih] = weights[:, :, ih]/(sigma_squared*(1 + np.exp(-Q[ih])))
             
     return  WfDer
 
@@ -79,8 +108,8 @@ def quantum_force(r, a, biases, weights):
     sigma = 1.0
     sigma_squared = sigma**2
     
-    qforce = np.zeros((n_particles, n_dims), np.double)
-    sum_1 = np.zeros((n_particles, n_dims), np.double)
+    qforce = np.zeros((n_particles, n_dims))
+    sum_1 = np.zeros((n_particles, n_dims))
     
     Q = q_fac(r,biases,weights)
     
@@ -90,40 +119,56 @@ def quantum_force(r, a, biases, weights):
     qforce = 2*(-(r - a)/sigma_squared + sum_1/sigma_squared)
     
     return qforce
-    
-def q_fac(r, biases, weights):
-    Q = np.zeros(n_hidden, np.double)
+
+@numba.njit
+def q_fac(pos, hidden_biases, weights):
+    Q = np.zeros(n_hidden)
     
     for ih in range(n_hidden):
-        Q[ih] = (r*weights[:, :, ih]).sum()
+        Q[ih] = (pos*weights[:, :, ih]).sum()
         
-    Q = biases + Q
+    Q += hidden_biases
     
     return Q
     
-# Computing the derivative of the energy and the energy 
-def energy_minimization(a, biases, weights):
+def energy_minimization(visible_layer, hidden_biases, weights):
+    """
+    Computing the local energy and the derivative.
 
+    Parameters
+    ----------
+    visible_layer : numpy.ndarray
+        The nodes of the visible layer. Dimension: n_particles x n_dims.
+    
+    hidden_biases : numpy.ndarray
+        The biases of the hidden nodes. Dimension: n_hidden.
+
+    weights : numpy.ndarray
+        Dimension: n_particles x n_dims x n_hidden
+
+    Returns
+    -------
+    energy : float
+    """
     n_mc_cycles = 10_000    # Number of Monte Carlo cycles.
     
-    # Parameters in the Fokker-Planck simulation of the quantum force
-    D = 0.5     # NOTE: What is this?
+    # Parameters in the Fokker-Planck simulation of the quantum force.
+    diffusion_coeff = 0.5
     time_step = 0.05
 
     pos_current = np.random.normal(loc=0.0, scale=1.0, size=(n_particles, n_dims))
     pos_current *= np.sqrt(time_step)
-    pos_new = np.zeros((n_particles, n_dims), np.double)
-    qforce_current = np.zeros((n_particles, n_dims), np.double)
-    qforce_new = np.zeros((n_particles, n_dims), np.double)
+    pos_new = np.zeros((n_particles, n_dims))
+    qforce_current = np.zeros((n_particles, n_dims))
+    qforce_new = np.zeros((n_particles, n_dims))
 
-    energy = 0.0
-    de = 0.0
+    energy = 0
 
-    DeltaPsi = [np.zeros_like(a), np.zeros_like(biases), np.zeros_like(weights)]
-    DerivativePsiE = [np.zeros_like(a), np.zeros_like(biases), np.zeros_like(weights)]
+    DeltaPsi = [np.zeros_like(visible_layer), np.zeros_like(hidden_biases), np.zeros_like(weights)]
+    DerivativePsiE = [np.zeros_like(visible_layer), np.zeros_like(hidden_biases), np.zeros_like(weights)]
     
-    wave_current = wave_function(pos_current, a, biases, weights)
-    qforce_current = quantum_force(pos_current, a, biases, weights)
+    wave_current = wave_function(pos_current, visible_layer, hidden_biases, weights)
+    qforce_current = quantum_force(pos_current, visible_layer, hidden_biases, weights)
 
     for _ in range(n_mc_cycles):
         """
@@ -133,15 +178,14 @@ def energy_minimization(a, biases, weights):
             """
             Loop over all particles.
             """
-            pos_new[i] = pos_current[i] + np.random.normal(loc=0.0, scale=1.0, size=n_dims)*np.sqrt(time_step) + qforce_current[i]*time_step*D
-            wave_new = wave_function(pos_new, a, biases, weights)
-            qforce_new = quantum_force(pos_new, a, biases, weights)
+            pos_new[i] = pos_current[i] + np.random.normal(loc=0.0, scale=1.0, size=n_dims)*np.sqrt(time_step) + qforce_current[i]*time_step*diffusion_coeff
+            wave_new = wave_function(pos_new, visible_layer, hidden_biases, weights)
+            qforce_new = quantum_force(pos_new, visible_layer, hidden_biases, weights)
             
-            greens_function = 0.5*(qforce_current[i] + qforce_new[i])*(D*time_step*0.5*(qforce_current[i] - qforce_new[i]) - pos_new[i] + pos_current[i])
-            greens_function = greens_function.sum()
-            greens_function = np.exp(greens_function)
+            greens_function = 0.5*(qforce_current[i] + qforce_new[i])*(diffusion_coeff*time_step*0.5*(qforce_current[i] - qforce_new[i]) - pos_new[i] + pos_current[i])
+            greens_function = np.exp(greens_function.sum())
             
-            if np.random.uniform() <= greens_function*wave_new**2/wave_current**2:
+            if np.random.uniform() <= greens_function*(wave_new/wave_current)**2:
                 """
                 Metropolis-Hastings.
                 """
@@ -150,8 +194,8 @@ def energy_minimization(a, biases, weights):
 
                 wave_current = wave_new
 
-        de = local_energy(pos_current, a, biases, weights)
-        DerPsi = DerivativeWFansatz(pos_current, a, biases, weights)
+        de = local_energy(pos_current, visible_layer, hidden_biases, weights)
+        DerPsi = wave_function_derivative(pos_current, visible_layer, hidden_biases, weights)
         
         DeltaPsi[0] += DerPsi[0]
         DeltaPsi[1] += DerPsi[1]
@@ -182,32 +226,31 @@ def energy_minimization(a, biases, weights):
 np.random.seed(1337)
 n_particles = 2     # Number of particles.
 n_dims = 2           # Number of dimensions.
-n_hidden = 2        # NOTE: Find out if this is the number of hidden nodes.
+n_hidden = 2        # NOTE: Find out if this is the number of hidden nodes. UPDATE: it prob. is.
 
 interaction = False
 
 # guess for parameters
-a = np.random.normal(loc=0.0, scale=0.001, size=(n_particles, n_dims))
-biases = np.random.normal(loc=0.0, scale=0.001, size=n_hidden)
+visible_layer = np.random.normal(loc=0.0, scale=0.001, size=(n_particles, n_dims))
+hidden_biases = np.random.normal(loc=0.0, scale=0.001, size=n_hidden)
 weights = np.random.normal(loc=0.0, scale=0.001, size=(n_particles, n_dims, n_hidden))
 # Set up iteration using stochastic gradient method
 energy = 0
 # Learning rate eta, max iterations, need to change to adaptive learning rate
 eta = 0.001
 max_iterations = 5
-np.seterr(invalid='raise')  # NOTE: Unsure why this is here.
 energies = np.zeros(max_iterations)
 
-for _ in range(max_iterations):
+for iteration in range(max_iterations):
     timing = time.time()
-    energy, EDerivative = energy_minimization(a, biases, weights)
+    energy, EDerivative = energy_minimization(visible_layer, hidden_biases, weights)
     agradient = EDerivative[0]
     bgradient = EDerivative[1]
     wgradient = EDerivative[2]
-    a -= eta*agradient
-    biases -= eta*bgradient 
+    visible_layer -= eta*agradient
+    hidden_biases -= eta*bgradient
     weights -= eta*wgradient 
-    energies[iter] = energy
+    energies[iteration] = energy
 
     print("Energy:", energy)
     print(f"Time: {time.time() - timing}")
