@@ -36,17 +36,16 @@ def wave_function(pos, visible_biases, hidden_biases, weights):
     weights : numpy.ndarray
         Dimension: n_particles x n_dims x n_hidden
     """
-    sigma = 1.0
     psi_1 = 0.0
     psi_2 = 1.0
-    Q = q_fac(pos, hidden_biases, weights)
+    exponent = exponent_in_wave_function(pos, hidden_biases, weights)
     
     for particle in range(n_particles):
         for dim in range(n_dims):
             psi_1 += (pos[particle, dim] - visible_biases[particle, dim])**2
             
     for hidden in range(n_hidden):
-        psi_2 *= (1.0 + np.exp(Q[hidden]))
+        psi_2 *= (1.0 + np.exp(exponent[hidden]))
         
     psi_1 = np.exp(-psi_1/(2*sigma**2))
 
@@ -72,16 +71,14 @@ def local_energy(pos, visible_biases, hidden_biases, weights):
     weights : numpy.ndarray
         Dimension: n_particles x n_dims x n_hidden
     """
-    sigma =  1.0
-    sigma_squared = sigma**2
     energy = 0                  # Local energy.
     
-    Q = q_fac(pos, hidden_biases, weights)
+    exponent = exponent_in_wave_function(pos, hidden_biases, weights)
 
     for particle in range(n_particles):
         for dim in range(n_dims):
-            sum_1 = (weights[particle, dim]/(1 + np.exp(-Q))).sum()
-            Q_exp = np.exp(Q)
+            sum_1 = (weights[particle, dim]/(1 + np.exp(-exponent))).sum()
+            Q_exp = np.exp(exponent)
             sum_2 = (weights[particle, dim]**2*Q_exp/(1 + Q_exp)**2).sum()
     
             dlnpsi1 = -(pos[particle, dim] - visible_biases[particle, dim]) /sigma_squared + sum_1/sigma_squared
@@ -114,19 +111,17 @@ def wave_function_derivative(pos, visible_biases, hidden_biases, weights):
 
     weights : numpy.ndarray
         Dimension: n_particles x n_dims x n_hidden
-    """
-    sigma = 1.0
-    sigma_squared = sigma**2
-    
-    Q = q_fac(pos, hidden_biases, weights)
+    """    
+    exponent = exponent_in_wave_function(pos, hidden_biases, weights)
     
     WfDer = [None, None, np.zeros_like(weights)]
     
     WfDer[0] = (pos - visible_biases)/sigma_squared
-    WfDer[1] = 1/(1 + np.exp(-Q))
+    WfDer[1] = 1/(1 + np.exp(-exponent))
     
-    for ih in range(n_hidden):
-        WfDer[2][:, :, ih] = weights[:, :, ih]/(sigma_squared*(1 + np.exp(-Q[ih])))
+    for hidden in range(n_hidden):
+        WfDer[2][:, :, hidden] = \
+            weights[:, :, hidden]/(sigma_squared*(1 + np.exp(-exponent[hidden])))
             
     return  WfDer
 
@@ -154,25 +149,49 @@ def quantum_force(pos, visible_biases, hidden_biases, weights):
     qforce = np.zeros((n_particles, n_dims))
     sum_1 = np.zeros((n_particles, n_dims))
     
-    Q = q_fac(pos, hidden_biases, weights)
+    exponent = exponent_in_wave_function(pos, hidden_biases, weights)
     
     for ih in range(n_hidden):
-        sum_1 += weights[:, :, ih]/(1 + np.exp(-Q[ih]))
+        sum_1 += weights[:, :, ih]/(1 + np.exp(-exponent[ih]))
     
     qforce = 2*(-(pos - visible_biases)/sigma_squared + sum_1/sigma_squared)
     
     return qforce
 
 @numba.njit
-def q_fac(pos, hidden_biases, weights):
-    Q = np.zeros(n_hidden)
+def exponent_in_wave_function(pos, hidden_biases, weights):
+    """
+    The exponent of the exponential factor in the product of the wave
+    function.
+
+    b_j + sum_i^M (x_i*w_ij/sigma^2).
+
+    Parameters
+    ----------
+    pos : numpy.ndarray
+        Array of particle positions. Dimension: n_particles x n_dims.
     
-    for ih in range(n_hidden):
-        Q[ih] = (pos*weights[:, :, ih]).sum()
-        
-    Q += hidden_biases
+    hidden_biases : numpy.ndarray
+        The biases of the hidden nodes. Dimension: n_hidden.
+
+    weights : numpy.ndarray
+        Dimension: n_particles x n_dims x n_hidden.
+
+    Returns
+    -------
+    Q : numpy.ndarray
+        The exponent of the exponential factor in the product of the
+        wave function. Dimension: n_hidden.
+    """
+    exponent = np.zeros(n_hidden)
     
-    return Q
+    for hidden in range(n_hidden):
+        exponent[hidden] = (pos*weights[:, :, hidden]).sum()
+    
+    exponent /= sigma_squared
+    exponent += hidden_biases
+    
+    return exponent
     
 def energy_minimization(visible_biases, hidden_biases, weights):
     """
@@ -270,6 +289,9 @@ np.random.seed(1337)
 n_particles = 2     # Number of particles.
 n_dims = 2          # Number of dimensions.
 n_hidden = 2        # Number of hidden nodes.
+
+sigma = 1.0
+sigma_squared = sigma**2
 
 interaction = False
 
