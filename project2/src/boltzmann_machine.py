@@ -239,8 +239,8 @@ class _RBMVMC:
     """
     Common stuff for both importance sampling and brute force.
     """
-    def __init__(self):
-        self.learning_rate = 0.01
+    def __init__(self, learning_rate: float) -> None:
+        self.learning_rate = learning_rate
         
         self.visible_biases = np.random.normal(loc=0.0, scale=0.1, size=(N_PARTICLES, N_DIMS))
         self.hidden_biases = np.random.normal(loc=0.0, scale=0.1, size=N_HIDDEN)
@@ -306,10 +306,10 @@ class _RBMVMC:
         print(f"Average acceptance rate:    {np.mean(self.acceptance_rates):.5f}")
 
 class ImportanceSampling(_RBMVMC):
-    def __init__(self):
+    def __init__(self, learning_rate: float) -> None:
         self.diffusion_coeff = 0.5
         self.time_step = 0.05
-        super().__init__()
+        super().__init__(learning_rate)
 
     def initial_state_addition(self):
         self.pos_current = np.random.normal(loc=0.0, scale=0.001, size=(N_PARTICLES, N_DIMS))
@@ -413,13 +413,12 @@ class ImportanceSampling(_RBMVMC):
             2*(self.wave_derivatives_energy_average[2] - self.wave_derivatives_average[2]*self.local_energy_average)
 
 class BruteForce(_RBMVMC):
-    def __init__(self):
+    def __init__(self, learning_rate: float) -> None:
         self.brute_force_step_size = 0.05
-        super().__init__()
+        super().__init__(learning_rate)
 
     def initial_state_addition(self):
-        self.pos_current = np.random.uniform(low=0, high=1, size=(N_PARTICLES, N_DIMS))*self.brute_force_step_size
-
+        self.pos_current = np.random.uniform(low=-0.5, high=0.5, size=(N_PARTICLES, N_DIMS))*self.brute_force_step_size
 
     def monte_carlo(self):
         for _ in range(N_MC_CYCLES):
@@ -428,7 +427,7 @@ class BruteForce(_RBMVMC):
                 Loop over all particles. Move one particle at the time.
                 """
                 self.pos_new[particle] = self.pos_current[particle]
-                self.pos_new[particle] += np.random.uniform(low=0, high=1, size=N_DIMS)*self.brute_force_step_size  # NOTE: Shift by -0.5?
+                self.pos_new[particle] += np.random.uniform(low=-0.5, high=0.5, size=N_DIMS)*self.brute_force_step_size
                 
                 wave_new = wave_function(
                     self.pos_new,
@@ -492,7 +491,7 @@ if __name__ == "__main__":
     N_PARTICLES = 2         # Number of particles.
     N_DIMS = 2              # Number of dimensions.
     N_HIDDEN = 2            # Number of hidden nodes.
-    N_MC_CYCLES = int(1e3)  # Number of Monte Carlo cycles.
+    N_MC_CYCLES = int(1e4)  # Number of Monte Carlo cycles.
     INTERACTION = True      # TODO: Double check interaction expression.
     MAX_ITERATIONS = 50
 
@@ -501,6 +500,8 @@ if __name__ == "__main__":
     SIGMA = 1
     SIGMA_SQUARED = SIGMA**2
 
-    q = ImportanceSampling()
-    # q = BruteForce()
+    learning_rate = 0.01
+
+    q = ImportanceSampling(learning_rate)
+    # q = BruteForce(learning_rate)
     q.solve()
