@@ -76,16 +76,25 @@ def local_energy(
 
     weights : numpy.ndarray
         Dimension: N_PARTICLES x N_DIMS x N_HIDDEN
+
+    Returns
+    -------
+    energy : float
+        The local energy.
     """
     energy = 0  # Local energy.
     exponent = exponent_in_wave_function(pos, hidden_biases, weights)
     exponential = np.exp(exponent)
+    exponential_negative = np.exp(-exponent)
+    # print(f"{exponent=}")
+    # print(f"{-exponent=}")
+    # print(f"{exponential_negative=}")
+    # print(f"{exponential=}")
 
     for particle in range(N_PARTICLES):
         for dim in range(N_DIMS):
-            sum_1 = (weights[particle, dim]/(1 + np.exp(-exponent))).sum()
-            sum_2 = (weights[particle, dim]**2*exponential/(1 + exponential)**2).sum()
-    
+            sum_1 = (weights[particle, dim]/(1 + exponential_negative)).sum()
+            sum_2 = (weights[particle, dim]**2*exponential_negative/(1 + exponential_negative)**2).sum()
             dlnpsi1 = -(pos[particle, dim] - visible_biases[particle, dim])/SIGMA_SQUARED + sum_1/SIGMA_SQUARED
             dlnpsi2 = -1/SIGMA_SQUARED + sum_2/SIGMA_SQUARED**2
             energy += 0.5*(-dlnpsi1*dlnpsi1 - dlnpsi2 + pos[particle, dim]**2)
@@ -247,13 +256,22 @@ def energy_minimization(
 
     Returns
     -------
-    energy : float
+    local_energy_average : float
+        The average of the local energy over all Monte Carlo iterations.
+
+    gradient : list
+        A list containing the derivative of the expectation value with
+        respect to the variational parameters.
+
+    acceptance_rate : float
+        The rate of acceptance. In the interval [0, 1].
     """
     diffusion_coeff = 0.5
     time_step = 0.05
     local_energy_average = 0
+    acceptance_rate = 0
 
-    pos_current = np.random.normal(loc=0.0, scale=1.0, size=(N_PARTICLES, N_DIMS))  # NOTE: Aka. visible layer? Yes!
+    pos_current = np.random.normal(loc=0.0, scale=0.001, size=(N_PARTICLES, N_DIMS))  # NOTE: Aka. visible layer? Yes!
     pos_current *= np.sqrt(time_step)
     pos_new = np.zeros((N_PARTICLES, N_DIMS))
     qforce_current = np.zeros((N_PARTICLES, N_DIMS))
@@ -286,6 +304,7 @@ def energy_minimization(
                 """
                 Metropolis-Hastings.
                 """
+                acceptance_rate += 1
                 pos_current[particle] = pos_new[particle]
                 qforce_current[particle] = qforce_new[particle]
                 wave_current = wave_new
@@ -313,6 +332,7 @@ def energy_minimization(
         wave_derivatives_energy_average[1] += wave_derivatives[1]*local_energy_partial
         wave_derivatives_energy_average[2] += wave_derivatives[2]*local_energy_partial
     
+    acceptance_rate /= N_MC_CYCLES*N_PARTICLES
     local_energy_average /= N_MC_CYCLES
     wave_derivatives_energy_average[0] /= N_MC_CYCLES
     wave_derivatives_energy_average[1] /= N_MC_CYCLES
@@ -325,42 +345,56 @@ def energy_minimization(
     gradient.append(2*(wave_derivatives_energy_average[1] - wave_derivatives_average[1]*local_energy_average))
     gradient.append(2*(wave_derivatives_energy_average[2] - wave_derivatives_average[2]*local_energy_average))
     
-    return local_energy_average, gradient
+    return local_energy_average, gradient, acceptance_rate
 
+def main():
+    """
+    Set up the system.
+    """
+    visible_biases = np.random.normal(loc=0.0, scale=0.1, size=(N_PARTICLES, N_DIMS))
+    hidden_biases = np.random.normal(loc=0.0, scale=0.1, size=N_HIDDEN)
+    weights = np.random.normal(loc=0.0, scale=0.1, size=(N_PARTICLES, N_DIMS, N_HIDDEN))
 
-np.random.seed(1337)
-N_PARTICLES = 2         # Number of particles.
-N_DIMS = 2              # Number of dimensions.
-N_HIDDEN = 2            # Number of hidden nodes.
-N_MC_CYCLES = 10_000    # Number of Monte Carlo cycles.
-INTERACTION = False     # TODO: Implement interaction.
+    energy = 0
+    learning_rate = 0.01
+    energies = np.zeros(MAX_ITERATIONS)
+    times = np.zeros(MAX_ITERATIONS)
+    acceptance_rates = np.zeros(MAX_ITERATIONS)
 
-# I believe this sigma is the std of the normal distribution the visible
-# layers. TODO: Find out how to choose what the std should be.
-SIGMA = 1
-SIGMA_SQUARED = SIGMA**2
+    for iteration in range(MAX_ITERATIONS):
+        timing = time.time()
 
-visible_biases = np.random.normal(loc=0.0, scale=0.001, size=(N_PARTICLES, N_DIMS))
-hidden_biases = np.random.normal(loc=0.0, scale=0.001, size=N_HIDDEN)
-weights = np.random.normal(loc=0.0, scale=0.001, size=(N_PARTICLES, N_DIMS, N_HIDDEN))
+        energy, gradient, acceptance_rate = energy_minimization(visible_biases, hidden_biases, weights)
+        visible_biases_gradient = gradient[0]
+        hidden_biases_gradient = gradient[1]
+        weights_gradient = gradient[2]
+        
+        visible_biases -= learning_rate*visible_biases_gradient
+        hidden_biases -= learning_rate*hidden_biases_gradient
+        weights -= learning_rate*weights_gradient 
+        energies[iteration] = energy
 
-energy = 0
-learning_rate = 0.001
-max_iterations = 5
-energies = np.zeros(max_iterations)
+        print(f"Energy:          {energy:.5f} a.u.")
+        print(f"Acceptance rate: {acceptance_rate:.5f}")
+        acceptance_rates[iteration] = acceptance_rate
+        times[iteration] = time.time() - timing
+        # print(f"Time: {time.time() - timing}")
 
-for iteration in range(max_iterations):
-    timing = time.time()
+    print(f"Average over {MAX_ITERATIONS} iterations: {np.mean(energies):.5f} a.u.")
+    print(f"Average time per iteration: {np.mean(times[1:]):.5f} s")
+    print(f"Average acceptance rate:    {np.mean(acceptance_rates):.5f}")
 
-    energy, gradient = energy_minimization(visible_biases, hidden_biases, weights)
-    visible_biases_gradient = gradient[0]
-    hidden_biases_gradient = gradient[1]
-    weights_gradient = gradient[2]
-    
-    visible_biases -= learning_rate*visible_biases_gradient
-    hidden_biases -= learning_rate*hidden_biases_gradient
-    weights -= learning_rate*weights_gradient 
-    energies[iteration] = energy
+if __name__ == "__main__":
+    np.random.seed(1337)
+    N_PARTICLES = 2         # Number of particles.
+    N_DIMS = 2              # Number of dimensions.
+    N_HIDDEN = 2            # Number of hidden nodes.
+    N_MC_CYCLES = int(1e3)  # Number of Monte Carlo cycles.
+    INTERACTION = True      # TODO: Double check interaction expression.
 
-    print("Energy:", energy)
-    print(f"Time: {time.time() - timing}")
+    # I believe this sigma is the std of the normal distribution the visible
+    # layers. TODO: Find out how to choose what the std should be.
+    SIGMA = 1
+    SIGMA_SQUARED = SIGMA**2
+    MAX_ITERATIONS = 50
+    main()
