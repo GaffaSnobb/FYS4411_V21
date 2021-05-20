@@ -10,6 +10,7 @@ W: interaction weights
 
 import sys, time
 import numpy as np
+from numpy.lib.function_base import _interp_dispatcher
 import other_functions as other
 
 
@@ -282,7 +283,8 @@ class BruteForce(_RBMVMC):
                     self.pos_new,
                     self.visible_biases,
                     self.hidden_biases,
-                    self.weights
+                    self.weights,
+                    self.sigma
                 )
                 
                 if np.random.uniform() <= (wave_new/self.wave_current)**2:
@@ -297,13 +299,16 @@ class BruteForce(_RBMVMC):
                 self.pos_current,
                 self.visible_biases,
                 self.hidden_biases,
-                self.weights
+                self.weights,
+                self.sigma,
+                self.interaction
             )
             wave_derivatives = other.wave_function_derivative(
                 self.pos_current,
                 self.visible_biases,
                 self.hidden_biases,
-                self.weights
+                self.weights,
+                self.sigma
             )
             
             self.wave_derivatives_average[0] += wave_derivatives[0]  # Wrt. visible bias.
@@ -337,28 +342,29 @@ class BruteForce(_RBMVMC):
 
 if __name__ == "__main__":
     np.random.seed(1337)
-    N_PARTICLES = 3         # Number of particles.
-    N_DIMS = 2              # Number of dimensions.
-    N_HIDDEN = 4            # Number of hidden nodes.
-    N_MC_CYCLES = int(1e3)  # Number of Monte Carlo cycles.
-    INTERACTION = True      # TODO: Double check interaction expression.
-    MAX_ITERATIONS = 20
-    SIGMA = 1   # Std. of the normal distribution the visible nodes.
-    SIGMA_SQUARED = SIGMA**2
     # self.brute_force_step_size = 0.05
 
-    q = ImportanceSampling(
+    # q = ImportanceSampling(
+    #     n_particles = 2,
+    #     n_dims = 2,
+    #     n_hidden = 2,
+    #     n_mc_cycles = int(1e3),
+    #     max_iterations = 20,
+    #     learning_rate = 0.01,
+    #     sigma = 1,              # Std. of the normal distribution the visible nodes.
+    #     interaction = True,
+    #     diffusion_coeff = 0.5,
+    #     time_step = 0.05
+    # )
+    q = BruteForce(
         n_particles = 2,
         n_dims = 2,
         n_hidden = 2,
-        n_mc_cycles = int(1e3),
+        n_mc_cycles = int(1e5),
         max_iterations = 20,
         learning_rate = 0.01,
-        sigma = 1,
+        sigma = 1,              # Std. of the normal distribution the visible nodes.
         interaction = True,
-        diffusion_coeff = 0.5,
-        time_step = 0.05
+        brute_force_step_size = 0.05
     )
-    # print(f"{q.hidden_biases.shape}")
-    # q = BruteForce(learning_rate)
     q.solve()
