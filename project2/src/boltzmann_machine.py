@@ -7,10 +7,9 @@ h: hidden layer
 b: hidden bias
 W: interaction weights
 """
-
+from typing import Union, Type
 import sys, time
 import numpy as np
-from numpy.lib.function_base import _interp_dispatcher
 import other_functions as other
 
 
@@ -39,16 +38,61 @@ class _RBMVMC:
         self.sigma = sigma
         self.interaction = interaction
         
-        self.visible_biases = np.random.normal(loc=0, scale=0.1, size=(self.n_particles, self.n_dims))
-        self.hidden_biases = np.random.normal(loc=0, scale=0.1, size=self.n_hidden)
-        self.weights = np.random.normal(loc=0, scale=0.1, size=(self.n_particles, self.n_dims, self.n_hidden))
-
         self.initial_state()
+        self.reset_state()
 
-    def initial_state(self):
+    def initial_state(
+        self,
+        loc_scale_all: Union[tuple, Type[None]] = (0, 0.1),
+        loc_scale_visible_biases: Union[tuple, Type[None]] = None,
+        loc_scale_hidden_biases: Union[tuple, Type[None]] = None,
+        loc_scale_weights: Union[tuple, Type[None]] = None,
+    ):
+        """
+        Set the initial state of all nodes, weights and biases.
+        """
+        if (loc_scale_all is None) and (
+            (loc_scale_visible_biases is None) or
+            (loc_scale_hidden_biases is None) or
+            (loc_scale_weights is None)
+        ):
+            msg = f"loc_scale_all cant be None when"
+            msg += f" either of the other inputs are None."
+            raise ValueError(msg)
+
+        if loc_scale_visible_biases is None:
+            loc_visible_biases = loc_scale_all[0]
+            scale_visible_biases = loc_scale_all[1]
+
+        if loc_scale_hidden_biases is None:
+            loc_hidden_biases = loc_scale_all[0]
+            scale_hidden_biases = loc_scale_all[1]
+
+        if loc_scale_weights is None:
+            loc_weights = loc_scale_all[0]
+            scale_weights = loc_scale_all[1]
+
+        self.visible_biases = np.random.normal(
+            loc = loc_visible_biases,
+            scale = scale_visible_biases,
+            size = (self.n_particles, self.n_dims)
+        )
+        self.hidden_biases = np.random.normal(
+            loc = loc_hidden_biases,
+            scale = scale_hidden_biases,
+            size = self.n_hidden
+        )
+        self.weights = np.random.normal(
+            loc = loc_weights,
+            scale = scale_weights,
+            size = (self.n_particles, self.n_dims, self.n_hidden)
+        )
+
+    def reset_state(self):
         """
         Set all arrays to initial state. Some of the zeroing might be
-        superfluous, but better safe than sorry.
+        superfluous, but better safe than sorry. Nodes, weights and
+        biases are not reset.
         """
         self.acceptance_rate = 0
         self.local_energy_average = 0
@@ -64,7 +108,7 @@ class _RBMVMC:
             np.zeros_like(self.hidden_biases),
             np.zeros_like(self.weights)
         ]
-        self.initial_state_addition()
+        self.reset_state_addition()
         self.pos_new = np.zeros_like(self.pos_current)
         
         self.wave_current = other.wave_function(
@@ -86,7 +130,7 @@ class _RBMVMC:
         for iteration in range(self.max_iterations):
             timing = time.time()
 
-            self.initial_state()    # Reset state.
+            self.reset_state()
             self.monte_carlo()
             
             self.visible_biases -= self.learning_rate*self.visible_biases_gradient
@@ -131,7 +175,7 @@ class ImportanceSampling(_RBMVMC):
             interaction
         )
 
-    def initial_state_addition(self):
+    def reset_state_addition(self):
         self.pos_current = np.random.normal(loc=0.0, scale=0.001, size=(self.n_particles, self.n_dims))
         self.pos_current *= np.sqrt(self.time_step)
 
@@ -267,7 +311,7 @@ class BruteForce(_RBMVMC):
             interaction
         )
 
-    def initial_state_addition(self):
+    def reset_state_addition(self):
         self.pos_current = np.random.uniform(low=-0.5, high=0.5, size=(self.n_particles, self.n_dims))*self.brute_force_step_size
 
     def monte_carlo(self):
