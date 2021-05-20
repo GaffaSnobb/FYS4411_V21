@@ -12,7 +12,6 @@ import sys, time
 import numpy as np
 import other_functions as other
 
-
 class _RBMVMC:
     """
     Common stuff for both importance sampling and brute force.
