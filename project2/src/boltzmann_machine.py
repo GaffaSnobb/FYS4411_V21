@@ -12,12 +12,13 @@ import sys, time
 import numpy as np
 import numba
 
-@numba.njit
+@numba.njit()
 def wave_function(
     pos: np.ndarray,
     visible_biases: np.ndarray,
     hidden_biases: np.ndarray,
-    weights: np.ndarray
+    weights: np.ndarray,
+    sigma: float
 ) -> float:
     """
     Trial wave function for the 2-electron system in two dimensions.
@@ -38,18 +39,20 @@ def wave_function(
     """
     term_1 = 0
     term_2 = 1
-    exponent = exponent_in_wave_function(pos, hidden_biases, weights)
+    exponent = exponent_in_wave_function(pos, hidden_biases, weights, sigma)
+    n_particles, n_dims = pos.shape
+    n_hidden = hidden_biases.shape[0]
     
     # term_1 = ((pos - visible_biases)**2).sum()    # This is prob. a replacement for the following two loops.
-    for particle in range(N_PARTICLES):
-        for dim in range(N_DIMS):
+    for particle in range(n_particles):
+        for dim in range(n_dims):
             term_1 += (pos[particle, dim] - visible_biases[particle, dim])**2
 
     # term_2 = np.product(1 + np.exp(exponent)) # This is prob. a replacement for the following loop.
-    for hidden in range(N_HIDDEN):
+    for hidden in range(n_hidden):
         term_2 *= (1 + np.exp(exponent[hidden]))
         
-    term_1 = np.exp(-term_1/(2*SIGMA_SQUARED))
+    term_1 = np.exp(-term_1/(2*sigma**2))
 
     return term_1*term_2
 
@@ -58,7 +61,9 @@ def local_energy(
     pos: np.ndarray,
     visible_biases: np.ndarray,
     hidden_biases: np.ndarray,
-    weights: np.ndarray
+    weights: np.ndarray,
+    sigma: float,
+    interaction: bool
 ) -> float:
     """
     Analytical local energy for the 2-electron system in two dimensions.
@@ -83,24 +88,21 @@ def local_energy(
         The local energy.
     """
     energy = 0  # Local energy.
-    exponent = exponent_in_wave_function(pos, hidden_biases, weights)
-    exponential = np.exp(exponent)
+    exponent = exponent_in_wave_function(pos, hidden_biases, weights, sigma)
     exponential_negative = np.exp(-exponent)
-    # print(f"{exponent=}")
-    # print(f"{-exponent=}")
-    # print(f"{exponential_negative=}")
-    # print(f"{exponential=}")
+    n_particles, n_dims = pos.shape
+    sigma_squared = sigma**2
 
-    for particle in range(N_PARTICLES):
-        for dim in range(N_DIMS):
+    for particle in range(n_particles):
+        for dim in range(n_dims):
             sum_1 = (weights[particle, dim]/(1 + exponential_negative)).sum()
             sum_2 = (weights[particle, dim]**2*exponential_negative/(1 + exponential_negative)**2).sum()
-            dlnpsi1 = -(pos[particle, dim] - visible_biases[particle, dim])/SIGMA_SQUARED + sum_1/SIGMA_SQUARED
-            dlnpsi2 = -1/SIGMA_SQUARED + sum_2/SIGMA_SQUARED**2
+            dlnpsi1 = -(pos[particle, dim] - visible_biases[particle, dim])/sigma_squared + sum_1/sigma_squared
+            dlnpsi2 = -1/sigma_squared + sum_2/sigma_squared**2
             energy += 0.5*(-dlnpsi1*dlnpsi1 - dlnpsi2 + pos[particle, dim]**2)
-            
-    if INTERACTION:
-        for particle in range(N_PARTICLES):
+
+    if interaction:
+        for particle in range(n_particles):
             for particle_inner in range(particle):
                 distance = ((pos[particle] - pos[particle_inner])**2).sum()
                 energy += 1/np.sqrt(distance)
@@ -112,7 +114,8 @@ def wave_function_derivative(
     pos: np.ndarray,
     visible_biases: np.ndarray,
     hidden_biases: np.ndarray,
-    weights: np.ndarray
+    weights: np.ndarray,
+    sigma: float
 ) -> tuple:
     """
     Derivate of wave function as a function of variational parameters.
@@ -147,15 +150,17 @@ def wave_function_derivative(
         divided by the wave function. Dimension: N_PARTICLES x N_DIMS x
         N_HIDDEN.
     """    
-    exponent = exponent_in_wave_function(pos, hidden_biases, weights)
+    exponent = exponent_in_wave_function(pos, hidden_biases, weights, sigma)
+    n_hidden = hidden_biases.shape[0]
+    sigma_squared = sigma**2
     
-    wave_diff_wrt_visible_bias = (pos - visible_biases)/SIGMA_SQUARED   # NOTE: This is verified to be correct.
-    wave_diff_wrt_hidden_bias = 1/(1 + np.exp(-exponent))   # NOTE: Verify that this is correct.
+    wave_diff_wrt_visible_bias = (pos - visible_biases)/sigma_squared   # NOTE: This is verified to be correct.
+    wave_diff_wrt_hidden_bias = 1/(1 + np.exp(-exponent))   # NOTE: This is verified to be correct.
     wave_diff_wrt_weights = np.zeros_like(weights)
     
-    for hidden in range(N_HIDDEN):
+    for hidden in range(n_hidden):
         wave_diff_wrt_weights[:, :, hidden] = \
-            weights[:, :, hidden]/(SIGMA_SQUARED*(1 + np.exp(-exponent[hidden])))   # NOTE: Verify that this is correct.
+            weights[:, :, hidden]/(sigma_squared*(1 + np.exp(-exponent[hidden])))   # NOTE: Verify that this is correct. Should 'weights' actually be 'pos'?
             
     return wave_diff_wrt_visible_bias, wave_diff_wrt_hidden_bias, wave_diff_wrt_weights
 
@@ -164,7 +169,8 @@ def quantum_force(
     pos: np.ndarray,
     visible_biases: np.ndarray,
     hidden_biases: np.ndarray,
-    weights: np.ndarray
+    weights: np.ndarray,
+    sigma: float
 ) -> np.ndarray:
     """
     Quantum force for the two-electron system.
@@ -182,29 +188,33 @@ def quantum_force(
 
     weights : numpy.ndarray
         Dimension: N_PARTICLES x N_DIMS x N_HIDDEN
-    """    
-    qforce = np.zeros((N_PARTICLES, N_DIMS))
-    sum_1 = np.zeros((N_PARTICLES, N_DIMS))
+    """
+    n_particles, n_dims = pos.shape
+    n_hidden = hidden_biases.shape[0]
+    sigma_squared = sigma**2
+
+    qforce = np.zeros((n_particles, n_dims))
+    sum_1 = np.zeros((n_particles, n_dims))
     
-    exponent = exponent_in_wave_function(pos, hidden_biases, weights)
+    exponent = exponent_in_wave_function(pos, hidden_biases, weights, sigma)
     
-    for ih in range(N_HIDDEN):
+    for ih in range(n_hidden):
         sum_1 += weights[:, :, ih]/(1 + np.exp(-exponent[ih]))
     
-    qforce = 2*(-(pos - visible_biases)/SIGMA_SQUARED + sum_1/SIGMA_SQUARED)
-    
+    qforce = 2*(-(pos - visible_biases)/sigma_squared + sum_1/sigma_squared)
+
     return qforce
 
 @numba.njit
 def exponent_in_wave_function(
     pos: np.ndarray,
     hidden_biases: np.ndarray,
-    weights: np.ndarray
+    weights: np.ndarray,
+    sigma: float
 ) -> np.ndarray:
     """
     The exponent of the exponential factor in the product of the wave
-    function.  TODO: A better name for this function. But the current
-    name is certainly better than q_fac.
+    function.
 
     b_j + sum_i^M (x_i*w_ij/sigma^2).
 
@@ -225,12 +235,13 @@ def exponent_in_wave_function(
         The exponent of the exponential factor in the product of the
         wave function. Dimension: N_HIDDEN.
     """
-    exponent = np.zeros(N_HIDDEN)
+    n_hidden = hidden_biases.shape[0]
+    exponent = np.zeros(n_hidden)
     
-    for hidden in range(N_HIDDEN):
+    for hidden in range(n_hidden):
         exponent[hidden] = (pos*weights[:, :, hidden]).sum()
     
-    exponent /= SIGMA_SQUARED
+    exponent /= sigma**2
     exponent += hidden_biases
     
     return exponent
@@ -239,12 +250,30 @@ class _RBMVMC:
     """
     Common stuff for both importance sampling and brute force.
     """
-    def __init__(self, learning_rate: float) -> None:
+    def __init__(
+        self,
+        n_particles: int,
+        n_dims: int,
+        n_hidden: int,
+        n_mc_cycles: int,
+        max_iterations: int,
+        learning_rate: float,
+        sigma: float,
+        interaction: bool
+    ) -> None:
+
         self.learning_rate = learning_rate
+        self.n_particles = n_particles
+        self.n_dims = n_dims
+        self.n_hidden = n_hidden
+        self.n_mc_cycles = n_mc_cycles
+        self.max_iterations = max_iterations
+        self.sigma = sigma
+        self.interaction = interaction
         
-        self.visible_biases = np.random.normal(loc=0.0, scale=0.1, size=(N_PARTICLES, N_DIMS))
-        self.hidden_biases = np.random.normal(loc=0.0, scale=0.1, size=N_HIDDEN)
-        self.weights = np.random.normal(loc=0.0, scale=0.1, size=(N_PARTICLES, N_DIMS, N_HIDDEN))
+        self.visible_biases = np.random.normal(loc=0, scale=0.1, size=(self.n_particles, self.n_dims))
+        self.hidden_biases = np.random.normal(loc=0, scale=0.1, size=self.n_hidden)
+        self.weights = np.random.normal(loc=0, scale=0.1, size=(self.n_particles, self.n_dims, self.n_hidden))
 
         self.initial_state()
 
@@ -274,18 +303,19 @@ class _RBMVMC:
             self.pos_current,
             self.visible_biases,
             self.hidden_biases,
-            self.weights
+            self.weights,
+            self.sigma
         )
 
     def solve(self):
         """
         Find the minimum energy using gradient descent.
         """
-        self.energies = np.zeros(MAX_ITERATIONS)
-        self.times = np.zeros(MAX_ITERATIONS)
-        self.acceptance_rates = np.zeros(MAX_ITERATIONS)
+        self.energies = np.zeros(self.max_iterations)
+        self.times = np.zeros(self.max_iterations)
+        self.acceptance_rates = np.zeros(self.max_iterations)
 
-        for iteration in range(MAX_ITERATIONS):
+        for iteration in range(self.max_iterations):
             timing = time.time()
 
             self.initial_state()    # Reset state.
@@ -301,25 +331,48 @@ class _RBMVMC:
             print(f"Energy:          {self.energies[iteration]:.5f} a.u.")
             print(f"Acceptance rate: {self.acceptance_rates[iteration]:.5f}")
 
-        print(f"Average over {MAX_ITERATIONS} iterations: {np.mean(self.energies):.5f} a.u.")
+        print(f"Average over {self.max_iterations} iterations: {np.mean(self.energies):.5f} a.u.")
         print(f"Average time per iteration: {np.mean(self.times[1:]):.5f} s")
         print(f"Average acceptance rate:    {np.mean(self.acceptance_rates):.5f}")
 
 class ImportanceSampling(_RBMVMC):
-    def __init__(self, learning_rate: float) -> None:
-        self.diffusion_coeff = 0.5
-        self.time_step = 0.05
-        super().__init__(learning_rate)
+    def __init__(
+        self,
+        n_particles: int,
+        n_dims: int,
+        n_hidden: int,
+        n_mc_cycles: int,
+        max_iterations: int,
+        learning_rate: float,
+        sigma: float,
+        interaction: bool,
+        diffusion_coeff: float,
+        time_step: float
+    ) -> None:
+        
+        self.diffusion_coeff = diffusion_coeff
+        self.time_step = time_step
+        super().__init__(
+            n_particles,
+            n_dims,
+            n_hidden,
+            n_mc_cycles,
+            max_iterations,
+            learning_rate,
+            sigma,
+            interaction
+        )
 
     def initial_state_addition(self):
-        self.pos_current = np.random.normal(loc=0.0, scale=0.001, size=(N_PARTICLES, N_DIMS))
+        self.pos_current = np.random.normal(loc=0.0, scale=0.001, size=(self.n_particles, self.n_dims))
         self.pos_current *= np.sqrt(self.time_step)
 
         self.qforce_current = quantum_force(
             self.pos_current,
             self.visible_biases,
             self.hidden_biases,
-            self.weights
+            self.weights,
+            self.sigma
         )
 
     def monte_carlo(self):
@@ -327,34 +380,39 @@ class ImportanceSampling(_RBMVMC):
             self.pos_current,
             self.visible_biases,
             self.hidden_biases,
-            self.weights
+            self.weights,
+            self.sigma,
+            self.interaction
         )
         wave_derivatives = wave_function_derivative(
             self.pos_current,
             self.visible_biases,
             self.hidden_biases,
-            self.weights
+            self.weights,
+            self.sigma
         )
-        for _ in range(N_MC_CYCLES):
-            for particle in range(N_PARTICLES):
+        for _ in range(self.n_mc_cycles):
+            for particle in range(self.n_particles):
                 """
                 Loop over all particles. Move one particle at the time.
                 """
                 self.pos_new[particle] = self.pos_current[particle]
-                self.pos_new[particle] += np.random.normal(loc=0.0, scale=1.0, size=N_DIMS)*np.sqrt(self.time_step)
+                self.pos_new[particle] += np.random.normal(loc=0.0, scale=1.0, size=self.n_dims)*np.sqrt(self.time_step)
                 self.pos_new[particle] += self.qforce_current[particle]*self.time_step*self.diffusion_coeff
                 
                 wave_new = wave_function(
                     self.pos_new,
                     self.visible_biases,
                     self.hidden_biases,
-                    self.weights
+                    self.weights,
+                    self.sigma
                 )
                 qforce_new = quantum_force(
                     self.pos_new,
                     self.visible_biases,
                     self.hidden_biases,
-                    self.weights
+                    self.weights,
+                    self.sigma
                 )
                 
                 greens_function = 0.5*(self.qforce_current[particle] + qforce_new[particle])
@@ -374,13 +432,16 @@ class ImportanceSampling(_RBMVMC):
                 self.pos_current,
                 self.visible_biases,
                 self.hidden_biases,
-                self.weights
+                self.weights,
+                self.sigma,
+                self.interaction
             )
             wave_derivatives = wave_function_derivative(
                 self.pos_current,
                 self.visible_biases,
                 self.hidden_biases,
-                self.weights
+                self.weights,
+                self.sigma
             )
             
             self.wave_derivatives_average[0] += wave_derivatives[0]  # Wrt. visible bias.
@@ -396,14 +457,14 @@ class ImportanceSampling(_RBMVMC):
             self.wave_derivatives_energy_average[2] += \
                 wave_derivatives[2]*local_energy_partial
 
-        self.acceptance_rate /= N_MC_CYCLES*N_PARTICLES
-        self.local_energy_average /= N_MC_CYCLES
-        self.wave_derivatives_energy_average[0] /= N_MC_CYCLES
-        self.wave_derivatives_energy_average[1] /= N_MC_CYCLES
-        self.wave_derivatives_energy_average[2] /= N_MC_CYCLES
-        self.wave_derivatives_average[0] /= N_MC_CYCLES
-        self.wave_derivatives_average[1] /= N_MC_CYCLES
-        self.wave_derivatives_average[2] /= N_MC_CYCLES
+        self.acceptance_rate /= self.n_mc_cycles*self.n_particles
+        self.local_energy_average /= self.n_mc_cycles
+        self.wave_derivatives_energy_average[0] /= self.n_mc_cycles
+        self.wave_derivatives_energy_average[1] /= self.n_mc_cycles
+        self.wave_derivatives_energy_average[2] /= self.n_mc_cycles
+        self.wave_derivatives_average[0] /= self.n_mc_cycles
+        self.wave_derivatives_average[1] /= self.n_mc_cycles
+        self.wave_derivatives_average[2] /= self.n_mc_cycles
         
         self.visible_biases_gradient = \
             2*(self.wave_derivatives_energy_average[0] - self.wave_derivatives_average[0]*self.local_energy_average)
@@ -413,21 +474,42 @@ class ImportanceSampling(_RBMVMC):
             2*(self.wave_derivatives_energy_average[2] - self.wave_derivatives_average[2]*self.local_energy_average)
 
 class BruteForce(_RBMVMC):
-    def __init__(self, learning_rate: float) -> None:
-        self.brute_force_step_size = 0.05
-        super().__init__(learning_rate)
+    def __init__(
+        self,
+        n_particles: int,
+        n_dims: int,
+        n_hidden: int,
+        n_mc_cycles: int,
+        max_iterations: int,
+        learning_rate: float,
+        sigma: float,
+        interaction: bool,
+        brute_force_step_size: float
+    ) -> None:
+        
+        self.brute_force_step_size = brute_force_step_size
+        super().__init__(
+            n_particles,
+            n_dims,
+            n_hidden,
+            n_mc_cycles,
+            max_iterations,
+            learning_rate,
+            sigma,
+            interaction
+        )
 
     def initial_state_addition(self):
-        self.pos_current = np.random.uniform(low=-0.5, high=0.5, size=(N_PARTICLES, N_DIMS))*self.brute_force_step_size
+        self.pos_current = np.random.uniform(low=-0.5, high=0.5, size=(self.n_particles, self.n_dims))*self.brute_force_step_size
 
     def monte_carlo(self):
-        for _ in range(N_MC_CYCLES):
-            for particle in range(N_PARTICLES):
+        for _ in range(self.n_mc_cycles):
+            for particle in range(self.n_particles):
                 """
                 Loop over all particles. Move one particle at the time.
                 """
                 self.pos_new[particle] = self.pos_current[particle]
-                self.pos_new[particle] += np.random.uniform(low=-0.5, high=0.5, size=N_DIMS)*self.brute_force_step_size
+                self.pos_new[particle] += np.random.uniform(low=-0.5, high=0.5, size=self.n_dims)*self.brute_force_step_size
                 
                 wave_new = wave_function(
                     self.pos_new,
@@ -470,14 +552,14 @@ class BruteForce(_RBMVMC):
             self.wave_derivatives_energy_average[2] += \
                 wave_derivatives[2]*local_energy_partial
 
-        self.acceptance_rate /= N_MC_CYCLES*N_PARTICLES
-        self.local_energy_average /= N_MC_CYCLES
-        self.wave_derivatives_energy_average[0] /= N_MC_CYCLES
-        self.wave_derivatives_energy_average[1] /= N_MC_CYCLES
-        self.wave_derivatives_energy_average[2] /= N_MC_CYCLES
-        self.wave_derivatives_average[0] /= N_MC_CYCLES
-        self.wave_derivatives_average[1] /= N_MC_CYCLES
-        self.wave_derivatives_average[2] /= N_MC_CYCLES
+        self.acceptance_rate /= self.n_mc_cycles*self.n_particles
+        self.local_energy_average /= self.n_mc_cycles
+        self.wave_derivatives_energy_average[0] /= self.n_mc_cycles
+        self.wave_derivatives_energy_average[1] /= self.n_mc_cycles
+        self.wave_derivatives_energy_average[2] /= self.n_mc_cycles
+        self.wave_derivatives_average[0] /= self.n_mc_cycles
+        self.wave_derivatives_average[1] /= self.n_mc_cycles
+        self.wave_derivatives_average[2] /= self.n_mc_cycles
         
         self.visible_biases_gradient = \
             2*(self.wave_derivatives_energy_average[0] - self.wave_derivatives_average[0]*self.local_energy_average)
@@ -488,20 +570,28 @@ class BruteForce(_RBMVMC):
 
 if __name__ == "__main__":
     np.random.seed(1337)
-    N_PARTICLES = 2         # Number of particles.
+    N_PARTICLES = 3         # Number of particles.
     N_DIMS = 2              # Number of dimensions.
-    N_HIDDEN = 2            # Number of hidden nodes.
-    N_MC_CYCLES = int(1e4)  # Number of Monte Carlo cycles.
+    N_HIDDEN = 4            # Number of hidden nodes.
+    N_MC_CYCLES = int(1e3)  # Number of Monte Carlo cycles.
     INTERACTION = True      # TODO: Double check interaction expression.
-    MAX_ITERATIONS = 50
-
-    # I believe this sigma is the std of the normal distribution the visible
-    # layers. TODO: Find out how to choose what the std should be.
-    SIGMA = 1
+    MAX_ITERATIONS = 20
+    SIGMA = 1   # Std. of the normal distribution the visible nodes.
     SIGMA_SQUARED = SIGMA**2
+    # self.brute_force_step_size = 0.05
 
-    learning_rate = 0.01
-
-    q = ImportanceSampling(learning_rate)
+    q = ImportanceSampling(
+        n_particles = 2,
+        n_dims = 2,
+        n_hidden = 2,
+        n_mc_cycles = int(1e3),
+        max_iterations = 20,
+        learning_rate = 0.01,
+        sigma = 1,
+        interaction = True,
+        diffusion_coeff = 0.5,
+        time_step = 0.05
+    )
+    # print(f"{q.hidden_biases.shape}")
     # q = BruteForce(learning_rate)
     q.solve()
