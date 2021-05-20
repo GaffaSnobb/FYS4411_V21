@@ -50,6 +50,24 @@ class _RBMVMC:
     ):
         """
         Set the initial state of all nodes, weights and biases.
+
+        Parameters
+        ----------
+        loc_scale_all:
+            The loc (mean) and scale (std) of the normal distribution
+            of all initial distributions.
+
+        loc_scale_visible_biases:
+            The loc (mean) and scale (std) of the normal distribution
+            of the visible biases.
+
+        loc_scale_hidden_biases:
+            The loc (mean) and scale (std) of the normal distribution
+            of the hidden biases.
+
+        loc_scale_weights:
+            The loc (mean) and scale (std) of the normal distribution
+            of the weights.
         """
         if (loc_scale_all is None) and (
             (loc_scale_visible_biases is None) or
