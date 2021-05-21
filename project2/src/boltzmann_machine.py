@@ -229,7 +229,7 @@ class ImportanceSampling(_RBMVMC):
             self.sigma
         )
 
-        for _ in range(self.n_mc_cycles):
+        for cycle in range(self.n_mc_cycles):
             for particle in range(self.n_particles):
                 """
                 Loop over all particles. Move one particle at the time.
@@ -295,7 +295,7 @@ class ImportanceSampling(_RBMVMC):
             self.wave_derivatives_energy_average[2] += \
                 wave_derivatives[2]*local_energy_partial
 
-            self.energy_mc[_] = local_energy_partial
+            self.energy_mc[cycle] = local_energy_partial
 
 
         self.acceptance_rate /= self.n_mc_cycles*self.n_particles
@@ -345,7 +345,7 @@ class BruteForce(_RBMVMC):
         self.pos_current = np.random.uniform(low=-0.5, high=0.5, size=(self.n_particles, self.n_dims))*self.brute_force_step_size
 
     def monte_carlo(self):
-        for _ in range(self.n_mc_cycles):
+        for cycle in range(self.n_mc_cycles):
             for particle in range(self.n_particles):
                 """
                 Loop over all particles. Move one particle at the time.
@@ -398,7 +398,7 @@ class BruteForce(_RBMVMC):
             self.wave_derivatives_energy_average[2] += \
                 wave_derivatives[2]*local_energy_partial
 
-            self.energy_mc[_] = local_energy_partial
+            self.energy_mc[cycle] = local_energy_partial
 
         self.acceptance_rate /= self.n_mc_cycles*self.n_particles
         self.local_energy_average /= self.n_mc_cycles

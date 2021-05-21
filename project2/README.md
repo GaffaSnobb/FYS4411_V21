@@ -23,3 +23,4 @@ Code is heavily (?) based on example code found at: [http://compphysics.github.i
 Notes for code and other stuff
 
 - [ ] list of attributes with description for the boltzmann machine
+- [ ] could have the time_step and brute_force_step_size parameters just called step
