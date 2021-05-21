@@ -136,14 +136,17 @@ class _RBMVMC:
             self.sigma
         )
 
+        self.energy_mc = np.zeros(self.n_mc_cycles)
+
     def solve(self, verbose=True):
         """
         Find the minimum energy using gradient descent.
         """
-    
+
         self.energies = np.zeros(self.max_iterations)
         self.times = np.zeros(self.max_iterations)
         self.acceptance_rates = np.zeros(self.max_iterations)
+        self.energy_mc_iter = np.zeros((self.max_iterations, self.n_mc_cycles))
 
         for iteration in range(self.max_iterations):
             timing = time.time()
@@ -157,6 +160,8 @@ class _RBMVMC:
             self.energies[iteration] = self.local_energy_average
             self.acceptance_rates[iteration] = self.acceptance_rate
             self.times[iteration] = time.time() - timing
+
+            self.energy_mc_iter[iteration,:] = self.energy_mc
 
             if verbose:
                 print(f"Energy:          {self.energies[iteration]:.5f} a.u.")
@@ -223,6 +228,7 @@ class ImportanceSampling(_RBMVMC):
             self.weights,
             self.sigma
         )
+
         for _ in range(self.n_mc_cycles):
             for particle in range(self.n_particles):
                 """
@@ -289,6 +295,9 @@ class ImportanceSampling(_RBMVMC):
             self.wave_derivatives_energy_average[2] += \
                 wave_derivatives[2]*local_energy_partial
 
+            self.energy_mc[_] = local_energy_partial
+
+
         self.acceptance_rate /= self.n_mc_cycles*self.n_particles
         self.local_energy_average /= self.n_mc_cycles
         self.wave_derivatives_energy_average[0] /= self.n_mc_cycles
@@ -304,6 +313,7 @@ class ImportanceSampling(_RBMVMC):
             2*(self.wave_derivatives_energy_average[1] - self.wave_derivatives_average[1]*self.local_energy_average)
         self.weights_gradient = \
             2*(self.wave_derivatives_energy_average[2] - self.wave_derivatives_average[2]*self.local_energy_average)
+
 
 class BruteForce(_RBMVMC):
     def __init__(
@@ -387,6 +397,8 @@ class BruteForce(_RBMVMC):
                 wave_derivatives[1]*local_energy_partial
             self.wave_derivatives_energy_average[2] += \
                 wave_derivatives[2]*local_energy_partial
+
+            self.energy_mc[_] = local_energy_partial
 
         self.acceptance_rate /= self.n_mc_cycles*self.n_particles
         self.local_energy_average /= self.n_mc_cycles
