@@ -8,7 +8,7 @@ b: hidden bias
 W: interaction weights
 """
 from typing import Union, Type
-import sys, time
+import sys, time, os
 import numpy as np
 import other_functions as other
 
@@ -37,8 +37,21 @@ class _RBMVMC:
         self.sigma = sigma
         self.interaction = interaction
 
+        self.parent_data_directory = "generated_data"
+        self.current_data_directory = f"{self.n_particles}_"
+        self.current_data_directory += f"{self.n_dims}_"
+        self.current_data_directory += f"{self.n_hidden}_"
+        self.current_data_directory += f"{self.n_dims}_"
+        self.current_data_directory += f"{self.n_mc_cycles}_"
+        self.current_data_directory += f"{self.max_iterations}_"
+        self.current_data_directory += f"{self.learning_rate}_"
+        self.current_data_directory += f"{self.sigma}_"
+        self.current_data_directory += f"{self.interaction}_"
+
         self.initial_state()
         self.reset_state()
+
+        self.call_solve = False
 
     def initial_state(
         self,
@@ -46,7 +59,7 @@ class _RBMVMC:
         loc_scale_visible_biases: Union[tuple, Type[None]] = None,
         loc_scale_hidden_biases: Union[tuple, Type[None]] = None,
         loc_scale_weights: Union[tuple, Type[None]] = None,
-    ):
+    ) -> None:
         """
         Set the initial state of all nodes, weights and biases.
 
@@ -114,7 +127,6 @@ class _RBMVMC:
         self.acceptance_rate = 0
         self.local_energy_average = 0
 
-        # wave_derivatives_averagee = np.empty(3, dtype=np.ndarray)
         self.wave_derivatives_average = [
             np.zeros_like(self.visible_biases),
             np.zeros_like(self.hidden_biases),
@@ -142,6 +154,28 @@ class _RBMVMC:
         """
         Find the minimum energy using gradient descent.
         """
+        self.call_solve = True
+        self.full_data_path = f"{self.parent_data_directory}/{self.current_data_directory}"
+        if os.path.isdir(f"{self.full_data_path}"):
+            print(f"This configuration already exists: {self.current_data_directory}")
+            while True:
+                load_ans = input("Load existing state? (y/n): ")
+                
+                if load_ans == "n":
+                    while True:
+                        overwrite_ans = input("Overwrite? (y/n): ")
+
+                        if (overwrite_ans == "n") or (overwrite_ans == ""):
+                            print("Exiting...")
+                            sys.exit()
+                        
+                        if overwrite_ans == "y":
+                            break
+                    break
+
+                if load_ans == "y":
+                    self._load_state()
+                    return
 
         self.energies = np.zeros(self.max_iterations)
         self.times = np.zeros(self.max_iterations)
@@ -161,7 +195,7 @@ class _RBMVMC:
             self.acceptance_rates[iteration] = self.acceptance_rate
             self.times[iteration] = time.time() - timing
 
-            self.energy_mc_iter[iteration,:] = self.energy_mc
+            self.energy_mc_iter[iteration, :] = self.energy_mc
 
             if verbose:
                 print(f"Energy:          {self.energies[iteration]:.5f} a.u.")
@@ -171,6 +205,35 @@ class _RBMVMC:
             print(f"Average over {self.max_iterations} iterations: {np.mean(self.energies):.5f} a.u.")
             print(f"Average time per iteration: {np.mean(self.times[1:]):.5f} s")
             print(f"Average acceptance rate:    {np.mean(self.acceptance_rates):.5f}")
+
+        self._save_state()
+
+    def _save_state(self):
+        """
+        Save relevant data as numpy arrays.
+        """
+        if not self.call_solve:
+            print(f"Cannot save state before running 'solve'. Exiting...")
+            sys.exit(0)
+
+        if not os.path.isdir(self.parent_data_directory):
+            os.mkdir(self.parent_data_directory)
+        
+        if not os.path.isdir(self.full_data_path):
+            os.mkdir(self.full_data_path)
+
+        np.save(f"{self.full_data_path}/energy_mc_iter.npy", self.energy_mc_iter)
+        np.save(f"{self.full_data_path}/acceptance_rates.npy", self.acceptance_rates)
+
+    def _load_state(self):
+        """
+        Load relevant data as numpy arrays.
+        """
+        if not self.call_solve:
+            print(f"Cannot load state before running 'solve'. Exiting...")
+            sys.exit(0)
+        self.energy_mc_iter = np.load(f"{self.full_data_path}/energy_mc_iter.npy")
+        self.acceptance_rates = np.load(f"{self.full_data_path}/acceptance_rates.npy")
 
 class ImportanceSampling(_RBMVMC):
     def __init__(
@@ -199,6 +262,9 @@ class ImportanceSampling(_RBMVMC):
             sigma,
             interaction
         )
+        self.current_data_directory = f"importance_" + self.current_data_directory
+        self.current_data_directory += f"{self.diffusion_coeff}_"
+        self.current_data_directory += f"{self.time_step}"
 
     def reset_state_addition(self):
         self.pos_current = np.random.normal(loc=0.0, scale=0.001, size=(self.n_particles, self.n_dims))
@@ -314,7 +380,6 @@ class ImportanceSampling(_RBMVMC):
         self.weights_gradient = \
             2*(self.wave_derivatives_energy_average[2] - self.wave_derivatives_average[2]*self.local_energy_average)
 
-
 class BruteForce(_RBMVMC):
     def __init__(
         self,
@@ -420,27 +485,27 @@ if __name__ == "__main__":
     np.random.seed(1337)
     # self.brute_force_step_size = 0.05
 
-    # q = ImportanceSampling(
-    #     n_particles = 2,
-    #     n_dims = 2,
-    #     n_hidden = 2,
-    #     n_mc_cycles = int(1e3),
-    #     max_iterations = 20,
-    #     learning_rate = 0.01,
-    #     sigma = 1,              # Std. of the normal distribution the visible nodes.
-    #     interaction = True,
-    #     diffusion_coeff = 0.5,
-    #     time_step = 0.05
-    # )
-    q = BruteForce(
+    q = ImportanceSampling(
         n_particles = 2,
         n_dims = 2,
         n_hidden = 2,
-        n_mc_cycles = int(1e5),
+        n_mc_cycles = int(2**12),
         max_iterations = 20,
         learning_rate = 0.01,
         sigma = 1,              # Std. of the normal distribution the visible nodes.
         interaction = True,
-        brute_force_step_size = 0.05
+        diffusion_coeff = 0.5,
+        time_step = 0.05
     )
+    # q = BruteForce(
+    #     n_particles = 2,
+    #     n_dims = 2,
+    #     n_hidden = 2,
+    #     n_mc_cycles = int(2**12),
+    #     max_iterations = 20,
+    #     learning_rate = 0.01,
+    #     sigma = 1,              # Std. of the normal distribution the visible nodes.
+    #     interaction = True,
+    #     brute_force_step_size = 0.05
+    # )
     q.solve()
