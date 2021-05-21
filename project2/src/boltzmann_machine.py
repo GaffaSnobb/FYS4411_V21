@@ -191,25 +191,8 @@ class _RBMVMC:
         """
         self.call_solve = True
         if os.path.isdir(f"{self.full_data_path}"):
-            print(f"This configuration already exists: {self.current_data_directory}")
-            while True:
-                load_ans = input("Load existing state? (y/n): ")
-                
-                if load_ans == "n":
-                    while True:
-                        overwrite_ans = input("Overwrite? (y/n): ")
-
-                        if (overwrite_ans == "n") or (overwrite_ans == ""):
-                            print("Exiting...")
-                            sys.exit()
-                        
-                        if overwrite_ans == "y":
-                            break
-                    break
-
-                if load_ans == "y":
-                    self._load_state()
-                    return
+            self._load_state()
+            return
 
         self.energies = np.zeros(self.max_iterations)
         self.times = np.zeros(self.max_iterations)
@@ -258,6 +241,7 @@ class _RBMVMC:
 
         np.save(f"{self.full_data_path}/energy_mc_iter.npy", self.energy_mc_iter)
         np.save(f"{self.full_data_path}/acceptance_rates.npy", self.acceptance_rates)
+        np.save(f"{self.full_data_path}/energies.npy", self.energies)
 
     def _load_state(self):
         """
@@ -268,6 +252,7 @@ class _RBMVMC:
             sys.exit(0)
         self.energy_mc_iter = np.load(f"{self.full_data_path}/energy_mc_iter.npy")
         self.acceptance_rates = np.load(f"{self.full_data_path}/acceptance_rates.npy")
+        self.energies = np.load(f"{self.full_data_path}/energies.npy")
 
 class ImportanceSampling(_RBMVMC):
     def __init__(
