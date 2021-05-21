@@ -16,8 +16,10 @@ TBA
 
 TBA
 
+Code is heavily (?) based on example code found at: [http://compphysics.github.io/ComputationalPhysics2/doc/LectureNotes/_build/html/boltzmannmachines.html#representing-the-wave-function]
+
 ## Dev
 
 Notes for code and other stuff
 
-- [ ] TBA
+- [ ] list of attributes with description for the boltzmann machine
