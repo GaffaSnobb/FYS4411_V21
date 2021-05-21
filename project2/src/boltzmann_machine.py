@@ -10,6 +10,7 @@ W: interaction weights
 from typing import Union, Type
 import sys, time, os
 import numpy as np
+from numpy.lib.function_base import diff
 import other_functions as other
 
 class _RBMVMC:
@@ -36,17 +37,6 @@ class _RBMVMC:
         self.max_iterations = max_iterations
         self.sigma = sigma
         self.interaction = interaction
-
-        self.parent_data_directory = "generated_data"
-        self.current_data_directory = f"{self.n_particles}_"
-        self.current_data_directory += f"{self.n_dims}_"
-        self.current_data_directory += f"{self.n_hidden}_"
-        self.current_data_directory += f"{self.n_dims}_"
-        self.current_data_directory += f"{self.n_mc_cycles}_"
-        self.current_data_directory += f"{self.max_iterations}_"
-        self.current_data_directory += f"{self.learning_rate}_"
-        self.current_data_directory += f"{self.sigma}_"
-        self.current_data_directory += f"{self.interaction}_"
 
         self.initial_state()
         self.reset_state()
@@ -81,6 +71,11 @@ class _RBMVMC:
             The loc (mean) and scale (std) of the normal distribution
             of the weights.
         """
+        self.loc_scale_all = loc_scale_all
+        self.loc_scale_hidden_biases = loc_scale_hidden_biases
+        self.loc_scale_visible_biases = loc_scale_visible_biases
+        self.loc_scale_weights = loc_scale_weights
+
         if (loc_scale_all is None) and (
             (loc_scale_visible_biases is None) or
             (loc_scale_hidden_biases is None) or
@@ -93,14 +88,23 @@ class _RBMVMC:
         if loc_scale_visible_biases is None:
             loc_visible_biases = loc_scale_all[0]
             scale_visible_biases = loc_scale_all[1]
+        else:
+            loc_visible_biases = loc_scale_visible_biases[0]
+            scale_visible_biases = loc_scale_visible_biases[1]
 
         if loc_scale_hidden_biases is None:
             loc_hidden_biases = loc_scale_all[0]
             scale_hidden_biases = loc_scale_all[1]
+        else:
+            loc_hidden_biases = loc_scale_hidden_biases[0]
+            scale_hidden_biases = loc_scale_hidden_biases[1]
 
         if loc_scale_weights is None:
             loc_weights = loc_scale_all[0]
             scale_weights = loc_scale_all[1]
+        else:
+            loc_weights = loc_scale_weights[0]
+            scale_weights = loc_scale_weights[1]
 
         self.visible_biases = np.random.normal(
             loc = loc_visible_biases,
@@ -117,6 +121,8 @@ class _RBMVMC:
             scale = scale_weights,
             size = (self.n_particles, self.n_dims, self.n_hidden)
         )
+
+        self._generate_paths()
 
     def reset_state(self):
         """
@@ -150,12 +156,40 @@ class _RBMVMC:
 
         self.energy_mc = np.zeros(self.n_mc_cycles)
 
-    def solve(self, verbose=True):
+    def _generate_paths(self) -> None:
+        """
+        Generate all needed file and directory names and paths.
+        """
+        self.parent_data_directory = "generated_data"
+        
+        self.current_data_directory = f"{self.prefix}_"
+        self.current_data_directory += f"{self.n_particles}_"
+        self.current_data_directory += f"{self.n_dims}_"
+        self.current_data_directory += f"{self.n_hidden}_"
+        self.current_data_directory += f"{self.n_dims}_"
+        self.current_data_directory += f"{self.n_mc_cycles}_"
+        self.current_data_directory += f"{self.max_iterations}_"
+        self.current_data_directory += f"{self.learning_rate}_"
+        self.current_data_directory += f"{self.sigma}_"
+        self.current_data_directory += f"{self.interaction}_"
+
+        if self.loc_scale_all is not None:
+            self.current_data_directory += f"all{self.loc_scale_all}_".replace(" ", "")
+        if self.loc_scale_visible_biases is not None:
+            self.current_data_directory += f"a{self.loc_scale_visible_biases}_".replace(" ", "")
+        if self.loc_scale_hidden_biases is not None:
+            self.current_data_directory += f"b{self.loc_scale_hidden_biases}_".replace(" ", "")
+        if self.loc_scale_weights is not None:
+            self.current_data_directory += f"w{self.loc_scale_weights}_".replace(" ", "")
+        
+        self.current_data_directory += f"{self.postfix}"
+        self.full_data_path = f"{self.parent_data_directory}/{self.current_data_directory}"
+
+    def solve(self, verbose: bool = True) -> None:
         """
         Find the minimum energy using gradient descent.
         """
         self.call_solve = True
-        self.full_data_path = f"{self.parent_data_directory}/{self.current_data_directory}"
         if os.path.isdir(f"{self.full_data_path}"):
             print(f"This configuration already exists: {self.current_data_directory}")
             while True:
@@ -252,6 +286,8 @@ class ImportanceSampling(_RBMVMC):
 
         self.diffusion_coeff = diffusion_coeff
         self.time_step = time_step
+        self.prefix = "importance"
+        self.postfix = f"{self.diffusion_coeff}_{self.time_step}"
         super().__init__(
             n_particles,
             n_dims,
@@ -262,9 +298,6 @@ class ImportanceSampling(_RBMVMC):
             sigma,
             interaction
         )
-        self.current_data_directory = f"importance_" + self.current_data_directory
-        self.current_data_directory += f"{self.diffusion_coeff}_"
-        self.current_data_directory += f"{self.time_step}"
 
     def reset_state_addition(self):
         self.pos_current = np.random.normal(loc=0.0, scale=0.001, size=(self.n_particles, self.n_dims))
@@ -395,6 +428,8 @@ class BruteForce(_RBMVMC):
     ) -> None:
 
         self.brute_force_step_size = brute_force_step_size
+        self.prefix = "brute"
+        self.postfix = f"{self.brute_force_step_size}"
         super().__init__(
             n_particles,
             n_dims,
@@ -508,4 +543,9 @@ if __name__ == "__main__":
     #     interaction = True,
     #     brute_force_step_size = 0.05
     # )
+    q.initial_state(
+        loc_scale_hidden_biases = (0, 0.1),
+        loc_scale_visible_biases = (0, 0.1),
+        loc_scale_weights = (0, 0.1)
+    )
     q.solve()
