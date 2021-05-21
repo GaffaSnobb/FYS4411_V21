@@ -140,7 +140,7 @@ class _RBMVMC:
         """
         Find the minimum energy using gradient descent.
         """
-        print(verbose)
+    
         self.energies = np.zeros(self.max_iterations)
         self.times = np.zeros(self.max_iterations)
         self.acceptance_rates = np.zeros(self.max_iterations)
