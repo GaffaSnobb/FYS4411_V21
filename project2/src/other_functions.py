@@ -15,16 +15,16 @@ def wave_function(
     Parameters
     ----------
     pos : numpy.ndarray
-        Array of particle positions. Dimension: N_PARTICLES x N_DIMS.
+        Array of particle positions. Dimension: n_particles x n_dims.
 
     visible_biases : numpy.ndarray
-        The biases of the visible layer. Dimension: N_PARTICLES x N_DIMS.
+        The biases of the visible layer. Dimension: n_particles x n_dims.
     
     hidden_biases : numpy.ndarray
-        The biases of the hidden nodes. Dimension: N_HIDDEN.
+        The biases of the hidden nodes. Dimension: n_hidden.
 
     weights : numpy.ndarray
-        Dimension: N_PARTICLES x N_DIMS x N_HIDDEN
+        Dimension: n_particles x n_dims x n_hidden
     """
     term_1 = 0
     term_2 = 1
@@ -60,16 +60,16 @@ def local_energy(
     Parameters
     ----------
     pos : numpy.ndarray
-        Array of particle positions. Dimension: N_PARTICLES x N_DIMS.
+        Array of particle positions. Dimension: n_particles x n_dims.
 
     visible_biases : numpy.ndarray
-        The biases of the visible layer. Dimension: N_PARTICLES x N_DIMS.
+        The biases of the visible layer. Dimension: n_particles x n_dims.
     
     hidden_biases : numpy.ndarray
-        The biases of the hidden nodes. Dimension: N_HIDDEN.
+        The biases of the hidden nodes. Dimension: n_hidden.
 
     weights : numpy.ndarray
-        Dimension: N_PARTICLES x N_DIMS x N_HIDDEN
+        Dimension: n_particles x n_dims x n_hidden
 
     Returns
     -------
@@ -93,8 +93,8 @@ def local_energy(
     if interaction:
         for particle in range(n_particles):
             for particle_inner in range(particle):
-                distance = ((pos[particle] - pos[particle_inner])**2).sum()
-                energy += 1/np.sqrt(distance)
+                distance = np.sqrt(((pos[particle] - pos[particle_inner])**2).sum())
+                energy += 1/distance
                 
     return energy
 
@@ -112,32 +112,32 @@ def wave_function_derivative(
     Parameters
     ----------
     pos : numpy.ndarray
-        Array of particle positions. Dimension: N_PARTICLES x N_DIMS.
+        Array of particle positions. Dimension: n_particles x n_dims.
 
     visible_biases : numpy.ndarray
-        The biases of the visible layer. Dimension: N_PARTICLES x N_DIMS.
+        The biases of the visible layer. Dimension: n_particles x n_dims.
     
     hidden_biases : numpy.ndarray
-        The biases of the hidden nodes. Dimension: N_HIDDEN.
+        The biases of the hidden nodes. Dimension: n_hidden.
 
     weights : numpy.ndarray
-        Dimension: N_PARTICLES x N_DIMS x N_HIDDEN.
+        Dimension: n_particles x n_dims x n_hidden.
 
     Returns
     -------
     wave_diff_wrt_visible_bias : numpy.ndarray
         The wave function differentiated with respect to the visible
-        bias, divided by the wave function. Dimension: N_PARTICLES x
-        N_DIMS.
+        bias, divided by the wave function. Dimension: n_particles x
+        n_dims.
 
     wave_diff_wrt_hidden_bias : numpy.ndarray
         The wave function differentiated with respect to the hidden
-        bias, divided by the wave function. Dimension: N_HIDDEN.
+        bias, divided by the wave function. Dimension: n_hidden.
 
     wave_diff_wrt_weights : numpy.ndarray
         The wave function differentiated with respect to the weights,
-        divided by the wave function. Dimension: N_PARTICLES x N_DIMS x
-        N_HIDDEN.
+        divided by the wave function. Dimension: n_particles x n_dims x
+        n_hidden.
     """    
     exponent = exponent_in_wave_function(pos, hidden_biases, weights, sigma)
     n_hidden = hidden_biases.shape[0]
@@ -167,16 +167,16 @@ def quantum_force(
     Parameters
     ----------
     pos : numpy.ndarray
-        Array of particle positions. Dimension: N_PARTICLES x N_DIMS.
+        Array of particle positions. Dimension: n_particles x n_dims.
 
     visible_biases : numpy.ndarray
-        The biases of the visible layer. Dimension: N_PARTICLES x N_DIMS.
+        The biases of the visible layer. Dimension: n_particles x n_dims.
     
     hidden_biases : numpy.ndarray
-        The biases of the hidden nodes. Dimension: N_HIDDEN.
+        The biases of the hidden nodes. Dimension: n_hidden.
 
     weights : numpy.ndarray
-        Dimension: N_PARTICLES x N_DIMS x N_HIDDEN
+        Dimension: n_particles x n_dims x n_hidden
     """
     n_particles, n_dims = pos.shape
     n_hidden = hidden_biases.shape[0]
@@ -210,19 +210,19 @@ def exponent_in_wave_function(
     Parameters
     ----------
     pos : numpy.ndarray
-        Array of particle positions. Dimension: N_PARTICLES x N_DIMS.
+        Array of particle positions. Dimension: n_particles x n_dims.
     
     hidden_biases : numpy.ndarray
-        The biases of the hidden nodes. Dimension: N_HIDDEN.
+        The biases of the hidden nodes. Dimension: n_hidden.
 
     weights : numpy.ndarray
-        Dimension: N_PARTICLES x N_DIMS x N_HIDDEN.
+        Dimension: n_particles x n_dims x n_hidden.
 
     Returns
     -------
     exponent : numpy.ndarray
         The exponent of the exponential factor in the product of the
-        wave function. Dimension: N_HIDDEN.
+        wave function. Dimension: n_hidden.
     """
     n_hidden = hidden_biases.shape[0]
     exponent = np.zeros(n_hidden)
