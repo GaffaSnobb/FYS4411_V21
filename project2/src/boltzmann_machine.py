@@ -10,7 +10,6 @@ W: interaction weights
 from typing import Union, Type
 import sys, time, os
 import numpy as np
-from numpy.lib.function_base import diff
 import other_functions as other
 
 class _RBMVMC:
@@ -26,7 +25,8 @@ class _RBMVMC:
         max_iterations: int,
         learning_rate: float,
         sigma: float,
-        interaction: bool
+        interaction: bool,
+        omega: float
     ) -> None:
 
         self.learning_rate = learning_rate
@@ -37,6 +37,7 @@ class _RBMVMC:
         self.max_iterations = max_iterations
         self.sigma = sigma
         self.interaction = interaction
+        self.omega = omega
 
         self.initial_state()
         self.reset_state()
@@ -124,7 +125,7 @@ class _RBMVMC:
 
         self._generate_paths()
 
-    def reset_state(self):
+    def reset_state(self) -> None:
         """
         Set all arrays to initial state. Some of the zeroing might be
         superfluous, but better safe than sorry. Nodes, weights and
@@ -172,6 +173,7 @@ class _RBMVMC:
         self.current_data_directory += f"{self.learning_rate}_"
         self.current_data_directory += f"{self.sigma}_"
         self.current_data_directory += f"{self.interaction}_"
+        self.current_data_directory += f"{self.omega:.3f}_"
 
         if self.loc_scale_all is not None:
             self.current_data_directory += f"all{self.loc_scale_all}_".replace(" ", "")
@@ -225,7 +227,7 @@ class _RBMVMC:
 
         self._save_state()
 
-    def _save_state(self):
+    def _save_state(self) -> None:
         """
         Save relevant data as numpy arrays.
         """
@@ -243,7 +245,7 @@ class _RBMVMC:
         np.save(f"{self.full_data_path}/acceptance_rates.npy", self.acceptance_rates)
         np.save(f"{self.full_data_path}/energies.npy", self.energies)
 
-    def _load_state(self):
+    def _load_state(self) -> None:
         """
         Load relevant data as numpy arrays.
         """
@@ -265,6 +267,7 @@ class ImportanceSampling(_RBMVMC):
         learning_rate: float,
         sigma: float,
         interaction: bool,
+        omega: float,
         diffusion_coeff: float,
         time_step: float
     ) -> None:
@@ -281,7 +284,8 @@ class ImportanceSampling(_RBMVMC):
             max_iterations,
             learning_rate,
             sigma,
-            interaction
+            interaction,
+            omega
         )
 
     def reset_state_addition(self):
@@ -297,21 +301,23 @@ class ImportanceSampling(_RBMVMC):
         )
 
     def monte_carlo(self):
-        local_energy_partial = other.local_energy(
-            self.pos_current,
-            self.visible_biases,
-            self.hidden_biases,
-            self.weights,
-            self.sigma,
-            self.interaction
-        )
-        wave_derivatives = other.wave_function_derivative(
-            self.pos_current,
-            self.visible_biases,
-            self.hidden_biases,
-            self.weights,
-            self.sigma
-        )
+        # These two calls can prob. be removed.
+        # local_energy_partial = other.local_energy(
+        #     self.pos_current,
+        #     self.visible_biases,
+        #     self.hidden_biases,
+        #     self.weights,
+        #     self.sigma,
+        #     self.interaction,
+        #     self.omega
+        # )
+        # wave_derivatives = other.wave_function_derivative(
+        #     self.pos_current,
+        #     self.visible_biases,
+        #     self.hidden_biases,
+        #     self.weights,
+        #     self.sigma
+        # )
 
         for cycle in range(self.n_mc_cycles):
             for particle in range(self.n_particles):
@@ -356,7 +362,8 @@ class ImportanceSampling(_RBMVMC):
                 self.hidden_biases,
                 self.weights,
                 self.sigma,
-                self.interaction
+                self.interaction,
+                self.omega
             )
             wave_derivatives = other.wave_function_derivative(
                 self.pos_current,
@@ -409,6 +416,7 @@ class BruteForce(_RBMVMC):
         learning_rate: float,
         sigma: float,
         interaction: bool,
+        omega: float,
         brute_force_step_size: float
     ) -> None:
 
@@ -423,13 +431,14 @@ class BruteForce(_RBMVMC):
             max_iterations,
             learning_rate,
             sigma,
-            interaction
+            interaction,
+            omega
         )
 
-    def reset_state_addition(self):
+    def reset_state_addition(self) -> None:
         self.pos_current = np.random.uniform(low=-0.5, high=0.5, size=(self.n_particles, self.n_dims))*self.brute_force_step_size
 
-    def monte_carlo(self):
+    def monte_carlo(self) -> None:
         for cycle in range(self.n_mc_cycles):
             for particle in range(self.n_particles):
                 """
@@ -460,7 +469,8 @@ class BruteForce(_RBMVMC):
                 self.hidden_biases,
                 self.weights,
                 self.sigma,
-                self.interaction
+                self.interaction,
+                self.omega
             )
             wave_derivatives = other.wave_function_derivative(
                 self.pos_current,
@@ -504,16 +514,18 @@ class BruteForce(_RBMVMC):
 if __name__ == "__main__":
     np.random.seed(1337)
     # self.brute_force_step_size = 0.05
-
+    omega = 1/4
+    sigma = np.sqrt(1/omega)
     q = ImportanceSampling(
         n_particles = 2,
-        n_dims = 2,
+        n_dims = 3,
         n_hidden = 2,
         n_mc_cycles = int(2**12),
         max_iterations = 20,
         learning_rate = 0.01,
-        sigma = 1,              # Std. of the normal distribution the visible nodes.
+        sigma = sigma,              # Std. of the normal distribution the visible nodes.
         interaction = True,
+        omega = omega,
         diffusion_coeff = 0.5,
         time_step = 0.05
     )
