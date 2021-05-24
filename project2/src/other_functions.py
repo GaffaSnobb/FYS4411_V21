@@ -52,28 +52,39 @@ def local_energy(
     hidden_biases: np.ndarray,
     weights: np.ndarray,
     sigma: float,
-    interaction: bool
+    interaction: bool,
+    omega: float
 ) -> float:
     """
     Analytical local energy for the 2-electron system in two dimensions.
 
     Parameters
     ----------
-    pos : numpy.ndarray
+    pos:
         Array of particle positions. Dimension: n_particles x n_dims.
 
-    visible_biases : numpy.ndarray
+    visible_biases:
         The biases of the visible layer. Dimension: n_particles x n_dims.
     
-    hidden_biases : numpy.ndarray
+    hidden_biases:
         The biases of the hidden nodes. Dimension: n_hidden.
 
-    weights : numpy.ndarray
+    weights:
         Dimension: n_particles x n_dims x n_hidden
+
+    sigma:
+        The standard deviation of the Gaussian part of the Gaussian-
+        binary RBM.
+
+    interaction:
+        Toggle interaction term on / off.
+
+    omega:
+        The potential frequency.
 
     Returns
     -------
-    energy : float
+    energy:
         The local energy.
     """
     energy = 0  # Local energy.
@@ -88,7 +99,7 @@ def local_energy(
             sum_2 = (weights[particle, dim]**2*exponential_negative/(1 + exponential_negative)**2).sum()
             dlnpsi1 = -(pos[particle, dim] - visible_biases[particle, dim])/sigma_squared + sum_1/sigma_squared
             dlnpsi2 = -1/sigma_squared + sum_2/sigma_squared**2
-            energy += 0.5*(-dlnpsi1*dlnpsi1 - dlnpsi2 + pos[particle, dim]**2)
+            energy += 0.5*(-dlnpsi1**2 - dlnpsi2 + omega**2*pos[particle, dim]**2)
 
     if interaction:
         for particle in range(n_particles):
