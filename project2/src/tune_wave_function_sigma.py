@@ -1,6 +1,7 @@
 import multiprocessing
 import matplotlib.pyplot as plt
 from boltzmann_machine import ImportanceSampling, BruteForce
+import mplrc_params
 
 def parallel(arg_list: list):
     """
@@ -12,13 +13,13 @@ def parallel(arg_list: list):
     arg_list:
         A list of arguments to pass to the class constructor.
     """
-    sigma, = arg_list
+    proc, sigma = arg_list
     
     q = ImportanceSampling(
         n_particles = 2,
         n_dims = 2,
         n_hidden = 2,
-        n_mc_cycles = int(2**12),
+        n_mc_cycles = int(2**14),
         max_iterations = 50,
         learning_rate = 0.05,
         sigma = sigma,
@@ -29,23 +30,29 @@ def parallel(arg_list: list):
     q.initial_state(
         loc_scale_all = (0, 1)
     )
-    q.solve()
+    if proc == 0:
+        q.solve(verbose=True)
+    else:
+        q.solve(verbose=False)
 
     return q
 
 def main():
     fig, ax = plt.subplots()
 
-    args = [[0.8], [0.9], [1.] , [1.1], [1.2]]
+    # args = [[0, 0.6], [1, 0.8], [2, 0.9], [3, 1.] , [4, 1.1], [5, 1.2], [6, 1.4], [7, 1.6]]
+    args = [[0, 0.6], [2, 0.9], [4, 1.1], [6, 1.4]]
+    # args = [[0, 0.5] , [1, 0.75], [2, 1.], [3, 1.25], [4, 1.5]]
     pool = multiprocessing.Pool()
     res = pool.map(parallel, args)
 
     for i in range(len(res)):
-        ax.plot(range(res[i].max_iterations), res[i].energies, label=r"$\sigma: $" + f"{args[i][0]}")
+        ax.plot(range(res[i].max_iterations), res[i].energies, label=r"$\sigma: $" + f"{args[i][1]}")
 
-    ax.set_xlabel("Iterations")
-    ax.set_ylabel("Energy")
+    ax.set_xlabel("GD iterations")
+    ax.set_ylabel("Energy [a.u.]")
     ax.legend()
+    ax.tick_params()
     plt.show()
 
 if __name__ == "__main__":
