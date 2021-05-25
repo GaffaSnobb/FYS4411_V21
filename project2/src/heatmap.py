@@ -1,7 +1,6 @@
 import multiprocessing
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy.core.numeric import indices
 import seaborn as sns
 from boltzmann_machine import ImportanceSampling, BruteForce
 
@@ -21,7 +20,7 @@ def parallel(arg_list: list):
         n_particles = 2,
         n_dims = 2,
         n_hidden = 2,
-        n_mc_cycles = int(2**13),
+        n_mc_cycles = int(2**14),
         max_iterations = max_iteration,
         learning_rate = 0.05,
         sigma = 1,              # Std. of the normal distribution the visible nodes.
@@ -38,7 +37,6 @@ def parallel(arg_list: list):
     return q
 
 def main():
-    fig, ax = plt.subplots()
 
     scales = [0.5, 1, 1.5, 2]
     max_iterations = [20, 30, 40, 50]
@@ -55,32 +53,30 @@ def main():
 
     pool = multiprocessing.Pool()
     res = pool.map(parallel, args)
-    np.random.shuffle(res)
+    # np.random.shuffle(res)
     
-    res.sort(key=lambda val: val.loc_scale_all[1] + val.max_iterations)
+    res.sort(key=lambda val: val.loc_scale_all[1]*1000 + val.max_iterations)
 
-    # res_tmp = np.array(sorted(res, key=lambda val: val.loc_scale_all[1]))   # Sort output based on scale
-    # res = []
-    # for lst in np.split(res_tmp, n_max_iterations):
-    #     res += sorted(lst, key=lambda val: val.max_iterations)  # Sort by max iterations after scale
-
-    for val in res:
-        print(val.max_iterations, val.loc_scale_all[1])
+    # for val in res:
+    #     print(val.max_iterations, val.loc_scale_all[1])
     
     for i in range(n_scales):
         for j in range(n_max_iterations):
             grid[i, j] = res[i*n_scales + j].energies[-1]
 
+    print(grid[-1, :])
+
+    # fig, ax = plt.subplots()
     # ax = sns.heatmap(
     #     data = grid,
     #     linewidth = 0.5,
     #     annot = True,
     #     cmap = "viridis",
     #     ax = ax,
-    #     # xticklabels = scales,
-    #     # yticklabels = max_iterations
+    #     xticklabels = scales,
+    #     yticklabels = max_iterations
     # )
-    # ax.invert_yaxis()
+    # # ax.invert_yaxis()
     
     # plt.show()
 
