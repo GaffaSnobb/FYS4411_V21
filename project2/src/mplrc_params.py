@@ -8,4 +8,5 @@ mpl.rcParams['legend.fontsize'] = 15
 mpl.rcParams['axes.labelsize'] = 15
 mpl.rcParams['xtick.labelsize'] = 15
 mpl.rcParams['ytick.labelsize'] = 15
+mpl.rcParams['axes.titlesize'] = 15
 # mpl.rcParams['text.usetex'] = True
