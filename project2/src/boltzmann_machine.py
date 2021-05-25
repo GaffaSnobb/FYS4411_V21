@@ -173,7 +173,7 @@ class _RBMVMC:
         self.current_data_directory += f"{self.learning_rate}_"
         self.current_data_directory += f"{self.sigma}_"
         self.current_data_directory += f"{self.interaction}_"
-        self.current_data_directory += f"{self.omega:.3f}_"
+        self.current_data_directory += f"{self.omega}_"
 
         if self.loc_scale_all is not None:
             self.current_data_directory += f"all{self.loc_scale_all}_".replace(" ", "")
