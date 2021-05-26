@@ -23,13 +23,16 @@ class _RBMVMC:
         n_hidden: int,
         n_mc_cycles: int,
         max_iterations: int,
-        learning_rate_input: Union[float, str],
+        learning_rate_input: Union[float, str, list, dict],
         sigma: float,
         interaction: bool,
         omega: float,
-        parent_data_directory: Union[None, str] = None
+        parent_data_directory: Union[None, str] = None,
+        rng_seed: Union[int, None] = None
     ) -> None:
 
+        if rng_seed is not None:
+            np.random.seed(rng_seed)
         self.learning_rate = learning_rate_input
         self.learning_rate_input = learning_rate_input
         self.n_particles = n_particles
@@ -173,7 +176,11 @@ class _RBMVMC:
         self.current_data_directory += f"{self.n_dims}_"
         self.current_data_directory += f"{self.n_mc_cycles}_"
         self.current_data_directory += f"{self.max_iterations}_"
-        self.current_data_directory += f"{self.learning_rate_input}_"
+        if isinstance(self.learning_rate_input, dict):
+            self.current_data_directory += f"{tuple(self.learning_rate_input.values())}_".replace(" ", "")
+        else:
+            self.current_data_directory += f"{self.learning_rate_input}_"
+            # self.current_data_directory += f"{self.learning_rate_input}_".replace(" ", "").replace("[", "(").replace("]", ")")
         self.current_data_directory += f"{self.sigma}_"
         self.current_data_directory += f"{self.interaction}_"
         self.current_data_directory += f"{self.omega}_"
@@ -211,7 +218,41 @@ class _RBMVMC:
             timing = time.time()
 
             if self.learning_rate_input == "variable":
-                self.learning_rate = other.variable_learning_rate(t=5*iteration, t0=2.5, t1=50)
+                """
+                Variable learning rate with default t0 and t1 parameter
+                values.
+                """
+                self.learning_rate = other.variable_learning_rate(
+                    t = 1*iteration,
+                    t0 = 2.5,
+                    t1 = 50,
+                    init = None
+                )
+            
+            elif isinstance(self.learning_rate_input, dict):
+                """
+                Variable learning rate with input t0 and t1 parameter
+                values.
+                """
+                if "init" not in self.learning_rate_input.keys():
+                    t = self.learning_rate_input["factor"]*iteration
+                    t0 = self.learning_rate_input["t0"]
+                    t1 = self.learning_rate_input["t1"]
+                    self.learning_rate = other.variable_learning_rate(
+                        t = t,
+                        t0 = t0,
+                        t1 = t1,
+                        init = None
+                    )
+                else:
+                    t = self.learning_rate_input["factor"]*iteration
+                    init = self.learning_rate_input["init"]
+                    self.learning_rate = other.variable_learning_rate(
+                        t = t,
+                        t0 = None,
+                        t1 = None,
+                        init = init
+                    )
 
             self.reset_state()
             self.monte_carlo()
@@ -246,12 +287,22 @@ class _RBMVMC:
             sys.exit(0)
 
         if not os.path.isdir(self.main_data_directory):
+            """
+            main_data_directory/
+            """
             os.mkdir(self.main_data_directory)
 
         if not os.path.isdir(f"{self.main_data_directory}/{self.parent_data_directory}"):
-            os.mkdir(f"{self.main_data_directory}/{self.parent_data_directory}")
+            """
+            main_data_directory/parent_data_directory/
+            """
+            if self.parent_data_directory is not None:
+                os.mkdir(f"{self.main_data_directory}/{self.parent_data_directory}")
         
         if not os.path.isdir(self.full_data_path):
+            """
+            main_data_directory/parent_data_directory/current_data_directory/
+            """
             os.mkdir(self.full_data_path)
 
         np.save(f"{self.full_data_path}/energy_mc_iter.npy", self.energy_mc_iter)
@@ -283,7 +334,8 @@ class ImportanceSampling(_RBMVMC):
         omega: float,
         diffusion_coeff: float,
         time_step: float,
-        parent_data_directory: Union[None, str] = None
+        parent_data_directory: Union[None, str] = None,
+        rng_seed: Union[int, None] = None
     ) -> None:
 
         self.diffusion_coeff = diffusion_coeff
@@ -300,7 +352,8 @@ class ImportanceSampling(_RBMVMC):
             sigma,
             interaction,
             omega,
-            parent_data_directory
+            parent_data_directory,
+            rng_seed
         )
 
     def reset_state_addition(self):
@@ -433,7 +486,8 @@ class BruteForce(_RBMVMC):
         interaction: bool,
         omega: float,
         brute_force_step_size: float,
-        parent_data_directory: Union[None, str] = None
+        parent_data_directory: Union[None, str] = None,
+        rng_seed: Union[int, None] = None
     ) -> None:
 
         self.brute_force_step_size = brute_force_step_size
@@ -449,7 +503,8 @@ class BruteForce(_RBMVMC):
             sigma,
             interaction,
             omega,
-            parent_data_directory
+            parent_data_directory,
+            rng_seed
         )
 
     def reset_state_addition(self) -> None:
@@ -533,14 +588,16 @@ if __name__ == "__main__":
     # self.brute_force_step_size = 0.05
     omega = 1/4
     sigma = np.sqrt(1/omega)
+    
     q = ImportanceSampling(
         n_particles = 2,
         n_dims = 3,
         n_hidden = 2,
         n_mc_cycles = int(2**12),
         max_iterations = 50,
-        learning_rate = "variable",
-        sigma = sigma,              # Std. of the normal distribution the visible nodes.
+        # learning_rate = [1, 2.5, 50],
+        learning_rate = {"factor": 0.1, "init": 0.05},
+        sigma = sigma,
         interaction = True,
         omega = omega,
         diffusion_coeff = 0.5,
@@ -553,7 +610,7 @@ if __name__ == "__main__":
     #     n_mc_cycles = int(2**12),
     #     max_iterations = 20,
     #     learning_rate = 0.01,
-    #     sigma = 1,              # Std. of the normal distribution the visible nodes.
+    #     sigma = 1,
     #     interaction = True,
     #     brute_force_step_size = 0.05
     # )
