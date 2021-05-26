@@ -23,13 +23,15 @@ class _RBMVMC:
         n_hidden: int,
         n_mc_cycles: int,
         max_iterations: int,
-        learning_rate: float,
+        learning_rate_input: Union[float, str],
         sigma: float,
         interaction: bool,
-        omega: float
+        omega: float,
+        parent_data_directory: Union[None, str] = None
     ) -> None:
 
-        self.learning_rate = learning_rate
+        self.learning_rate = learning_rate_input
+        self.learning_rate_input = learning_rate_input
         self.n_particles = n_particles
         self.n_dims = n_dims
         self.n_hidden = n_hidden
@@ -38,6 +40,7 @@ class _RBMVMC:
         self.sigma = sigma
         self.interaction = interaction
         self.omega = omega
+        self.parent_data_directory = parent_data_directory
 
         self.initial_state()
         self.reset_state()
@@ -161,8 +164,8 @@ class _RBMVMC:
         """
         Generate all needed file and directory names and paths.
         """
-        self.parent_data_directory = "generated_data"
-        
+        self.main_data_directory = "generated_data"
+            
         self.current_data_directory = f"{self.prefix}_"
         self.current_data_directory += f"{self.n_particles}_"
         self.current_data_directory += f"{self.n_dims}_"
@@ -170,7 +173,7 @@ class _RBMVMC:
         self.current_data_directory += f"{self.n_dims}_"
         self.current_data_directory += f"{self.n_mc_cycles}_"
         self.current_data_directory += f"{self.max_iterations}_"
-        self.current_data_directory += f"{self.learning_rate}_"
+        self.current_data_directory += f"{self.learning_rate_input}_"
         self.current_data_directory += f"{self.sigma}_"
         self.current_data_directory += f"{self.interaction}_"
         self.current_data_directory += f"{self.omega}_"
@@ -185,7 +188,10 @@ class _RBMVMC:
             self.current_data_directory += f"w{self.loc_scale_weights}_".replace(" ", "")
         
         self.current_data_directory += f"{self.postfix}"
-        self.full_data_path = f"{self.parent_data_directory}/{self.current_data_directory}"
+        if self.parent_data_directory is not None:
+            self.full_data_path = f"{self.main_data_directory}/{self.parent_data_directory}/{self.current_data_directory}"
+        else:
+            self.full_data_path = f"{self.main_data_directory}/{self.current_data_directory}"
 
     def solve(self, verbose: bool = True) -> None:
         """
@@ -204,6 +210,9 @@ class _RBMVMC:
         for iteration in range(self.max_iterations):
             timing = time.time()
 
+            if self.learning_rate_input == "variable":
+                self.learning_rate = other.variable_learning_rate(t=5*iteration, t0=2.5, t1=50)
+
             self.reset_state()
             self.monte_carlo()
 
@@ -219,6 +228,7 @@ class _RBMVMC:
             if verbose:
                 print(f"Energy:          {self.energies[iteration]:.5f} a.u.")
                 print(f"Acceptance rate: {self.acceptance_rates[iteration]:.5f}")
+                print(f"Learning rate:   {self.learning_rate}")
 
         if verbose:
             print(f"Average over {self.max_iterations} iterations: {np.mean(self.energies):.5f} a.u.")
@@ -235,8 +245,11 @@ class _RBMVMC:
             print(f"Cannot save state before running 'solve'. Exiting...")
             sys.exit(0)
 
-        if not os.path.isdir(self.parent_data_directory):
-            os.mkdir(self.parent_data_directory)
+        if not os.path.isdir(self.main_data_directory):
+            os.mkdir(self.main_data_directory)
+
+        if not os.path.isdir(f"{self.main_data_directory}/{self.parent_data_directory}"):
+            os.mkdir(f"{self.main_data_directory}/{self.parent_data_directory}")
         
         if not os.path.isdir(self.full_data_path):
             os.mkdir(self.full_data_path)
@@ -269,7 +282,8 @@ class ImportanceSampling(_RBMVMC):
         interaction: bool,
         omega: float,
         diffusion_coeff: float,
-        time_step: float
+        time_step: float,
+        parent_data_directory: Union[None, str] = None
     ) -> None:
 
         self.diffusion_coeff = diffusion_coeff
@@ -285,7 +299,8 @@ class ImportanceSampling(_RBMVMC):
             learning_rate,
             sigma,
             interaction,
-            omega
+            omega,
+            parent_data_directory
         )
 
     def reset_state_addition(self):
@@ -417,7 +432,8 @@ class BruteForce(_RBMVMC):
         sigma: float,
         interaction: bool,
         omega: float,
-        brute_force_step_size: float
+        brute_force_step_size: float,
+        parent_data_directory: Union[None, str] = None
     ) -> None:
 
         self.brute_force_step_size = brute_force_step_size
@@ -432,7 +448,8 @@ class BruteForce(_RBMVMC):
             learning_rate,
             sigma,
             interaction,
-            omega
+            omega,
+            parent_data_directory
         )
 
     def reset_state_addition(self) -> None:
@@ -521,13 +538,13 @@ if __name__ == "__main__":
         n_dims = 3,
         n_hidden = 2,
         n_mc_cycles = int(2**12),
-        max_iterations = 20,
-        learning_rate = 0.01,
+        max_iterations = 50,
+        learning_rate = "variable",
         sigma = sigma,              # Std. of the normal distribution the visible nodes.
         interaction = True,
         omega = omega,
         diffusion_coeff = 0.5,
-        time_step = 0.05
+        time_step = 0.05,
     )
     # q = BruteForce(
     #     n_particles = 2,
