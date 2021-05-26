@@ -1,6 +1,13 @@
 import numba
 import numpy as np
 
+def variable_learning_rate(t, t0, t1):
+    """
+    Taken from FYS-STK. Find motivation for this function in the FYS-STK
+    material.
+    """
+    return t0/(t + t1)
+
 @numba.njit()
 def wave_function(
     pos: np.ndarray,
@@ -14,16 +21,16 @@ def wave_function(
 
     Parameters
     ----------
-    pos : numpy.ndarray
+    pos:
         Array of particle positions. Dimension: n_particles x n_dims.
 
-    visible_biases : numpy.ndarray
+    visible_biases:
         The biases of the visible layer. Dimension: n_particles x n_dims.
     
-    hidden_biases : numpy.ndarray
+    hidden_biases:
         The biases of the hidden nodes. Dimension: n_hidden.
 
-    weights : numpy.ndarray
+    weights:
         Dimension: n_particles x n_dims x n_hidden
     """
     term_1 = 0
