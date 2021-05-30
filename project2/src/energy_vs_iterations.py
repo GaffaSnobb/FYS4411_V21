@@ -1,5 +1,7 @@
+import time
 import multiprocessing
 import matplotlib.pyplot as plt
+import numpy as np
 from boltzmann_machine import ImportanceSampling, BruteForce
 
 def parallel(arg_list: list):
@@ -12,7 +14,10 @@ def parallel(arg_list: list):
     arg_list:
         A list of arguments to pass to the class constructor.
     """
-    max_iterations, = arg_list
+    timing = time.time()
+    proc, max_iterations = arg_list
+    omega = 1/4
+    sigma = np.sqrt(1/omega)
     
     q = ImportanceSampling(
         n_particles = 2,
@@ -25,33 +30,38 @@ def parallel(arg_list: list):
         interaction = True,
         omega = 1,
         diffusion_coeff = 0.5,
-        time_step = 0.05
+        time_step = 0.05,
+        parent_data_directory = (__file__.split(".")[0]).split("/")[-1],
     )
     q.initial_state(
         loc_scale_all = (0, 2)
     )
     q.solve()
 
+    print(f"Process {proc} finished in {time.time() - timing:.3f}s with parameters {arg_list[1:]}")
+
     return q
 
 def main():
-    fig, ax = plt.subplots()
-
-    # args = [[0.06], [0.08], [0.1], [0.12], [0.14]]
-    # args = [[0.11], [0.12], [0.13], [0.14]]
-    args = [[20], [30], [40], [50]]
+    
+    max_iterations = [10, 20, 30, 40, 50]
+    
+    args = []
+    for i in range(len(max_iterations)):
+        args.append([i, max_iterations[i]])
+    
     pool = multiprocessing.Pool()
     res = pool.map(parallel, args)
-    
+
+    fig, ax = plt.subplots()
     for i in range(len(res)):
-        print(f"{res[i].energies[-1]}", end=" ")
         ax.plot(range(res[i].max_iterations), res[i].energies, label=r"iterations: " + f"{args[i][0]}")
         ax.plot(res[i].max_iterations, res[i].energies[-1], "o")
 
-    # ax.set_xlabel("Iterations")
-    # ax.set_ylabel("Energy")
-    # ax.legend()
-    # plt.show()
+    ax.set_xlabel("Iterations")
+    ax.set_ylabel("Energy")
+    ax.legend()
+    plt.show()
 
 if __name__ == "__main__":
     main()
