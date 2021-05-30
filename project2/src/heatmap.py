@@ -66,7 +66,6 @@ def main():
         for j in range(n_max_iterations):
             grid[i, j] = res[i*n_max_iterations + j].energies[-1]
 
-
     fig, ax = plt.subplots()
     ax = sns.heatmap(
         data = grid,
