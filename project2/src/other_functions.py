@@ -1,11 +1,29 @@
+from typing import Union
 import numba
 import numpy as np
 
-def variable_learning_rate(t, t0, t1):
+def variable_learning_rate(
+    t: float,
+    t0: Union[float, None],
+    t1: Union[float, None],
+    init: Union[float, None] = None
+):
     """
     Taken from FYS-STK. Find motivation for this function in the FYS-STK
     material.
     """
+    if (init is None) and ((t0 is None) or (t1 is None)):
+        msg = "Init cannot be None if either t0 or t1 is None"
+        raise ValueError(msg)
+
+    if (init is not None) and ((t0 is not None) or (t1 is not None)):
+        msg = "Cannot have init float input if either t0 or t1 has float input"
+        raise ValueError(msg)
+
+    if init is not None:
+        t1 = 1
+        t0 = init*t1
+
     return t0/(t + t1)
 
 @numba.njit()
