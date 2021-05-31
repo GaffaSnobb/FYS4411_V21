@@ -32,9 +32,7 @@ class _RBMVMC:
         rng_seed: Union[int, None] = None
     ) -> None:
 
-        if rng_seed is not None:
-            print("LOL")
-            np.random.seed(rng_seed)
+        self.rng = np.random.default_rng(rng_seed)
         self.learning_rate = learning_rate_input
         self.learning_rate_input = learning_rate_input
         self.n_particles = n_particles
@@ -115,17 +113,17 @@ class _RBMVMC:
             loc_weights = loc_scale_weights[0]
             scale_weights = loc_scale_weights[1]
 
-        self.visible_biases = np.random.normal(
+        self.visible_biases = self.rng.normal(
             loc = loc_visible_biases,
             scale = scale_visible_biases,
             size = (self.n_particles, self.n_dims)
         )
-        self.hidden_biases = np.random.normal(
+        self.hidden_biases = self.rng.normal(
             loc = loc_hidden_biases,
             scale = scale_hidden_biases,
             size = self.n_hidden
         )
-        self.weights = np.random.normal(
+        self.weights = self.rng.normal(
             loc = loc_weights,
             scale = scale_weights,
             size = (self.n_particles, self.n_dims, self.n_hidden)
@@ -202,9 +200,22 @@ class _RBMVMC:
         else:
             self.full_data_path = f"{self.main_data_directory}/{self.current_data_directory}"
 
-    def solve(self, verbose: bool = True) -> None:
+    def solve(
+        self,
+        verbose: bool = True,
+        save_state: bool = True
+    ) -> None:
         """
         Find the minimum energy using gradient descent.
+
+        Parameters
+        ----------
+        verbose:
+            Toggle energy, acceptance rate and learning rate print on /
+            off.
+        
+        save_state:
+            Toggle save state on / off.
         """
         self.call_solve = True
         if os.path.isdir(f"{self.full_data_path}"):
@@ -278,7 +289,7 @@ class _RBMVMC:
             print(f"Average time per iteration: {np.mean(self.times[1:]):.5f} s")
             print(f"Average acceptance rate:    {np.mean(self.acceptance_rates):.5f}")
 
-        self._save_state()    # NOTE: THIS!!
+        if save_state: self._save_state()
 
     def _save_state(self) -> None:
         """
@@ -359,7 +370,7 @@ class ImportanceSampling(_RBMVMC):
         )
 
     def reset_state_addition(self):
-        self.pos_current = np.random.normal(loc=0.0, scale=0.001, size=(self.n_particles, self.n_dims))
+        self.pos_current = self.rng.normal(loc=0.0, scale=0.001, size=(self.n_particles, self.n_dims))
         self.pos_current *= np.sqrt(self.time_step)
 
         self.qforce_current = other.quantum_force(
@@ -377,7 +388,7 @@ class ImportanceSampling(_RBMVMC):
                 Loop over all particles. Move one particle at the time.
                 """
                 self.pos_new[particle] = self.pos_current[particle]
-                self.pos_new[particle] += np.random.normal(loc=0.0, scale=1.0, size=self.n_dims)*np.sqrt(self.time_step)
+                self.pos_new[particle] += self.rng.normal(loc=0.0, scale=1.0, size=self.n_dims)*np.sqrt(self.time_step)
                 self.pos_new[particle] += self.qforce_current[particle]*self.time_step*self.diffusion_coeff
 
                 wave_new = other.wave_function(
@@ -399,7 +410,7 @@ class ImportanceSampling(_RBMVMC):
                 greens_function *= (self.diffusion_coeff*self.time_step*0.5*(self.qforce_current[particle] - qforce_new[particle]) - self.pos_new[particle] + self.pos_current[particle])
                 greens_function = np.exp(greens_function.sum())
 
-                if np.random.uniform() <= greens_function*(wave_new/self.wave_current)**2:
+                if self.rng.uniform() <= greens_function*(wave_new/self.wave_current)**2:
                     """
                     Metropolis-Hastings.
                     """
@@ -491,7 +502,7 @@ class BruteForce(_RBMVMC):
         )
 
     def reset_state_addition(self) -> None:
-        self.pos_current = np.random.uniform(low=-0.5, high=0.5, size=(self.n_particles, self.n_dims))*self.brute_force_step_size
+        self.pos_current = self.rng.uniform(low=-0.5, high=0.5, size=(self.n_particles, self.n_dims))*self.brute_force_step_size
 
     def monte_carlo(self) -> None:
         for cycle in range(self.n_mc_cycles):
@@ -500,7 +511,7 @@ class BruteForce(_RBMVMC):
                 Loop over all particles. Move one particle at the time.
                 """
                 self.pos_new[particle] = self.pos_current[particle]
-                self.pos_new[particle] += np.random.uniform(low=-0.5, high=0.5, size=self.n_dims)*self.brute_force_step_size
+                self.pos_new[particle] += self.rng.uniform(low=-0.5, high=0.5, size=self.n_dims)*self.brute_force_step_size
 
                 wave_new = other.wave_function(
                     self.pos_new,
@@ -510,7 +521,7 @@ class BruteForce(_RBMVMC):
                     self.sigma
                 )
 
-                if np.random.uniform() <= (wave_new/self.wave_current)**2:
+                if self.rng.uniform() <= (wave_new/self.wave_current)**2:
                     """
                     Metropolis-Hastings.
                     """
