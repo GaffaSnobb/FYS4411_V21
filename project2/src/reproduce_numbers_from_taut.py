@@ -1,8 +1,8 @@
 import multiprocessing
 import numpy as np
 import matplotlib.pyplot as plt
-from boltzmann_machine import ImportanceSampling, BruteForce
-import mplrc_params
+from boltzmann_machine import ImportanceSampling
+import mpl_rcparams
 
 def parallel(arg_list: list):
     """
@@ -27,7 +27,8 @@ def parallel(arg_list: list):
         interaction = True,
         diffusion_coeff = 0.5,
         time_step = 0.05,
-        omega = omega
+        omega = omega,
+        parent_data_directory = (__file__.split(".")[0]).split("/")[-1]
     )
     q.initial_state(
         loc_scale_all = (0, 0.1)
@@ -40,6 +41,14 @@ def parallel(arg_list: list):
     return q
 
 def main():
+    """
+    Reproduce numbers from figure 1 and table 1 in
+    https://journals.aps.org/pra/abstract/10.1103/PhysRevA.48.3561.
+
+    3D system with 2 particles for different values of the potential
+    oscillator frequency, omega. The relation sigma = sqrt(1/omega) is
+    used.
+    """
     fig, ax = plt.subplots()
 
     energies_taut = np.array([0.625, 0.175, 0.0822, 0.0477, 0.0311, 0.0219, 0.0162, 0.0125, 0.01, 0.0081])*2
@@ -64,9 +73,8 @@ def main():
 
     ax.plot(1/omegas_taut, energies_taut, "--.", label="M. Taut")
     ax.plot(1/omegas_taut, energies, "--.", label="This work")
-    # ax.set_title("3D")
     ax.set_xlabel(r"1/$\omega$")
-    ax.set_ylabel("Energy [a.u.]")
+    ax.set_ylabel(r"$E_L$ [a.u.]")
     ax.legend()
     ax.tick_params()
     fig.savefig(fname="../fig/tune_omega_taut_vs_this_work.png", dpi=300)
