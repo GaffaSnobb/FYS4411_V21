@@ -3,7 +3,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-from boltzmann_machine import ImportanceSampling, BruteForce
+from boltzmann_machine import ImportanceSampling
 import mpl_rcparams
 
 def parallel(arg_list: list):
@@ -17,20 +17,19 @@ def parallel(arg_list: list):
         A list of arguments to pass to the class constructor.
     """
     timing = time.time()
-    proc, scale, max_iteration = arg_list
-    omega = 1/4
+    proc, scale, max_iteration, learning_rate = arg_list
+    omega = 1
     sigma = np.sqrt(1/omega)
     
     q = ImportanceSampling(
         n_particles = 2,
-        n_dims = 3,
-        # n_dims = 2,
+        n_dims = 1,
         n_hidden = 2,
         n_mc_cycles = int(2**14),
         max_iterations = max_iteration,
-        learning_rate = 0.05,
+        learning_rate = learning_rate,
         sigma = sigma,
-        interaction = True,
+        interaction = False,
         omega = omega,
         diffusion_coeff = 0.5,
         time_step = 0.05,
@@ -46,6 +45,11 @@ def parallel(arg_list: list):
     return q
 
 def main():
+    """
+    Produce a heatmap featuring GD iterations on the x axis, standard
+    deviations of the initial distributions of weights and biases on the
+    y axis, and local energy as the heat values.
+    """
     scales = [0, 1, 2, 3, 4]
     max_iterations = [10, 20, 30, 40, 50, 60, 70]
     n_scales = len(scales)
@@ -56,7 +60,7 @@ def main():
     
     for i in range(n_scales):
         for j in range(n_max_iterations):
-            args.append([i*n_max_iterations + j, scales[i], max_iterations[j]])
+            args.append([i*n_max_iterations + j, scales[i], max_iterations[j], {"factor": 0.05, "init": 0.18}])
 
     pool = multiprocessing.Pool()
     res = pool.map(parallel, args)    
@@ -80,7 +84,7 @@ def main():
     )
     ax.tick_params(axis='y', rotation=0)
     ax.set_xlabel(r"GD iterations")
-    ax.set_ylabel(r"Initial std")
+    ax.set_ylabel(r"Initial STD")
     cbar = ax.collections[0].colorbar
     cbar.ax.set_ylabel(r"$E_L$ [a.u.]", rotation=90)
     ax.invert_yaxis()
