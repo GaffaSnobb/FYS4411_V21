@@ -10,7 +10,6 @@ W: interaction weights
 from typing import Union, Type
 import sys, time, os
 import numpy as np
-import numba
 import other_functions as other
 
 class _RBMVMC:
@@ -258,6 +257,10 @@ class _RBMVMC:
                         init = None
                     )
                 else:
+                    """
+                    Variable learning rate with factor and initial
+                    learning rate input.
+                    """
                     t = self.learning_rate_input["factor"]*iteration
                     init = self.learning_rate_input["init"]
                     self.learning_rate = other.variable_learning_rate(
@@ -578,6 +581,10 @@ class BruteForce(_RBMVMC):
             2*(self.wave_derivatives_energy_average[2] - self.wave_derivatives_average[2]*self.local_energy_average)
 
 def main():
+    """
+    The content of this function is for testing purposes. All actual
+    runs are administered via separate files.
+    """
     # self.brute_force_step_size = 0.05
     # omega = 1/4
     omega = 1
