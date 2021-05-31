@@ -245,18 +245,18 @@ def exponent_in_wave_function(
 
     Parameters
     ----------
-    pos : numpy.ndarray
+    pos:
         Array of particle positions. Dimension: n_particles x n_dims.
     
-    hidden_biases : numpy.ndarray
+    hidden_biases:
         The biases of the hidden nodes. Dimension: n_hidden.
 
-    weights : numpy.ndarray
+    weights:
         Dimension: n_particles x n_dims x n_hidden.
 
     Returns
     -------
-    exponent : numpy.ndarray
+    exponent:
         The exponent of the exponential factor in the product of the
         wave function. Dimension: n_hidden.
     """
