@@ -2,7 +2,8 @@ import multiprocessing
 import time
 import matplotlib.pyplot as plt
 import numpy as np
-from boltzmann_machine import ImportanceSampling, BruteForce
+from boltzmann_machine import ImportanceSampling
+import mpl_rcparams
 
 def parallel(arg_list: list):
     """
