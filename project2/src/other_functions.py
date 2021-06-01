@@ -57,12 +57,10 @@ def wave_function(
     n_particles, n_dims = pos.shape
     n_hidden = hidden_biases.shape[0]
     
-    # term_1 = ((pos - visible_biases)**2).sum()    # This is prob. a replacement for the following two loops.
     for particle in range(n_particles):
         for dim in range(n_dims):
             term_1 += (pos[particle, dim] - visible_biases[particle, dim])**2
 
-    # term_2 = np.product(1 + np.exp(exponent)) # This is prob. a replacement for the following loop.
     for hidden in range(n_hidden):
         term_2 *= (1 + np.exp(exponent[hidden]))
         
@@ -147,16 +145,16 @@ def wave_function_derivative(
 
     Parameters
     ----------
-    pos : numpy.ndarray
+    pos:
         Array of particle positions. Dimension: n_particles x n_dims.
 
-    visible_biases : numpy.ndarray
+    visible_biases:
         The biases of the visible layer. Dimension: n_particles x n_dims.
     
-    hidden_biases : numpy.ndarray
+    hidden_biases:
         The biases of the hidden nodes. Dimension: n_hidden.
 
-    weights : numpy.ndarray
+    weights:
         Dimension: n_particles x n_dims x n_hidden.
 
     Returns
@@ -202,16 +200,16 @@ def quantum_force(
 
     Parameters
     ----------
-    pos : numpy.ndarray
+    pos:
         Array of particle positions. Dimension: n_particles x n_dims.
 
-    visible_biases : numpy.ndarray
+    visible_biases:
         The biases of the visible layer. Dimension: n_particles x n_dims.
     
-    hidden_biases : numpy.ndarray
+    hidden_biases:
         The biases of the hidden nodes. Dimension: n_hidden.
 
-    weights : numpy.ndarray
+    weights:
         Dimension: n_particles x n_dims x n_hidden
     """
     n_particles, n_dims = pos.shape
@@ -223,8 +221,8 @@ def quantum_force(
     
     exponent = exponent_in_wave_function(pos, hidden_biases, weights, sigma)
     
-    for ih in range(n_hidden):
-        sum_1 += weights[:, :, ih]/(1 + np.exp(-exponent[ih]))
+    for i in range(n_hidden):
+        sum_1 += weights[:, :, i]/(1 + np.exp(-exponent[i]))
     
     qforce = 2*(-(pos - visible_biases)/sigma_squared + sum_1/sigma_squared)
 
