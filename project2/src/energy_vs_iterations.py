@@ -16,7 +16,7 @@ def parallel(arg_list: list):
         A list of arguments to pass to the class constructor.
     """
     timing = time.time()
-    proc, scale, learning_rate = arg_list
+    proc, scale, learning_rate, seed = arg_list
     omega = 1
     sigma = np.sqrt(1/omega)
     
@@ -24,7 +24,7 @@ def parallel(arg_list: list):
         n_particles = 1,
         n_dims = 1,
         n_hidden = 2,
-        n_mc_cycles = int(2**12),
+        n_mc_cycles = int(2**10),
         max_iterations = 100,
         learning_rate = learning_rate,
         sigma = sigma,
@@ -34,6 +34,7 @@ def parallel(arg_list: list):
         time_step = 0.05,
         parent_data_directory = (__file__.split(".")[0]).split("/")[-1],
         rng_seed = 1337
+        # rng_seed = seed
     )
     q.initial_state(
         loc_scale_all = (0, scale)
@@ -61,12 +62,13 @@ def main():
     # scales = [0.5, 1, 1.5, 2]
     scales = [0.5, 1.5]
     n_scales = len(scales)
+    seed = int(time.time())  # Same seed for each proc, but different between runs
     
     args = []
     proc = 0
     for i in range(n_scales):
         for j in range(n_learning_rates):
-            args.append([proc, scales[i], learning_rates[j]])
+            args.append([proc, scales[i], learning_rates[j], seed])
             proc += 1
     
     pool = multiprocessing.Pool()
