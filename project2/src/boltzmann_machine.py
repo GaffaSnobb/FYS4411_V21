@@ -14,45 +14,48 @@ import numba
 import other_functions as other
 
 @numba.njit
-def monte_carlo_work(
-    pos_new,
-    pos_current,
-    qforce_current,
-    visible_biases,
-    hidden_biases,
-    weights,
-    wave_current,
-    wave_derivative_average_wrt_visible_bias,
-    wave_derivative_average_wrt_hidden_bias,
-    wave_derivative_average_wrt_weights,
-    wave_derivative_energy_average_wrt_visible_bias,
-    wave_derivative_energy_average_wrt_hidden_bias,
-    wave_derivative_energy_average_wrt_weights,
-    energy_mc,
-    acceptance_rate,
-    local_energy_average,
-    pre_drawn_pos_new,
-    pre_drawn_metropolis,
-    constants
+def monte_carlo_importance_numba(
+    pos_new: np.ndarray,
+    pos_current: np.ndarray,
+    qforce_current: np.ndarray,
+    visible_biases: np.ndarray,
+    hidden_biases: np.ndarray,
+    weights: np.ndarray,
+    wave_current: np.ndarray,
+    wave_derivative_average_wrt_visible_bias: np.ndarray,
+    wave_derivative_average_wrt_hidden_bias: np.ndarray,
+    wave_derivative_average_wrt_weights: np.ndarray,
+    wave_derivative_energy_average_wrt_visible_bias: np.ndarray,
+    wave_derivative_energy_average_wrt_hidden_bias: np.ndarray,
+    wave_derivative_energy_average_wrt_weights: np.ndarray,
+    energy_mc: np.ndarray,
+    acceptance_rate: np.ndarray,
+    local_energy_average: np.ndarray,
+    pre_drawn_pos_new: np.ndarray,
+    pre_drawn_metropolis: np.ndarray,
+    constants: np.ndarray
 ):  
+    """
+    Perform the Monte Carlo work for the importance sampling
+    implementation. This function is broken out of the class to be numba
+    compatible, and is therefore a bit ugly in regards of input
+    arguments and breaking of the class structure (file a complaint to
+    the numba developers, not me!).
+
+    All calculations in this function operate on arrays which is why
+    there are no return values. See RBMVMC class documentation for
+    description of all these input parameters.
+    """
     n_mc_cycles, n_particles, time_step, diffusion_coeff, sigma, interaction, omega = constants
-    for cycle in range(n_mc_cycles):
-        for particle in range(n_particles):
+    for cycle in range(int(n_mc_cycles)):
+        for particle in range(int(n_particles)):
             """
             Loop over all particles. Move one particle at the time.
             """
-
-            # old
             pos_new[particle] = pos_current[particle]
             pos_new[particle] += pre_drawn_pos_new[particle, :, cycle]
             pos_new[particle] += qforce_current[particle]*time_step*diffusion_coeff
 
-            # new
-            # pos_new[particle] = pos_current[particle]
-            # pos_new[particle] += pre_drawn_pos_new[particle, :, cycle]
-            # pos_new[particle] += qforce_current[particle]*time_step*diffusion_coeff
-
-            # old                
             wave_new = other.wave_function(
                 pos_new,
                 visible_biases,
@@ -61,15 +64,6 @@ def monte_carlo_work(
                 sigma
             )
 
-            # new
-            # wave_new = other.wave_function(
-            #     pos_new,
-            #     visible_biases,
-            #     hidden_biases,
-            #     weights,
-            #     sigma
-            # )
-            # old
             qforce_new = other.quantum_force(
                 pos_new,
                 visible_biases,
@@ -78,25 +72,10 @@ def monte_carlo_work(
                 sigma
             )
 
-            # new
-            # qforce_new = other.quantum_force(
-            #     pos_new,
-            #     visible_biases,
-            #     hidden_biases,
-            #     weights,
-            #     sigma
-            # )
-            # old
             greens_function = 0.5*(qforce_current[particle] + qforce_new[particle])
             greens_function *= (diffusion_coeff*time_step*0.5*(qforce_current[particle] - qforce_new[particle]) - pos_new[particle] + pos_current[particle])
             greens_function = np.exp(greens_function.sum())
 
-            # new
-            # greens_function = 0.5*(qforce_current[particle] + qforce_new[particle])
-            # greens_function *= (diffusion_coeff*time_step*0.5*(qforce_current[particle] - qforce_new[particle]) - pos_new[particle] + pos_current[particle])
-            # greens_function = np.exp(greens_function.sum())
-
-            # old
             if pre_drawn_metropolis[cycle, particle] <= greens_function*(wave_new/wave_current)**2:
                 """
                 Metropolis-Hastings.
@@ -106,17 +85,6 @@ def monte_carlo_work(
                 qforce_current[particle] = qforce_new[particle]
                 wave_current = wave_new
 
-            # new
-            # if pre_drawn_metropolis[cycle, particle] <= greens_function*(wave_new/wave_current)**2:
-            #     """
-            #     Metropolis-Hastings.
-            #     """
-            #     acceptance_rate += 1
-            #     pos_current[particle] = pos_new[particle]
-            #     qforce_current[particle] = qforce_new[particle]
-            #     wave_current = wave_new
-        
-        # old
         local_energy_partial = other.local_energy(
             pos_current,
             visible_biases,
@@ -127,18 +95,6 @@ def monte_carlo_work(
             omega
         )
 
-        # new
-        # local_energy_partial = other.local_energy(
-        #     pos_current,
-        #     visible_biases,
-        #     hidden_biases,
-        #     weights,
-        #     sigma,
-        #     interaction,
-        #     omega
-        # )
-
-        # old
         wrt_visible_bias_tmp, wrt_hidden_bias_tmp, wrt_weights_tmp = other.wave_function_derivative(
             pos_current,
             visible_biases,
@@ -147,56 +103,16 @@ def monte_carlo_work(
             sigma
         )
 
-        # new
-        # wave_derivatives = other.wave_function_derivative(
-        #     pos_current,
-        #     visible_biases,
-        #     hidden_biases,
-        #     weights,
-        #     sigma
-        # )
-
-        # old
-        # wave_derivatives_average[0] += wave_derivatives[0]  # Wrt. visible bias.
-        # wave_derivatives_average[1] += wave_derivatives[1]  # Wrt. hidden bias.
-        # wave_derivatives_average[2] += wave_derivatives[2]  # Wrt. weights.
-
         wave_derivative_average_wrt_visible_bias += wrt_visible_bias_tmp
         wave_derivative_average_wrt_hidden_bias += wrt_hidden_bias_tmp
         wave_derivative_average_wrt_weights += wrt_weights_tmp
 
-        # new
-        # wave_derivatives_average[0] += wave_derivatives[0]  # Wrt. visible bias.
-        # wave_derivatives_average[1] += wave_derivatives[1]  # Wrt. hidden bias.
-        # wave_derivatives_average[2] += wave_derivatives[2]  # Wrt. weights.
-
-        # old
         local_energy_average[0] += local_energy_partial
         energy_mc[cycle] = local_energy_partial
-
-        # new
-        # local_energy_average += local_energy_partial
-        # energy_mc[cycle] = local_energy_partial
-
-        # old
-        # wave_derivatives_energy_average[0] += \
-        #     wave_derivatives[0]*local_energy_partial
-        # wave_derivatives_energy_average[1] += \
-        #     wave_derivatives[1]*local_energy_partial
-        # wave_derivatives_energy_average[2] += \
-        #     wave_derivatives[2]*local_energy_partial
 
         wave_derivative_energy_average_wrt_visible_bias += local_energy_partial*wrt_visible_bias_tmp
         wave_derivative_energy_average_wrt_hidden_bias += local_energy_partial*wrt_hidden_bias_tmp
         wave_derivative_energy_average_wrt_weights += local_energy_partial*wrt_weights_tmp
-
-        # new
-#         wave_derivatives_energy_average[0] += \
-#             wave_derivatives[0]*local_energy_partial
-#         wave_derivatives_energy_average[1] += \
-#             wave_derivatives[1]*local_energy_partial
-#         wave_derivatives_energy_average[2] += \
-#             wave_derivatives[2]*local_energy_partial
 
 class _RBMVMC:
     """
@@ -372,7 +288,7 @@ class _RBMVMC:
         """
         Generate all needed file and directory names and paths.
         """
-        self.main_data_directory = "generated_data"
+        self.main_data_directory = "tmp"
             
         self.current_data_directory = f"{self.prefix}_"
         self.current_data_directory += f"{self.n_particles}_"
@@ -648,7 +564,7 @@ class ImportanceSampling(_RBMVMC):
         # wave_derivatives_energy_average = self.wave_derivatives_energy_average
         interaction_int = 1 if interaction else 0
         constants = np.array([n_mc_cycles, n_particles, time_step, diffusion_coeff, sigma, interaction_int, omega])
-        monte_carlo_work(
+        monte_carlo_importance_numba(
             self.pos_new,
             self.pos_current,
             self.qforce_current,
@@ -816,38 +732,38 @@ def main():
     omega = 1
     sigma = np.sqrt(1/omega)
     
-    q = ImportanceSampling(
-        n_particles = 1,
-        n_dims = 1,
-        n_hidden = 2,
-        n_mc_cycles = int(2**12),
-        max_iterations = 50,
-        learning_rate = 0.05,
-        # learning_rate = {"factor": 0.1, "init": 0.05},
-        sigma = sigma,
-        interaction = True,
-        omega = omega,
-        diffusion_coeff = 0.5,
-        time_step = 0.05,
-        rng_seed = 1337
-    )
-    # q = BruteForce(
-    #     n_particles = 2,
-    #     n_dims = 2,
+    # q = ImportanceSampling(
+    #     n_particles = 1,
+    #     n_dims = 1,
     #     n_hidden = 2,
-    #     n_mc_cycles = int(2**12),
-    #     max_iterations = 20,
-    #     learning_rate = 0.01,
-    #     sigma = 1,
+    #     n_mc_cycles = int(2**10),
+    #     max_iterations = 50,
+    #     learning_rate = 0.05,
+    #     # learning_rate = {"factor": 0.1, "init": 0.05},
+    #     sigma = sigma,
     #     interaction = True,
-    #     brute_force_step_size = 0.05
+    #     omega = omega,
+    #     diffusion_coeff = 0.5,
+    #     time_step = 0.05,
+    #     rng_seed = 1337
     # )
-    q.initial_state(
-        loc_scale_hidden_biases = (0, 0.5),
-        loc_scale_visible_biases = (0, 0.5),
-        loc_scale_weights = (0, 0.5)
-    )
-    q.solve(verbose=True, save_state=False)
+    # # q = BruteForce(
+    # #     n_particles = 2,
+    # #     n_dims = 2,
+    # #     n_hidden = 2,
+    # #     n_mc_cycles = int(2**12),
+    # #     max_iterations = 20,
+    # #     learning_rate = 0.01,
+    # #     sigma = 1,
+    # #     interaction = True,
+    # #     brute_force_step_size = 0.05
+    # # )
+    # q.initial_state(
+    #     loc_scale_hidden_biases = (0, 0.5),
+    #     loc_scale_visible_biases = (0, 0.5),
+    #     loc_scale_weights = (0, 0.5)
+    # )
+    # q.solve(verbose=True, save_state=True)
 
 if __name__ == "__main__":
     main()
