@@ -393,23 +393,9 @@ class _RBMVMC:
                     )
 
             self.reset_state()
-            self.acceptance_rate = np.zeros(1)
+            self.acceptance_rate = np.zeros(1)  # Hack to get numba to work
             self.local_energy_average = np.zeros(1)
             self.monte_carlo()
-            # self.monte_carlo(
-            #     self.pos_new,
-            #     self.pos_current,
-            #     self.qforce_current,
-            #     self.visible_biases,
-            #     self.hidden_biases,
-            #     self.weights,
-            #     self.wave_current,
-            #     self.wave_derivatives_average,
-            #     self.wave_derivatives_energy_average,
-            #     self.energy_mc,
-            #     self.acceptance_rate,
-            #     self.local_energy_average
-            # )
 
             self.visible_biases -= self.learning_rate*self.visible_biases_gradient
             self.hidden_biases -= self.learning_rate*self.hidden_biases_gradient
@@ -525,20 +511,6 @@ class ImportanceSampling(_RBMVMC):
             self.sigma
         )
 
-    # def monte_carlo(self,
-    #     pos_new: np.ndarray,
-    #     pos_current: np.ndarray,
-    #     qforce_current: np.ndarray,
-    #     visible_biases: np.ndarray,
-    #     hidden_biases: np.ndarray,
-    #     weights: np.ndarray,
-    #     wave_current: np.ndarray,
-    #     wave_derivatives_average: list,
-    #     wave_derivatives_energy_average: list,
-    #     energy_mc: np.ndarray,
-    #     acceptance_rate: np.ndarray,
-    #     local_energy_average: np.ndarray,
-    # ) -> None:
     def monte_carlo(self):
         # For numba compatibility:
         n_mc_cycles = self.n_mc_cycles
@@ -551,18 +523,8 @@ class ImportanceSampling(_RBMVMC):
 
         pre_drawn_pos_new = self.rng.normal(loc=0, scale=1, size=(self.n_particles, self.n_dims, self.n_mc_cycles))*np.sqrt(self.time_step)
         pre_drawn_metropolis = self.rng.uniform(size=(self.n_mc_cycles, self.n_particles))
-        # pos_new = self.pos_new
-        # pos_current = self.pos_current
-        # qforce_current = self.qforce_current
-        # visible_biases = self.visible_biases
-        # hidden_biases = self.hidden_biases
-        # weights = self.weights
-        # wave_current = self.wave_current
-        # energy_mc = self.energy_mc
 
-        # wave_derivatives_average = self.wave_derivatives_average
-        # wave_derivatives_energy_average = self.wave_derivatives_energy_average
-        interaction_int = 1 if interaction else 0
+        interaction_int = 1 if interaction else 0   # Datatype fix for constants array
         constants = np.array([n_mc_cycles, n_particles, time_step, diffusion_coeff, sigma, interaction_int, omega])
         monte_carlo_importance_numba(
             self.pos_new,
@@ -732,38 +694,38 @@ def main():
     omega = 1
     sigma = np.sqrt(1/omega)
     
-    # q = ImportanceSampling(
-    #     n_particles = 1,
-    #     n_dims = 1,
+    q = ImportanceSampling(
+        n_particles = 1,
+        n_dims = 1,
+        n_hidden = 2,
+        n_mc_cycles = int(2**12),
+        max_iterations = 50,
+        learning_rate = 0.05,
+        # learning_rate = {"factor": 0.1, "init": 0.05},
+        sigma = sigma,
+        interaction = True,
+        omega = omega,
+        diffusion_coeff = 0.5,
+        time_step = 0.05,
+        rng_seed = 1337
+    )
+    # q = BruteForce(
+    #     n_particles = 2,
+    #     n_dims = 2,
     #     n_hidden = 2,
-    #     n_mc_cycles = int(2**10),
-    #     max_iterations = 50,
-    #     learning_rate = 0.05,
-    #     # learning_rate = {"factor": 0.1, "init": 0.05},
-    #     sigma = sigma,
+    #     n_mc_cycles = int(2**12),
+    #     max_iterations = 20,
+    #     learning_rate = 0.01,
+    #     sigma = 1,
     #     interaction = True,
-    #     omega = omega,
-    #     diffusion_coeff = 0.5,
-    #     time_step = 0.05,
-    #     rng_seed = 1337
+    #     brute_force_step_size = 0.05
     # )
-    # # q = BruteForce(
-    # #     n_particles = 2,
-    # #     n_dims = 2,
-    # #     n_hidden = 2,
-    # #     n_mc_cycles = int(2**12),
-    # #     max_iterations = 20,
-    # #     learning_rate = 0.01,
-    # #     sigma = 1,
-    # #     interaction = True,
-    # #     brute_force_step_size = 0.05
-    # # )
-    # q.initial_state(
-    #     loc_scale_hidden_biases = (0, 0.5),
-    #     loc_scale_visible_biases = (0, 0.5),
-    #     loc_scale_weights = (0, 0.5)
-    # )
-    # q.solve(verbose=True, save_state=True)
+    q.initial_state(
+        loc_scale_hidden_biases = (0, 0.5),
+        loc_scale_visible_biases = (0, 0.5),
+        loc_scale_weights = (0, 0.5)
+    )
+    q.solve(verbose=True, save_state=False)
 
 if __name__ == "__main__":
     main()
