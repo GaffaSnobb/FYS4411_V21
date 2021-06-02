@@ -286,6 +286,7 @@ class _RBMVMC:
                 print(f"Energy:          {self.energies[iteration]:.5f} a.u.")
                 print(f"Acceptance rate: {self.acceptance_rates[iteration]:.5f}")
                 print(f"Learning rate:   {self.learning_rate}")
+                print(f"Iteration {iteration + 1} of {self.max_iterations}")
 
         if verbose:
             print(f"Average over {self.max_iterations} iterations: {np.mean(self.energies):.5f} a.u.")
