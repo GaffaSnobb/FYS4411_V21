@@ -324,6 +324,7 @@ class _RBMVMC:
         np.save(f"{self.full_data_path}/energy_mc_iter.npy", self.energy_mc_iter)
         np.save(f"{self.full_data_path}/acceptance_rates.npy", self.acceptance_rates)
         np.save(f"{self.full_data_path}/energies.npy", self.energies)
+        np.save(f"{self.full_data_path}/times.npy", self.times)
 
     def _load_state(self) -> None:
         """
@@ -335,6 +336,7 @@ class _RBMVMC:
         self.energy_mc_iter = np.load(f"{self.full_data_path}/energy_mc_iter.npy")
         self.acceptance_rates = np.load(f"{self.full_data_path}/acceptance_rates.npy")
         self.energies = np.load(f"{self.full_data_path}/energies.npy")
+        self.times = np.load(f"{self.full_data_path}/times.npy")
 
 class ImportanceSampling(_RBMVMC):
     def __init__(
