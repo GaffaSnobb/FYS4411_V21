@@ -324,7 +324,8 @@ class _RBMVMC:
     def solve(
         self,
         verbose: bool = True,
-        save_state: bool = True
+        save_state: bool = True,
+        load_state: bool = True
     ) -> None:
         """
         Find the minimum energy using gradient descent.
@@ -339,7 +340,12 @@ class _RBMVMC:
             Toggle save state on / off.
         """
         self.call_solve = True
-        if os.path.isdir(f"{self.full_data_path}"):
+
+        if not load_state:
+            save_state = False
+            print(f"Load state is {load_state}, setting save state to {save_state}")
+
+        if os.path.isdir(f"{self.full_data_path}") and load_state:
             self._load_state()
             return
 
