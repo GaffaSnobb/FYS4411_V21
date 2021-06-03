@@ -26,8 +26,8 @@ def parallel(arg_list: list):
         n_particles = 1,
         n_dims = 1,
         n_hidden = n_hidden,
-        n_mc_cycles = int(2**12),
-        max_iterations = 50,
+        n_mc_cycles = int(2**14),
+        max_iterations = 100,
         # learning_rate = 0.05,
         learning_rate = {"factor": 0.05, "init": 0.18},
         sigma = sigma,
@@ -92,9 +92,10 @@ def compare_multiple():
     hidden_nodes_error = np.zeros(n_hidden_nodes)
     iterations = np.arange(1, 200+1, 1)
     args = []
+    scale = 0.5
 
     for i in range(n_hidden_nodes):
-        args.append([i, hidden_nodes[i]])
+        args.append([i, hidden_nodes[i], scale])
 
     pool = multiprocessing.Pool()
     results = pool.map(parallel, args)
@@ -129,7 +130,7 @@ def compare_multiple():
     # plt.show()
 
 def bar_plot_comparison():
-    hidden_nodes = [2, 3, 4, 5]
+    hidden_nodes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     scales = [0.5, 1, 1.5]
     n_scales = len(scales)
     n_hidden_nodes = len(hidden_nodes)
@@ -171,20 +172,18 @@ def bar_plot_comparison():
         for j in range(n_hidden_nodes):
             end_iterations[i, j] = iterations[goal_indices[i, j]]
 
-    # women_means = [25, 32, 34, 20, 25]
-
-    x = np.arange(n_scales)  # the label locations
-    width = 0.35  # the width of the bars
+    x = np.arange(n_hidden_nodes)  # the label locations
+    width = 0.25  # the width of the bars
 
     fig, ax = plt.subplots()
-    rects1 = ax.bar(x - width/2, end_iterations[:, 0], width, label='Men')
-    rects2 = ax.bar(x + width/2, end_iterations[:, 1], width, label='Women')
+    rects1 = ax.bar(x - width, end_iterations[0, :], width, label=r"$\sigma_{init} = $" + f"{res_array[0, 0].loc_scale_all[1]}")
+    rects2 = ax.bar(x, end_iterations[1, :], width, label=r"$\sigma_{init} = $" + f"{res_array[1, 0].loc_scale_all[1]}")
+    rects2 = ax.bar(x + width, end_iterations[2, :], width, label=r"$\sigma_{init} = $" + f"{res_array[2, 0].loc_scale_all[1]}")
 
-    # Add some text for labels, title and custom x-axis tick labels, etc.
-    ax.set_ylabel('Scores')
-    ax.set_title('Scores by group and gender')
+    ax.set_ylabel("GD iterations")
+    ax.set_xlabel("# hidden nodes")
     ax.set_xticks(x)
-    ax.set_xticklabels(scales)
+    ax.set_xticklabels(hidden_nodes)
     ax.legend()
 
     # ax.bar_label(rects1, padding=3)
@@ -194,7 +193,25 @@ def bar_plot_comparison():
 
     plt.show()
 
+def look_at_one():
+    proc = 1
+    hidden = [6]
+    n_hidden = len(hidden)
+    scale = 1.5
+    # args = [[proc, hidden, scale]]
+    args = []
+
+    for i in range(n_hidden):
+        args.append([i, hidden[i], scale])
+    pool = multiprocessing.Pool()
+    results = pool.map(parallel, args)
+
+    plt.plot(range(results[0].max_iterations), results[0].energies)
+    plt.hlines(y=0.5, xmin=0, xmax=100, linestyle="dashed", color="black")
+    plt.show()
+
 if __name__ == "__main__":
     # compare_multiple()
-    bar_plot_comparison()
+    # bar_plot_comparison()
+    look_at_one()
     pass
