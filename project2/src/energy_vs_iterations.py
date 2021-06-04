@@ -24,7 +24,7 @@ def parallel(arg_list: list):
         n_particles = 1,
         n_dims = 1,
         n_hidden = 2,
-        n_mc_cycles = int(2**10),
+        n_mc_cycles = int(2**15),
         max_iterations = 100,
         learning_rate = learning_rate,
         sigma = sigma,
@@ -58,6 +58,7 @@ def main():
     # learning_rates = [0.02, 0.04, 0.06, 0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2]
     # learning_rates = [0.02, 0.06, 0.1, 0.14, 0.18]
     learning_rates = [0.02, 0.1, 0.18, {"factor": 0.05, "init": 0.18}]
+    # learning_rates = [0.1, 0.18, {"factor": 0.05, "init": 0.18}]
     n_learning_rates = len(learning_rates)
     # scales = [0.5, 1, 1.5, 2]
     scales = [0.5, 1.5]
