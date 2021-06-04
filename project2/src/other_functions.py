@@ -182,8 +182,10 @@ def wave_function_derivative(
     wave_diff_wrt_weights = np.zeros_like(weights)
     
     for hidden in range(n_hidden):
+        # wave_diff_wrt_weights[:, :, hidden] = \
+        #     weights[:, :, hidden]/(sigma_squared*(1 + np.exp(-exponent[hidden])))   # NOTE: Verify that this is correct. Should 'weights' actually be 'pos'?
         wave_diff_wrt_weights[:, :, hidden] = \
-            weights[:, :, hidden]/(sigma_squared*(1 + np.exp(-exponent[hidden])))   # NOTE: Verify that this is correct. Should 'weights' actually be 'pos'?
+            pos/(sigma_squared*(1 + np.exp(-exponent[hidden])))   # NOTE: Verify that this is correct. Should 'weights' actually be 'pos'?
             
     return wave_diff_wrt_visible_bias, wave_diff_wrt_hidden_bias, wave_diff_wrt_weights
 
