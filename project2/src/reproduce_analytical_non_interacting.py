@@ -2,7 +2,6 @@ import multiprocessing
 import time
 import numpy as np
 from boltzmann_machine import ImportanceSampling
-from blocking import block
 
 def parallel(arg_list: list):
     """
@@ -23,8 +22,8 @@ def parallel(arg_list: list):
         n_particles = n_particles,
         n_dims = n_dims,
         n_hidden = 2,
-        n_mc_cycles = int(2**18),
-        max_iterations = 100,
+        n_mc_cycles = int(2**20),
+        max_iterations = 30,
         # learning_rate = {"factor": 0.1, "init": 0.2},
         # learning_rate = 1,
         learning_rate = 0.05,
