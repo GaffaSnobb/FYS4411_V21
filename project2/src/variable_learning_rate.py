@@ -17,7 +17,7 @@ def parallel(arg_list: list):
     """
     timing = time.time()
     proc, learning_rate = arg_list
-    omega = 1/4
+    omega = 1
     sigma = np.sqrt(1/omega)
     
     q = ImportanceSampling(
@@ -38,7 +38,12 @@ def parallel(arg_list: list):
     q.initial_state(
         loc_scale_all = (0, 2)
     )
-    q.solve(verbose=True)
+
+    q.solve(
+        verbose = True if proc == 0 else False,
+        save_state = True,
+        load_state = True
+    )
 
     print(f"Process {proc} finished in {time.time() - timing:.3f}s with parameters {arg_list[1:]}")
 
@@ -48,7 +53,7 @@ def main():
     fig, ax = plt.subplots()
 
     # learning_rates = [0.05, {"factor": 1, "t0": 2.5, "t1": 50}, {"factor": 2, "t0": 2.5, "t1": 50}, {"factor": 3, "t0": 2.5, "t1": 50}, {"factor": 4, "t0": 2.5, "t1": 50}]
-    learning_rate_init = 1
+    learning_rate_init = 0.5
 
     # learning_rates = [
     #     learning_rate_init,
