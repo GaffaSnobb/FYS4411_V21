@@ -13,108 +13,73 @@ import numpy as np
 import numba
 import other_functions as other
 
-@numba.njit
-def monte_carlo_importance_numba(
-    pos_new: np.ndarray,
-    pos_current: np.ndarray,
-    qforce_current: np.ndarray,
-    visible_biases: np.ndarray,
-    hidden_biases: np.ndarray,
-    weights: np.ndarray,
-    wave_current: np.ndarray,
-    wave_derivative_average_wrt_visible_bias: np.ndarray,
-    wave_derivative_average_wrt_hidden_bias: np.ndarray,
-    wave_derivative_average_wrt_weights: np.ndarray,
-    wave_derivative_energy_average_wrt_visible_bias: np.ndarray,
-    wave_derivative_energy_average_wrt_hidden_bias: np.ndarray,
-    wave_derivative_energy_average_wrt_weights: np.ndarray,
-    energy_mc: np.ndarray,
-    acceptance_rate: np.ndarray,
-    local_energy_average: np.ndarray,
-    pre_drawn_pos_new: np.ndarray,
-    pre_drawn_metropolis: np.ndarray,
-    constants: np.ndarray
-):  
-    """
-    Perform the Monte Carlo work for the importance sampling
-    implementation. This function is broken out of the class to be numba
-    compatible, and is therefore a bit ugly in regards of input
-    arguments and breaking of the class structure (file a complaint to
-    the numba developers, not me!).
+class Blocking:
+    @staticmethod
+    @numba.njit
+    def blocking(x, verbose=True):
+        """
+        Credit: Marius Jonsson
+        Jonsson, M. (2018). Standard error estimation by an automated blocking method. Physical Review E, 98(4), 043304.
+        """
+        # preliminaries
+        n = len(x)
+        d = int(np.log2(n))
+        s, gamma, error_array = np.zeros(d), np.zeros(d), np.zeros(d)
+        mu = np.mean(x)
 
-    All calculations in this function operate on arrays which is why
-    there are no return values. See RBMVMC class documentation for
-    description of all these input parameters.
-    """
-    n_mc_cycles, n_particles, time_step, diffusion_coeff, sigma, interaction, omega = constants
-    for cycle in range(int(n_mc_cycles)):
-        for particle in range(int(n_particles)):
-            """
-            Loop over all particles. Move one particle at the time.
-            """
-            pos_new[particle] = pos_current[particle]
-            pos_new[particle] += pre_drawn_pos_new[particle, :, cycle]
-            pos_new[particle] += qforce_current[particle]*time_step*diffusion_coeff
+        # Calculate the autocovariance and variance for the data
+        gamma[0] = (n)**(-1)*np.sum( (x[0:(n-1)] - mu) * (x[1:n] - mu) )
+        s[0] = np.var(x)
+        error_array[0] = (s[0]/n)**.5
 
-            wave_new = other.wave_function(
-                pos_new,
-                visible_biases,
-                hidden_biases,
-                weights,
-                sigma
-            )
+        # estimate the auto-covariance and variances for each blocking transformation
+        for i in np.arange(1, d):
 
-            qforce_new = other.quantum_force(
-                pos_new,
-                visible_biases,
-                hidden_biases,
-                weights,
-                sigma
-            )
+            # perform blocking transformation
+            x = 0.5*(x[0::2] + x[1::2])
 
-            greens_function = 0.5*(qforce_current[particle] + qforce_new[particle])
-            greens_function *= (diffusion_coeff*time_step*0.5*(qforce_current[particle] - qforce_new[particle]) - pos_new[particle] + pos_current[particle])
-            greens_function = np.exp(greens_function.sum())
+            n = len(x)
 
-            if pre_drawn_metropolis[cycle, particle] <= greens_function*(wave_new/wave_current)**2:
-                """
-                Metropolis-Hastings.
-                """
-                acceptance_rate[0] += 1
-                pos_current[particle] = pos_new[particle]
-                qforce_current[particle] = qforce_new[particle]
-                wave_current = wave_new
+            # estimate autocovariance of x
+            gamma[i] = (n)**(-1)*np.sum( (x[0:(n-1)] - mu) * (x[1:n] - mu) )
 
-        local_energy_partial = other.local_energy(
-            pos_current,
-            visible_biases,
-            hidden_biases,
-            weights,
-            sigma,
-            interaction,
-            omega
-        )
+            # estimate variance of x
+            s[i] = np.var(x)
 
-        wrt_visible_bias_tmp, wrt_hidden_bias_tmp, wrt_weights_tmp = other.wave_function_derivative(
-            pos_current,
-            visible_biases,
-            hidden_biases,
-            weights,
-            sigma
-        )
+            # estimate the error
+            error_array[i] = (s[i]/n)**.5
 
-        wave_derivative_average_wrt_visible_bias += wrt_visible_bias_tmp
-        wave_derivative_average_wrt_hidden_bias += wrt_hidden_bias_tmp
-        wave_derivative_average_wrt_weights += wrt_weights_tmp
 
-        local_energy_average[0] += local_energy_partial
-        energy_mc[cycle] = local_energy_partial
+        # generate the test observator M_k from the theorem
+        M = (np.cumsum( ((gamma/s)**2*2**np.arange(1,d+1)[::-1])[::-1] )  )[::-1]
 
-        wave_derivative_energy_average_wrt_visible_bias += local_energy_partial*wrt_visible_bias_tmp
-        wave_derivative_energy_average_wrt_hidden_bias += local_energy_partial*wrt_hidden_bias_tmp
-        wave_derivative_energy_average_wrt_weights += local_energy_partial*wrt_weights_tmp
+        # we need a list of magic numbers
+        # alpha= 0.05
+        q = np.array([3.841, 5.991, 7.815, 9.488, 11.070, 12.592, 14.067, 15.507,
+                    16.919, 18.307, 19.675, 21.026, 22.362, 23.685, 24.996, 26.296,
+                    27.587, 28.869, 30.144, 31.410, 32.671, 33.924, 35.172, 36.415,
+                    37.652, 38.885, 40.113, 41.337, 42.557, 43.773, 44.985, 46.194,
+                    47.400, 48.602, 49.802, 50.998, 52.192, 53.384, 54.572, 55.758,
+                    56.942, 58.124, 59.304, 60.481, 61.656, 62.830, 64.001, 65.171,
+                    66.339, 67.505, 68.669, 69.832, 70.993, 72.153, 73.311, 74.468,
+                    75.624, 76.778, 77.931, 79.082, 80.232, 81.381, 82.529, 83.675,
+                    84.821, 85.965, 87.108, 88.250, 89.391, 90.531, 91.670, 92.808,
+                    93.945, 95.081, 96.217, 97.351, 98.484, 99.617, 100.749, 101.879,
+                    103.010, 104.139, 105.267, 106.395, 107.522, 108.648, 109.773,
+                    110.898, 112.022, 113.145, 114.268, 115.390, 116.511, 117.632,
+                    118.752, 119.871, 120.990, 122.108, 123.225, 124.342, 124.342])
 
-class _RBMVMC:
+        # use magic to determine when we should have stopped blocking
+        for k in np.arange(0, d):
+            if(M[k] < q[k]):
+                break
+
+        best_error = error_array[k]
+        original_error = error_array[0]
+
+        return mu, best_error, original_error, k, error_array
+
+class _RBMVMC(Blocking):
     """
     Common stuff for both importance sampling and brute force.
     """
@@ -338,6 +303,10 @@ class _RBMVMC:
         
         save_state:
             Toggle save state on / off.
+
+        load_state:
+            Toggle load state on / off. If False, save_state is also set
+            to False.
         """
         self.call_solve = True
 
@@ -423,6 +392,9 @@ class _RBMVMC:
             print(f"Average time per iteration: {np.mean(self.times[1:]):.5f} s")
             print(f"Average acceptance rate:    {np.mean(self.acceptance_rates):.5f}")
 
+        _, self.blocking_final, _, _, _ = self.blocking(self.energy_mc_iter[-1, :])
+        self.blocking_final = np.array([self.blocking_final])
+
         if save_state: self._save_state()
 
     def _save_state(self) -> None:
@@ -456,6 +428,7 @@ class _RBMVMC:
         np.save(f"{self.full_data_path}/acceptance_rates.npy", self.acceptance_rates)
         np.save(f"{self.full_data_path}/energies.npy", self.energies)
         np.save(f"{self.full_data_path}/times.npy", self.times)
+        np.save(f"{self.full_data_path}/blocking_final.npy", self.blocking_final)
 
     def _load_state(self) -> None:
         """
@@ -468,6 +441,7 @@ class _RBMVMC:
         self.acceptance_rates = np.load(f"{self.full_data_path}/acceptance_rates.npy")
         self.energies = np.load(f"{self.full_data_path}/energies.npy")
         self.times = np.load(f"{self.full_data_path}/times.npy")
+        self.blocking_final = np.load(f"{self.full_data_path}/blocking_final.npy")
 
 class ImportanceSampling(_RBMVMC):
     def __init__(
@@ -526,13 +500,12 @@ class ImportanceSampling(_RBMVMC):
         sigma = self.sigma
         interaction = self.interaction
         omega = self.omega
-
         pre_drawn_pos_new = self.rng.normal(loc=0, scale=1, size=(self.n_particles, self.n_dims, self.n_mc_cycles))*np.sqrt(self.time_step)
         pre_drawn_metropolis = self.rng.uniform(size=(self.n_mc_cycles, self.n_particles))
-
         interaction_int = 1 if interaction else 0   # Datatype fix for constants array
         constants = np.array([n_mc_cycles, n_particles, time_step, diffusion_coeff, sigma, interaction_int, omega])
-        monte_carlo_importance_numba(
+
+        self.monte_carlo_importance_numba(
             self.pos_new,
             self.pos_current,
             self.qforce_current,
@@ -579,6 +552,109 @@ class ImportanceSampling(_RBMVMC):
             2*(self.wave_derivatives_energy_average[1] - self.wave_derivatives_average[1]*self.local_energy_average)
         self.weights_gradient = \
             2*(self.wave_derivatives_energy_average[2] - self.wave_derivatives_average[2]*self.local_energy_average)
+    
+    @staticmethod
+    @numba.njit
+    def monte_carlo_importance_numba(
+        pos_new: np.ndarray,
+        pos_current: np.ndarray,
+        qforce_current: np.ndarray,
+        visible_biases: np.ndarray,
+        hidden_biases: np.ndarray,
+        weights: np.ndarray,
+        wave_current: np.ndarray,
+        wave_derivative_average_wrt_visible_bias: np.ndarray,
+        wave_derivative_average_wrt_hidden_bias: np.ndarray,
+        wave_derivative_average_wrt_weights: np.ndarray,
+        wave_derivative_energy_average_wrt_visible_bias: np.ndarray,
+        wave_derivative_energy_average_wrt_hidden_bias: np.ndarray,
+        wave_derivative_energy_average_wrt_weights: np.ndarray,
+        energy_mc: np.ndarray,
+        acceptance_rate: np.ndarray,
+        local_energy_average: np.ndarray,
+        pre_drawn_pos_new: np.ndarray,
+        pre_drawn_metropolis: np.ndarray,
+        constants: np.ndarray
+    ):  
+        """
+        Perform the Monte Carlo work for the importance sampling
+        implementation. This function is broken out of the class to be numba
+        compatible, and is therefore a bit ugly in regards of input
+        arguments and breaking of the class structure (file a complaint to
+        the numba developers, not me!).
+
+        All calculations in this function operate on arrays which is why
+        there are no return values. See RBMVMC class documentation for
+        description of all these input parameters.
+        """
+        n_mc_cycles, n_particles, time_step, diffusion_coeff, sigma, interaction, omega = constants
+        for cycle in range(int(n_mc_cycles)):
+            for particle in range(int(n_particles)):
+                """
+                Loop over all particles. Move one particle at the time.
+                """
+                pos_new[particle] = pos_current[particle]
+                pos_new[particle] += pre_drawn_pos_new[particle, :, cycle]
+                pos_new[particle] += qforce_current[particle]*time_step*diffusion_coeff
+
+                wave_new = other.wave_function(
+                    pos_new,
+                    visible_biases,
+                    hidden_biases,
+                    weights,
+                    sigma
+                )
+
+                qforce_new = other.quantum_force(
+                    pos_new,
+                    visible_biases,
+                    hidden_biases,
+                    weights,
+                    sigma
+                )
+
+                greens_function = 0.5*(qforce_current[particle] + qforce_new[particle])
+                greens_function *= (diffusion_coeff*time_step*0.5*(qforce_current[particle] - qforce_new[particle]) - pos_new[particle] + pos_current[particle])
+                greens_function = np.exp(greens_function.sum())
+
+                if pre_drawn_metropolis[cycle, particle] <= greens_function*(wave_new/wave_current)**2:
+                    """
+                    Metropolis-Hastings.
+                    """
+                    acceptance_rate[0] += 1
+                    pos_current[particle] = pos_new[particle]
+                    qforce_current[particle] = qforce_new[particle]
+                    wave_current = wave_new
+
+            local_energy_partial = other.local_energy(
+                pos_current,
+                visible_biases,
+                hidden_biases,
+                weights,
+                sigma,
+                interaction,
+                omega
+            )
+
+            wrt_visible_bias_tmp, wrt_hidden_bias_tmp, wrt_weights_tmp = other.wave_function_derivative(
+                pos_current,
+                visible_biases,
+                hidden_biases,
+                weights,
+                sigma
+            )
+
+            wave_derivative_average_wrt_visible_bias += wrt_visible_bias_tmp
+            wave_derivative_average_wrt_hidden_bias += wrt_hidden_bias_tmp
+            wave_derivative_average_wrt_weights += wrt_weights_tmp
+
+            local_energy_average[0] += local_energy_partial
+            energy_mc[cycle] = local_energy_partial
+
+            wave_derivative_energy_average_wrt_visible_bias += local_energy_partial*wrt_visible_bias_tmp
+            wave_derivative_energy_average_wrt_hidden_bias += local_energy_partial*wrt_hidden_bias_tmp
+            wave_derivative_energy_average_wrt_weights += local_energy_partial*wrt_weights_tmp
+
 
 class BruteForce(_RBMVMC):
     def __init__(
