@@ -6,6 +6,7 @@
 *.pdf
 *.txt
 *.png
+tmp/
 
 ### C ###
 # Prerequisites
