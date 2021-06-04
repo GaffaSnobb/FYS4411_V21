@@ -23,8 +23,8 @@ def parallel(arg_list: list):
         n_particles = n_particles,
         n_dims = n_dims,
         n_hidden = 2,
-        n_mc_cycles = int(2**12),
-        max_iterations = 50,
+        n_mc_cycles = int(2**18),
+        max_iterations = 100,
         # learning_rate = {"factor": 0.1, "init": 0.2},
         # learning_rate = 1,
         learning_rate = 0.05,
@@ -38,7 +38,11 @@ def parallel(arg_list: list):
     q.initial_state(
         loc_scale_all = (0, scale)
     )
-    q.solve(verbose=False)
+    q.solve(
+        verbose = True if proc == 0 else False,
+        save_state = True, 
+        load_state = True
+    )
 
     print(f"Process {proc} finished in {time.time() - timing:.3f}s with parameters {arg_list[1:]}")
 
@@ -63,19 +67,12 @@ def main():
 
     pool = multiprocessing.Pool()
     results = pool.map(parallel, args)
-    n_results = len(results)
-    results_blocking = np.zeros(n_results)
-
-    for result in range(n_results):
-        data = results[result].energy_mc_iter[-1, :]
-        _, results_blocking[result], _, _, _ = block(data, verbose=False)
-
     results_exact = ["1/2", "1", "3/2", "1", "2", "3"]
 
     for i in range(len(n_particles)):
-        print(f"{i+1}, 1 & \({results[i*6 + 0].energies[-1]:.3f} \pm {results_blocking[i*6 + 0]:5.1g}\) & \({results[i*6 + 3].energies[-1]:.3f} \pm {results_blocking[i*6 + 3]:5.1g}\) & {results_exact[i*3]:4s}" + r" \\")
-        print(f"{i+1}, 2 & \({results[i*6 + 1].energies[-1]:.3f} \pm {results_blocking[i*6 + 1]:5.1g}\) & \({results[i*6 + 4].energies[-1]:.3f} \pm {results_blocking[i*6 + 4]:5.1g}\) & {results_exact[i*3 + 1]:4s}" + r" \\")
-        print(f"{i+1}, 3 & \({results[i*6 + 2].energies[-1]:.3f} \pm {results_blocking[i*6 + 2]:5.1g}\) & \({results[i*6 + 5].energies[-1]:.3f} \pm {results_blocking[i*6 + 5]:5.1g}\) & {results_exact[i*3 + 2]:4s}" + r" \\")
+        print(f"{i+1}, 1 & \({results[i*6 + 0].energies[-1]:.1f} \pm {results[i*6 + 0].blocking_final[0]:5.1g}\) & \({results[i*6 + 3].energies[-1]:.4f} \pm {results[i*6 + 3].blocking_final[0]:5.1g}\) & {results_exact[i*3]:4s}" + r" \\")
+        print(f"{i+1}, 2 & \({results[i*6 + 1].energies[-1]:.1f} \pm {results[i*6 + 1].blocking_final[0]:5.1g}\) & \({results[i*6 + 4].energies[-1]:.4f} \pm {results[i*6 + 4].blocking_final[0]:5.1g}\) & {results_exact[i*3 + 1]:4s}" + r" \\")
+        print(f"{i+1}, 3 & \({results[i*6 + 2].energies[-1]:.1f} \pm {results[i*6 + 2].blocking_final[0]:5.1g}\) & \({results[i*6 + 5].energies[-1]:.4f} \pm {results[i*6 + 5].blocking_final[0]:5.1g}\) & {results_exact[i*3 + 2]:4s}" + r" \\")
 
 if __name__ == "__main__":
     main()
