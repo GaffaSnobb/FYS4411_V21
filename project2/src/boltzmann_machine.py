@@ -213,7 +213,7 @@ class _RBMVMC(Blocking):
         self.wave_derivative_average_wrt_visible_bias = np.zeros_like(self.visible_biases)
         self.wave_derivative_average_wrt_hidden_bias = np.zeros_like(self.hidden_biases)
         self.wave_derivative_average_wrt_weights = np.zeros_like(self.weights)
-        
+
         # wave_derivatives_average[0] += wave_derivatives[0]  # Wrt. visible bias.
         # wave_derivatives_average[1] += wave_derivatives[1]  # Wrt. hidden bias.
         # wave_derivatives_average[2] += wave_derivatives[2]  # Wrt. weights.
@@ -254,7 +254,7 @@ class _RBMVMC(Blocking):
         Generate all needed file and directory names and paths.
         """
         self.main_data_directory = "tmp"
-            
+
         self.current_data_directory = f"{self.prefix}_"
         self.current_data_directory += f"{self.n_particles}_"
         self.current_data_directory += f"{self.n_dims}_"
@@ -279,7 +279,7 @@ class _RBMVMC(Blocking):
             self.current_data_directory += f"b{self.loc_scale_hidden_biases}_".replace(" ", "")
         if self.loc_scale_weights is not None:
             self.current_data_directory += f"w{self.loc_scale_weights}_".replace(" ", "")
-        
+
         self.current_data_directory += f"{self.postfix}"
         if self.parent_data_directory is not None:
             self.full_data_path = f"{self.main_data_directory}/{self.parent_data_directory}/{self.current_data_directory}"
@@ -300,7 +300,7 @@ class _RBMVMC(Blocking):
         verbose:
             Toggle energy, acceptance rate and learning rate print on /
             off.
-        
+
         save_state:
             Toggle save state on / off.
 
@@ -337,7 +337,7 @@ class _RBMVMC(Blocking):
                     t1 = 50,
                     init = None
                 )
-            
+
             elif isinstance(self.learning_rate_input, dict):
                 """
                 Variable learning rate with input t0 and t1 parameter
@@ -417,7 +417,7 @@ class _RBMVMC(Blocking):
             """
             if self.parent_data_directory is not None:
                 os.mkdir(f"{self.main_data_directory}/{self.parent_data_directory}")
-        
+
         if not os.path.isdir(self.full_data_path):
             """
             main_data_directory/parent_data_directory/current_data_directory/
@@ -552,7 +552,7 @@ class ImportanceSampling(_RBMVMC):
             2*(self.wave_derivatives_energy_average[1] - self.wave_derivatives_average[1]*self.local_energy_average)
         self.weights_gradient = \
             2*(self.wave_derivatives_energy_average[2] - self.wave_derivatives_average[2]*self.local_energy_average)
-    
+
     @staticmethod
     @numba.njit
     def monte_carlo_importance_numba(
@@ -575,7 +575,7 @@ class ImportanceSampling(_RBMVMC):
         pre_drawn_pos_new: np.ndarray,
         pre_drawn_metropolis: np.ndarray,
         constants: np.ndarray
-    ):  
+    ):
         """
         Perform the Monte Carlo work for the importance sampling
         implementation. This function is broken out of the class to be numba
@@ -616,6 +616,10 @@ class ImportanceSampling(_RBMVMC):
                 greens_function = 0.5*(qforce_current[particle] + qforce_new[particle])
                 greens_function *= (diffusion_coeff*time_step*0.5*(qforce_current[particle] - qforce_new[particle]) - pos_new[particle] + pos_current[particle])
                 greens_function = np.exp(greens_function.sum())
+
+                #tmp_ratio = 0
+                #if wave_current != 0:
+                #    tmp_ratio = wave_new/wave_current
 
                 if pre_drawn_metropolis[cycle, particle] <= greens_function*(wave_new/wave_current)**2:
                     """
@@ -775,7 +779,7 @@ def main():
     # omega = 1/4
     omega = 1
     sigma = np.sqrt(1/omega)
-    
+
     q = ImportanceSampling(
         n_particles = 1,
         n_dims = 1,
