@@ -1,7 +1,7 @@
 import multiprocessing
 import time
 import matplotlib.pyplot as plt
-import matplotlib as mpl
+# import matplotlib as mpl
 import numpy as np
 from boltzmann_machine import ImportanceSampling
 from blocking import block
@@ -18,7 +18,7 @@ def parallel(arg_list: list):
         A list of arguments to pass to the class constructor.
     """
     timing = time.time()
-    proc, n_hidden, scale = arg_list
+    proc, n_hidden, scale, mc, iterations, lr = arg_list
     omega = 1
     sigma = np.sqrt(1/omega)
     
@@ -26,25 +26,27 @@ def parallel(arg_list: list):
         n_particles = 1,
         n_dims = 1,
         n_hidden = n_hidden,
-        n_mc_cycles = int(2**14),
-        max_iterations = 100,
+        n_mc_cycles = mc,
+        max_iterations = iterations,
         # learning_rate = 0.05,
-        learning_rate = {"factor": 0.05, "init": 0.18},
+        learning_rate = lr,
         sigma = sigma,
         interaction = False,
         omega = omega,
         diffusion_coeff = 0.5,
         time_step = 0.05,
         parent_data_directory = (__file__.split(".")[0]).split("/")[-1],
-        # rng_seed = 1337
+        rng_seed = 1337
     )
     q.initial_state(
         loc_scale_all = (0, scale)
     )
-    if proc == 0:
-        q.solve(verbose=True, save_state=True)
-    else:
-        q.solve(verbose=False, save_state=True)
+    
+    q.solve(
+        verbose = True if proc == 0 else False,
+        save_state = True,
+        load_state = True
+    )
 
     q.timing = time.time() - timing
     print(f"Process {proc} finished in {q.timing:.3f}s with parameters {arg_list[1:]}")
@@ -210,8 +212,40 @@ def look_at_one():
     plt.hlines(y=0.5, xmin=0, xmax=100, linestyle="dashed", color="black")
     plt.show()
 
+def look_at_more():
+    proc = 1
+    hidden = [2]
+    n_hidden = len(hidden)
+    scale = 1.5
+    # scale = 1
+    args = [
+        [0, hidden[0], scale, int(2**16), 100, {"factor": 0.05, "init": 0.18}],
+        [1, hidden[0], scale, int(2**18), 50, {"factor": 0.05, "init": 0.18}],
+        [2, hidden[0], scale, int(2**20), 50, {"factor": 0.05, "init": 0.18}],
+        [0, hidden[0], scale, int(2**16), 400, 0.01],
+        [3, hidden[0], scale, int(2**16), 400, 0.02],
+        [4, hidden[0], scale, int(2**16), 400, 0.005],
+        [5, hidden[0], scale, int(2**16), 400, 0.001],
+    ]
+    # args = []
+
+    # for i in range(n_hidden):
+    #     args.append([i, hidden[i], scale])
+    pool = multiprocessing.Pool()
+    results = pool.map(parallel, args)
+
+    for i in range(len(results)):
+        plt.plot(range(results[i].max_iterations), results[i].energies, label=f"{results[i].n_mc_cycles}")
+    plt.hlines(y=0.5, xmin=0, xmax=100, linestyle="dashed", color="black")
+    plt.legend()
+    plt.title(r"$\sigma_{init}$ = " + f"{results[0].loc_scale_all[1]}")
+    plt.xlabel("Iterations")
+    plt.ylabel(r"$E_L$")
+    plt.show()
+
 if __name__ == "__main__":
     # compare_multiple()
     # bar_plot_comparison()
-    look_at_one()
+    # look_at_one()
+    look_at_more()
     pass
