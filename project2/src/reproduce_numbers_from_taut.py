@@ -1,7 +1,8 @@
 import multiprocessing
+import time
 import numpy as np
 import matplotlib.pyplot as plt
-from boltzmann_machine import ImportanceSampling
+from boltzmann_machine import BruteForce
 import mpl_rcparams
 
 def parallel(arg_list: list):
@@ -14,29 +15,32 @@ def parallel(arg_list: list):
     arg_list:
         A list of arguments to pass to the class constructor.
     """
+    timing = time.time()
     proc, omega, sigma = arg_list
     
-    q = ImportanceSampling(
+    q = BruteForce(
         n_particles = 2,
         n_dims = 3,
-        n_hidden = 2,
-        n_mc_cycles = int(2**14),
+        n_hidden = 4,
+        n_mc_cycles = int(2**12),
         max_iterations = 50,
-        learning_rate = 0.05,
+        learning_rate = {"init": 0.6, "factor": 0.05},
         sigma = sigma,
         interaction = True,
-        diffusion_coeff = 0.5,
-        time_step = 0.05,
+        brute_force_step_size = 1,
         omega = omega,
         parent_data_directory = (__file__.split(".")[0]).split("/")[-1]
     )
     q.initial_state(
-        loc_scale_all = (0, 0.1)
+        loc_scale_all = (0, 1)
     )
-    if proc == 0:
-        q.solve(verbose=True)
-    else:
-        q.solve(verbose=False)
+    q.solve(
+        verbose = True if proc == 0 else False,
+        save_state = True,
+        load_state = True,
+        calculate_blocking_all = False
+    )
+    print(f"Process {proc} finished in {time.time() - timing:.3f}s with parameters {arg_list[1:]}")
 
     return q
 
@@ -54,22 +58,28 @@ def main():
     energies_taut = np.array([0.625, 0.175, 0.0822, 0.0477, 0.0311, 0.0219, 0.0162, 0.0125, 0.01, 0.0081])*2
     omegas_taut_inverse = np.array([4, 20, 54.7386, 115.299, 208.803, 342.366, 523.102, 758.124, 1054.54, 1419.47])
     omegas_taut = 1/omegas_taut_inverse
-    # omegas = np.arange(1, 6+1, 1)
     
     args = [[proc, omega, np.sqrt(1/omega)] for proc, omega in enumerate(omegas_taut)]
     pool = multiprocessing.Pool()
-    res = pool.map(parallel, args)
-
-    energies = np.zeros(len(res))
-
-    for i in range(len(res)):
-        energies[i] = res[i].energies[-1]
+    results = pool.map(parallel, args)
+    n_results = len(results)
+    energies = np.zeros(n_results)
     
-    for omega, our, taut, diff in zip(omegas_taut_inverse, energies, energies_taut, np.abs(energies - energies_taut)):
+    print()
+    # for omega, our, taut, diff in zip(omegas_taut_inverse, energies, energies_taut, np.abs(energies - energies_taut)):
+    for i in range(n_results):
         """
         Print the values in LaTeX table format.
         """
-        print(f"{omega} & {our:.4f} & {taut:.4f} & {diff:.4f}" + r" \\")
+        omega = omegas_taut_inverse[i]
+        our = results[i].energies[-1]
+        energies[i] = results[i].energies[-1]   # For the plot
+        our_std = results[i].blocking_final[0]
+        taut = energies_taut[i]
+        # diff = abs(our - taut)*100/taut
+        diff = abs(our - taut)
+
+        print(f"{omega} & \({our:.5f} \pm {our_std:.5f} \) & {taut} & {diff:.5f}" + r" \\")
 
     ax.plot(1/omegas_taut, energies_taut, "--.", label="M. Taut")
     ax.plot(1/omegas_taut, energies, "--.", label="This work")
@@ -78,7 +88,7 @@ def main():
     ax.legend()
     ax.tick_params()
     fig.savefig(fname="../fig/tune_omega_taut_vs_this_work.png", dpi=300)
-    plt.show()
+    # plt.show()
 
 
 if __name__ == "__main__":
