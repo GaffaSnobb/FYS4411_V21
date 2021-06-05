@@ -784,13 +784,14 @@ class BruteForce(_RBMVMC):
                 omega
             )
 
-            wrt_visible_bias_tmp, wrt_hidden_bias_tmp, wrt_weights_tmp = other.wave_function_derivative(
-                pos_current,
-                visible_biases,
-                hidden_biases,
-                weights,
-                sigma
-            )
+            wrt_visible_bias_tmp, wrt_hidden_bias_tmp, wrt_weights_tmp = \
+                other.wave_function_derivative(
+                    pos_current,
+                    visible_biases,
+                    hidden_biases,
+                    weights,
+                    sigma
+                )
 
             wave_derivative_average_wrt_visible_bias += wrt_visible_bias_tmp
             wave_derivative_average_wrt_hidden_bias += wrt_hidden_bias_tmp
@@ -878,6 +879,7 @@ class BruteForce(_RBMVMC):
 
     def __str__(self):
         return "Brute force"
+
 def main():
     """
     The content of this function is for testing purposes. All actual
@@ -885,7 +887,7 @@ def main():
     """
     # self.brute_force_step_size = 0.05
     # omega = 1/4
-    omega = 1
+    omega = 1/4
     sigma = np.sqrt(1/omega)
     
     # q = ImportanceSampling(
@@ -904,15 +906,15 @@ def main():
     #     rng_seed = 1337
     # )
     q = BruteForce(
-        n_particles = 1,
-        n_dims = 1,
+        n_particles = 2,
+        n_dims = 2,
         n_hidden = 2,
         n_mc_cycles = int(2**16),
-        max_iterations = 50,
-        learning_rate = 0.05,
+        max_iterations = 100,
+        learning_rate = 0.5,
         # learning_rate = {"factor": 0.1, "init": 0.05},
         sigma = sigma,
-        interaction = False,
+        interaction = True,
         omega = omega,
         brute_force_step_size = 1,
         rng_seed = 1337
@@ -923,9 +925,10 @@ def main():
         loc_scale_weights = (0, 0.5)
     )
     q.solve(verbose=True, save_state=False)
-    import matplotlib.pyplot as plt
-    plt.plot(range(q.max_iterations), q.energies)
-    plt.show()
+    print(q.energies[-1])
+    # import matplotlib.pyplot as plt
+    # plt.plot(range(q.max_iterations), q.energies)
+    # plt.show()
 
 if __name__ == "__main__":
     main()
