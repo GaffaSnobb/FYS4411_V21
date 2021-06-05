@@ -177,15 +177,13 @@ def wave_function_derivative(
     n_hidden = hidden_biases.shape[0]
     sigma_squared = sigma**2
     
-    wave_diff_wrt_visible_bias = (pos - visible_biases)/sigma_squared   # NOTE: This is verified to be correct.
-    wave_diff_wrt_hidden_bias = 1/(1 + np.exp(-exponent))   # NOTE: This is verified to be correct.
+    wave_diff_wrt_visible_bias = (pos - visible_biases)/sigma_squared
+    wave_diff_wrt_hidden_bias = 1/(1 + np.exp(-exponent))
     wave_diff_wrt_weights = np.zeros_like(weights)
     
     for hidden in range(n_hidden):
-        # wave_diff_wrt_weights[:, :, hidden] = \
-        #     weights[:, :, hidden]/(sigma_squared*(1 + np.exp(-exponent[hidden])))   # NOTE: Verify that this is correct. Should 'weights' actually be 'pos'?
         wave_diff_wrt_weights[:, :, hidden] = \
-            pos/(sigma_squared*(1 + np.exp(-exponent[hidden])))   # NOTE: This is verified to be correct.
+            pos/(sigma_squared*(1 + np.exp(-exponent[hidden])))
             
     return wave_diff_wrt_visible_bias, wave_diff_wrt_hidden_bias, wave_diff_wrt_weights
 
