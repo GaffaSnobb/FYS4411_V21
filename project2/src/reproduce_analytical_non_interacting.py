@@ -40,7 +40,8 @@ def parallel(arg_list: list):
     q.solve(
         verbose = True if proc == 0 else False,
         save_state = True, 
-        load_state = True
+        load_state = True,
+        calculate_blocking_all = False
     )
 
     print(f"Process {proc} finished in {time.time() - timing:.3f}s with parameters {arg_list[1:]}")
