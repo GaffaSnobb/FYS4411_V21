@@ -246,12 +246,10 @@ class _RBMVMC(Blocking):
         self.acceptance_rate = 0
         self.local_energy_average = 0
 
-        # self.wave_derivatives_average = np.empty(3, dtype=np.ndarray)
         self.wave_derivative_average_wrt_visible_bias = np.zeros_like(self.visible_biases)
         self.wave_derivative_average_wrt_hidden_bias = np.zeros_like(self.hidden_biases)
         self.wave_derivative_average_wrt_weights = np.zeros_like(self.weights)
         
-        # self.wave_derivatives_energy_average = np.empty(3, dtype=np.ndarray)
         self.wave_derivative_energy_average_wrt_visible_bias = np.zeros_like(self.visible_biases)
         self.wave_derivative_energy_average_wrt_hidden_bias = np.zeros_like(self.hidden_biases)
         self.wave_derivative_energy_average_wrt_weights = np.zeros_like(self.weights)
