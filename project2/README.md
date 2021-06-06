@@ -70,6 +70,7 @@ If ```load_state``` is set to ```False```, then ```save_state``` is forced to ``
 - Check that two different runs with the same input RNG seed draws the same random numbers.
 - Check that two different runs with different RNG seeds draws different random numbers.
 - Check that both importance sampling and brute-force manages to reproduce analytical answers for one and two particles in one, two, and three dimensions, within a tolerance.
+
 Run the tests with ```pytest```.
 
 ## Credit
