@@ -12,7 +12,7 @@ In this project we will apply a restricted Boltzmann machine (RBM) to a system o
 
 ## Usage
 
-The RBM is located in the 'boltzmann_machine.py' script. For improved readability, several functions have been put in a separate file, ```other_functions.py```. The superclass ```_RBMVMC``` contains common tools for both importance sampling and brute-force, like ```_load_state``` and ```_save_state``` methods and a common gradient descent method, ```solve```. The subclasses ```ImportanceSampling``` and ```BruteForce``` inherit from ```_RBMVMC``` and they contain the VMC loop where the Metopolis-Hastings algorithm is located. All additional Python files contain specific parameters for the RBM. Any of the files may be run to produce results which we include in the report. All of the functions which contain heavy work are compiled with the ```@numba.njit``` decorator.  Here is an example of use:
+The RBM is located in the 'boltzmann_machine.py' script. For improved readability, several functions have been put in a separate file, ```other_functions.py```. The superclass ```_RBMVMC``` contains common tools for both importance sampling and brute-force, like ```_load_state``` and ```_save_state``` methods and a common gradient descent method, ```solve```. The subclasses ```ImportanceSampling``` and ```BruteForce``` inherit from ```_RBMVMC``` and they contain the VMC loop where the Metopolis-Hastings algorithm is located. All additional Python files contain specific parameters for the RBM. Any of the files may be run to produce results which we include in the report. Run by ```python file.py```. All of the functions which contain heavy work are compiled with the ```@numba.njit``` decorator.  Here is an example of use:
 
 ``` python
 q = BruteForce(
