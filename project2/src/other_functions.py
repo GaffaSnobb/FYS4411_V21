@@ -9,8 +9,30 @@ def variable_learning_rate(
     init: Union[float, None] = None
 ):
     """
-    Taken from FYS-STK. Find motivation for this function in the FYS-STK
-    material.
+    A simple variable learning rate.
+
+    Parameters
+    ----------
+    t:
+        Input variable to vary the learning rate.
+
+    t0:
+        Input constant to decide the form of the learning rate.
+
+    t1:
+        Input constant to decide the form of the learning rate.
+
+    init:
+        Initial learning rate at t = 0.
+
+    Returns
+    -------
+    The learning rate.
+
+    Raises
+    ------
+    ValueError:
+        Wrong combination of inputs.
     """
     if (init is None) and ((t0 is None) or (t1 is None)):
         msg = "Init cannot be None if either t0 or t1 is None"
@@ -50,6 +72,12 @@ def wave_function(
 
     weights:
         Dimension: n_particles x n_dims x n_hidden
+
+    Returns
+    -------
+        Trial wave function for the 2-electron system evaluated at 'pos'
+        with 'visible_biases', 'hidden_biases', and 'weights' as
+        parameters.
     """
     term_1 = 0
     term_2 = 1
@@ -119,15 +147,20 @@ def local_energy(
     for particle in range(n_particles):
         for dim in range(n_dims):
             sum_1 = (weights[particle, dim]/(1 + exponential_negative)).sum()
-            sum_2 = (weights[particle, dim]**2*exponential_negative/(1 + exponential_negative)**2).sum()
-            dlnpsi1 = -(pos[particle, dim] - visible_biases[particle, dim])/sigma_squared + sum_1/sigma_squared
+            sum_2 = (weights[particle, dim]**2*exponential_negative/\
+                (1 + exponential_negative)**2).sum()
+            
+            dlnpsi1 = -(pos[particle, dim] - visible_biases[particle, dim])/\
+                sigma_squared + sum_1/sigma_squared
             dlnpsi2 = -1/sigma_squared + sum_2/sigma_squared**2
-            energy += 0.5*(-dlnpsi1**2 - dlnpsi2 + omega**2*pos[particle, dim]**2)
+            energy += \
+                0.5*(-dlnpsi1**2 - dlnpsi2 + omega**2*pos[particle, dim]**2)
 
     if interaction:
         for particle in range(n_particles):
             for particle_inner in range(particle):
-                distance = np.sqrt(((pos[particle] - pos[particle_inner])**2).sum())
+                distance = \
+                    np.sqrt(((pos[particle] - pos[particle_inner])**2).sum())
                 energy += 1/distance
                 
     return energy
@@ -185,7 +218,8 @@ def wave_function_derivative(
         wave_diff_wrt_weights[:, :, hidden] = \
             pos/(sigma_squared*(1 + np.exp(-exponent[hidden])))
             
-    return wave_diff_wrt_visible_bias, wave_diff_wrt_hidden_bias, wave_diff_wrt_weights
+    return wave_diff_wrt_visible_bias, wave_diff_wrt_hidden_bias, \
+        wave_diff_wrt_weights
 
 @numba.njit
 def quantum_force(
@@ -211,6 +245,11 @@ def quantum_force(
 
     weights:
         Dimension: n_particles x n_dims x n_hidden
+
+    Returns
+    -------
+    qforce:
+        The quantum force.
     """
     n_particles, n_dims = pos.shape
     n_hidden = hidden_biases.shape[0]
