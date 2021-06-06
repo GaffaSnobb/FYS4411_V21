@@ -2,7 +2,7 @@ import multiprocessing
 import time
 import matplotlib.pyplot as plt
 import numpy as np
-from boltzmann_machine import ImportanceSampling, BruteForce
+from boltzmann_machine import BruteForce
 import mpl_rcparams
 
 
