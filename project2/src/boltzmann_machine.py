@@ -246,12 +246,12 @@ class _RBMVMC(Blocking):
         self.acceptance_rate = 0
         self.local_energy_average = 0
 
-        self.wave_derivatives_average = np.empty(3, dtype=np.ndarray)
+        # self.wave_derivatives_average = np.empty(3, dtype=np.ndarray)
         self.wave_derivative_average_wrt_visible_bias = np.zeros_like(self.visible_biases)
         self.wave_derivative_average_wrt_hidden_bias = np.zeros_like(self.hidden_biases)
         self.wave_derivative_average_wrt_weights = np.zeros_like(self.weights)
         
-        self.wave_derivatives_energy_average = np.empty(3, dtype=np.ndarray)
+        # self.wave_derivatives_energy_average = np.empty(3, dtype=np.ndarray)
         self.wave_derivative_energy_average_wrt_visible_bias = np.zeros_like(self.visible_biases)
         self.wave_derivative_energy_average_wrt_hidden_bias = np.zeros_like(self.hidden_biases)
         self.wave_derivative_energy_average_wrt_weights = np.zeros_like(self.weights)
@@ -618,15 +618,6 @@ class ImportanceSampling(_RBMVMC):
             constants
         )
 
-        # All this packing and un-packing is here to make numba happy
-        # TODO: Dont need the lists.
-        # self.wave_derivatives_average[0] = self.wave_derivative_average_wrt_visible_bias
-        # self.wave_derivatives_average[1] = self.wave_derivative_average_wrt_hidden_bias
-        # self.wave_derivatives_average[2] = self.wave_derivative_average_wrt_weights
-        # self.wave_derivatives_energy_average[0] = self.wave_derivative_energy_average_wrt_visible_bias
-        # self.wave_derivatives_energy_average[1] = self.wave_derivative_energy_average_wrt_hidden_bias
-        # self.wave_derivatives_energy_average[2] = self.wave_derivative_energy_average_wrt_weights
-
         self.acceptance_rate = self.acceptance_rate[0]
         self.acceptance_rate /= self.n_mc_cycles*self.n_particles
         self.local_energy_average = self.local_energy_average[0]
@@ -675,16 +666,17 @@ class ImportanceSampling(_RBMVMC):
     ):  
         """
         Perform the Monte Carlo work for the importance sampling
-        implementation. This function is broken out of the class to be numba
-        compatible, and is therefore a bit ugly in regards of input
-        arguments and breaking of the class structure (file a complaint to
-        the numba developers, not me!).
+        implementation. This function is broken out of the class to be
+        numba compatible, and is therefore a bit ugly in regards of
+        input arguments and breaking of the class structure (file a
+        complaint to the numba developers, not me!).
 
         All calculations in this function operate on arrays which is why
         there are no return values. See RBMVMC class documentation for
         description of all these input parameters.
         """
-        n_mc_cycles, n_particles, time_step, diffusion_coeff, sigma, interaction, omega = constants
+        n_mc_cycles, n_particles, time_step, diffusion_coeff, sigma, \
+            interaction, omega = constants
         for cycle in range(int(n_mc_cycles)):
             for particle in range(int(n_particles)):
                 """
@@ -692,7 +684,8 @@ class ImportanceSampling(_RBMVMC):
                 """
                 pos_new[particle] = pos_current[particle]
                 pos_new[particle] += pre_drawn_pos_new[particle, :, cycle]
-                pos_new[particle] += qforce_current[particle]*time_step*diffusion_coeff
+                pos_new[particle] += \
+                    qforce_current[particle]*time_step*diffusion_coeff
 
                 wave_new = other.wave_function(
                     pos_new,
@@ -710,11 +703,15 @@ class ImportanceSampling(_RBMVMC):
                     sigma
                 )
 
-                greens_function = 0.5*(qforce_current[particle] + qforce_new[particle])
-                greens_function *= (diffusion_coeff*time_step*0.5*(qforce_current[particle] - qforce_new[particle]) - pos_new[particle] + pos_current[particle])
+                greens_function = \
+                    0.5*(qforce_current[particle] + qforce_new[particle])
+                greens_function *= \
+                    diffusion_coeff*time_step*0.5*(qforce_current[particle] - \
+                    qforce_new[particle]) - pos_new[particle] + pos_current[particle]
                 greens_function = np.exp(greens_function.sum())
 
-                if pre_drawn_metropolis[cycle, particle] <= greens_function*(wave_new/wave_current)**2:
+                if pre_drawn_metropolis[cycle, particle] <= \
+                    greens_function*(wave_new/wave_current)**2:
                     """
                     Metropolis-Hastings.
                     """
@@ -733,13 +730,14 @@ class ImportanceSampling(_RBMVMC):
                 omega
             )
 
-            wrt_visible_bias_tmp, wrt_hidden_bias_tmp, wrt_weights_tmp = other.wave_function_derivative(
-                pos_current,
-                visible_biases,
-                hidden_biases,
-                weights,
-                sigma
-            )
+            wrt_visible_bias_tmp, wrt_hidden_bias_tmp, wrt_weights_tmp = \
+                other.wave_function_derivative(
+                    pos_current,
+                    visible_biases,
+                    hidden_biases,
+                    weights,
+                    sigma
+                )
 
             wave_derivative_average_wrt_visible_bias += wrt_visible_bias_tmp
             wave_derivative_average_wrt_hidden_bias += wrt_hidden_bias_tmp
@@ -748,9 +746,12 @@ class ImportanceSampling(_RBMVMC):
             local_energy_average[0] += local_energy_partial
             energy_mc[cycle] = local_energy_partial
 
-            wave_derivative_energy_average_wrt_visible_bias += local_energy_partial*wrt_visible_bias_tmp
-            wave_derivative_energy_average_wrt_hidden_bias += local_energy_partial*wrt_hidden_bias_tmp
-            wave_derivative_energy_average_wrt_weights += local_energy_partial*wrt_weights_tmp
+            wave_derivative_energy_average_wrt_visible_bias += \
+                local_energy_partial*wrt_visible_bias_tmp
+            wave_derivative_energy_average_wrt_hidden_bias += \
+                local_energy_partial*wrt_hidden_bias_tmp
+            wave_derivative_energy_average_wrt_weights += \
+                local_energy_partial*wrt_weights_tmp
 
     def __str__(self):
         return "Importance sampling"
@@ -891,7 +892,12 @@ class BruteForce(_RBMVMC):
                 local_energy_partial*wrt_weights_tmp
 
     def monte_carlo(self) -> None:
-        # For numba compatibility:
+        """
+        Perform the VMC using brute-force. The actual work is put in a
+        separate staticmethod to be able to compile the VMC loop with
+        numba.njit. Unpacking of instance attributes is for numba
+        compatibility.
+        """
         n_mc_cycles = self.n_mc_cycles
         n_particles = self.n_particles
         sigma = self.sigma
@@ -934,34 +940,34 @@ class BruteForce(_RBMVMC):
         )
 
         # All this packing and un-packing is here to make numba happy
-        self.wave_derivatives_average[0] = self.wave_derivative_average_wrt_visible_bias
-        self.wave_derivatives_average[1] = self.wave_derivative_average_wrt_hidden_bias
-        self.wave_derivatives_average[2] = self.wave_derivative_average_wrt_weights
-        self.wave_derivatives_energy_average[0] = self.wave_derivative_energy_average_wrt_visible_bias
-        self.wave_derivatives_energy_average[1] = self.wave_derivative_energy_average_wrt_hidden_bias
-        self.wave_derivatives_energy_average[2] = self.wave_derivative_energy_average_wrt_weights
+        # self.wave_derivatives_average[0] = self.wave_derivative_average_wrt_visible_bias
+        # self.wave_derivatives_average[1] = self.wave_derivative_average_wrt_hidden_bias
+        # self.wave_derivatives_average[2] = self.wave_derivative_average_wrt_weights
+        # self.wave_derivatives_energy_average[0] = self.wave_derivative_energy_average_wrt_visible_bias
+        # self.wave_derivatives_energy_average[1] = self.wave_derivative_energy_average_wrt_hidden_bias
+        # self.wave_derivatives_energy_average[2] = self.wave_derivative_energy_average_wrt_weights
 
         self.acceptance_rate = self.acceptance_rate[0]
         self.acceptance_rate /= self.n_mc_cycles*self.n_particles
         self.local_energy_average = self.local_energy_average[0]
         self.local_energy_average /= self.n_mc_cycles
 
-        self.wave_derivatives_energy_average[0] /= self.n_mc_cycles
-        self.wave_derivatives_energy_average[1] /= self.n_mc_cycles
-        self.wave_derivatives_energy_average[2] /= self.n_mc_cycles
-        self.wave_derivatives_average[0] /= self.n_mc_cycles
-        self.wave_derivatives_average[1] /= self.n_mc_cycles
-        self.wave_derivatives_average[2] /= self.n_mc_cycles
+        self.wave_derivative_energy_average_wrt_visible_bias /= self.n_mc_cycles
+        self.wave_derivative_energy_average_wrt_hidden_bias /= self.n_mc_cycles
+        self.wave_derivative_energy_average_wrt_weights /= self.n_mc_cycles
+        self.wave_derivative_average_wrt_visible_bias /= self.n_mc_cycles
+        self.wave_derivative_average_wrt_hidden_bias /= self.n_mc_cycles
+        self.wave_derivative_average_wrt_weights /= self.n_mc_cycles
 
         self.visible_biases_gradient = \
-            2*(self.wave_derivatives_energy_average[0] - self.wave_derivatives_average[0]*self.local_energy_average)
+            2*(self.wave_derivative_energy_average_wrt_visible_bias - self.wave_derivative_average_wrt_visible_bias*self.local_energy_average)
         self.hidden_biases_gradient = \
-            2*(self.wave_derivatives_energy_average[1] - self.wave_derivatives_average[1]*self.local_energy_average)
+            2*(self.wave_derivative_energy_average_wrt_hidden_bias - self.wave_derivative_average_wrt_hidden_bias*self.local_energy_average)
         self.weights_gradient = \
-            2*(self.wave_derivatives_energy_average[2] - self.wave_derivatives_average[2]*self.local_energy_average)
+            2*(self.wave_derivative_energy_average_wrt_weights - self.wave_derivative_average_wrt_weights*self.local_energy_average)
 
     def __str__(self):
-        return "Brute force"
+        return "Brute-force"
 
 def main():
     """
