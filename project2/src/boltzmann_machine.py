@@ -798,7 +798,14 @@ class BruteForce(_RBMVMC):
         )
 
     def reset_state_addition(self) -> None:
-        self.pos_current = self.rng.uniform(low=-0.5, high=0.5, size=(self.n_particles, self.n_dims))*self.brute_force_step_size
+        """
+        Reset state parameters specific to brute-force.
+        """
+        self.pos_current = self.rng.uniform(
+            low = -0.5,
+            high = 0.5,
+            size = (self.n_particles, self.n_dims)
+        )*self.brute_force_step_size
 
     @staticmethod
     @numba.njit
@@ -850,7 +857,8 @@ class BruteForce(_RBMVMC):
                     sigma
                 )
 
-                if pre_drawn_metropolis[cycle, particle] <= (wave_new/wave_current)**2:
+                if pre_drawn_metropolis[cycle, particle] <= \
+                    (wave_new/wave_current)**2:
                     """
                     Metropolis-Hastings.
                     """
@@ -939,14 +947,6 @@ class BruteForce(_RBMVMC):
             constants
         )
 
-        # All this packing and un-packing is here to make numba happy
-        # self.wave_derivatives_average[0] = self.wave_derivative_average_wrt_visible_bias
-        # self.wave_derivatives_average[1] = self.wave_derivative_average_wrt_hidden_bias
-        # self.wave_derivatives_average[2] = self.wave_derivative_average_wrt_weights
-        # self.wave_derivatives_energy_average[0] = self.wave_derivative_energy_average_wrt_visible_bias
-        # self.wave_derivatives_energy_average[1] = self.wave_derivative_energy_average_wrt_hidden_bias
-        # self.wave_derivatives_energy_average[2] = self.wave_derivative_energy_average_wrt_weights
-
         self.acceptance_rate = self.acceptance_rate[0]
         self.acceptance_rate /= self.n_mc_cycles*self.n_particles
         self.local_energy_average = self.local_energy_average[0]
@@ -955,16 +955,20 @@ class BruteForce(_RBMVMC):
         self.wave_derivative_energy_average_wrt_visible_bias /= self.n_mc_cycles
         self.wave_derivative_energy_average_wrt_hidden_bias /= self.n_mc_cycles
         self.wave_derivative_energy_average_wrt_weights /= self.n_mc_cycles
+        
         self.wave_derivative_average_wrt_visible_bias /= self.n_mc_cycles
         self.wave_derivative_average_wrt_hidden_bias /= self.n_mc_cycles
         self.wave_derivative_average_wrt_weights /= self.n_mc_cycles
 
         self.visible_biases_gradient = \
-            2*(self.wave_derivative_energy_average_wrt_visible_bias - self.wave_derivative_average_wrt_visible_bias*self.local_energy_average)
+            2*(self.wave_derivative_energy_average_wrt_visible_bias - \
+            self.wave_derivative_average_wrt_visible_bias*self.local_energy_average)
         self.hidden_biases_gradient = \
-            2*(self.wave_derivative_energy_average_wrt_hidden_bias - self.wave_derivative_average_wrt_hidden_bias*self.local_energy_average)
+            2*(self.wave_derivative_energy_average_wrt_hidden_bias - \
+            self.wave_derivative_average_wrt_hidden_bias*self.local_energy_average)
         self.weights_gradient = \
-            2*(self.wave_derivative_energy_average_wrt_weights - self.wave_derivative_average_wrt_weights*self.local_energy_average)
+            2*(self.wave_derivative_energy_average_wrt_weights - \
+            self.wave_derivative_average_wrt_weights*self.local_energy_average)
 
     def __str__(self):
         return "Brute-force"
@@ -974,8 +978,6 @@ def main():
     The content of this function is for testing purposes. All actual
     runs are administered via separate files.
     """
-    # self.brute_force_step_size = 0.05
-    # omega = 1/4
     omega = 1
     sigma = np.sqrt(1/omega)
     
@@ -1001,7 +1003,6 @@ def main():
     #     n_mc_cycles = int(2**16),
     #     max_iterations = 100,
     #     learning_rate = 0.5,
-    #     # learning_rate = {"factor": 0.1, "init": 0.05},
     #     sigma = sigma,
     #     interaction = True,
     #     omega = omega,
@@ -1014,10 +1015,6 @@ def main():
         loc_scale_weights = (0, 0.5)
     )
     q.solve(verbose=True, save_state=False)
-    # print(q.energies[-1])
-    # import matplotlib.pyplot as plt
-    # plt.plot(range(q.max_iterations), q.energies)
-    # plt.show()
 
 if __name__ == "__main__":
     main()
