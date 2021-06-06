@@ -2,7 +2,7 @@ import time
 import multiprocessing
 import matplotlib.pyplot as plt
 import numpy as np
-from boltzmann_machine import BruteForce, ImportanceSampling
+from boltzmann_machine import BruteForce
 import mpl_rcparams
 
 def parallel(arg_list: list):
@@ -16,7 +16,7 @@ def parallel(arg_list: list):
         A list of arguments to pass to the class constructor.
     """
     timing = time.time()
-    proc, scale, learning_rate, seed = arg_list
+    proc, scale, learning_rate = arg_list
     omega = 1
     sigma = np.sqrt(1/omega)
     
@@ -33,7 +33,6 @@ def parallel(arg_list: list):
         brute_force_step_size = 1,
         parent_data_directory = (__file__.split(".")[0]).split("/")[-1],
         rng_seed = 1337+4
-        # rng_seed = seed
     )
     q.initial_state(
         loc_scale_all = (0, scale)
@@ -55,19 +54,15 @@ def main():
     different learning rates. Include variable learning rate.
     """
     learning_rates = [0.5, {"factor": 0.05, "init": 0.5}, 0.6, {"factor": 0.05, "init": 0.6}]
-    # learning_rates = [0.05, {"factor": 0.5, "init": 0.05}, 0.1, {"factor": 0.5, "init": 0.1}]
     scales = [0.5, 4]
-    # learning_rates = [0.2, {"factor": 0.05, "init": 0.2}, 0.25, {"factor": 0.05, "init": 0.25}]#, 0.3, {"factor": 0.05, "init": 0.3}]
-    # scales = [3, 4]
     n_learning_rates = len(learning_rates)
     n_scales = len(scales)
-    seed = np.random.randint(100000)
     
     args = []
     proc = 0
     for i in range(n_scales):
         for j in range(n_learning_rates):
-            args.append([proc, scales[i], learning_rates[j], seed])
+            args.append([proc, scales[i], learning_rates[j]])
             proc += 1
     
     pool = multiprocessing.Pool()
@@ -75,18 +70,33 @@ def main():
 
     fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(8, 7))
     ax = ax.ravel()
+    
     proc = 0
     for i in range(n_scales):
-        ax[i].hlines(y=0.5, xmin=0, xmax=12, label=r"Exact ($E_L = 0.5$ a.u.)", linestyle="dashed", color="black")
-        # ax[i].set_yscale("log")
+        ax[i].hlines(
+            y = 0.5,
+            xmin = 0,
+            xmax = 12,
+            label = r"Exact ($E_L = 0.5$ a.u.)",
+            linestyle = "dashed",
+            color = "black"
+        )
+        
         for j in range(n_learning_rates):
             label = r"$\eta$ = " + f"{learning_rates[j]}"
             linestyle = "solid"
+            
             if isinstance(learning_rates[j], dict):
                 label = r"$\eta_{init} = $" + f"{learning_rates[j]['init']}"
                 label += r" $f_{\eta} = $" + f"{learning_rates[j]['factor']}"
                 linestyle = "dashed"
-            ax[i].plot(range(res[proc].max_iterations), res[proc].energies, label=label, linestyle=linestyle)
+            
+            ax[i].plot(
+                range(res[proc].max_iterations),
+                res[proc].energies,
+                label = label,
+                linestyle = linestyle
+            )
             proc += 1
 
     ax[0].set_xticklabels("")
