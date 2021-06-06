@@ -75,7 +75,7 @@ def parallel(arg_list: list):
 
 def main():
     """
-    Produce comparison data of brute force and importance sampling.
+    Produce comparison data of brute-force and importance sampling.
     Print the results in a LaTeX formatted table.
     """
     args = [
@@ -108,6 +108,9 @@ def main():
     goal_indices = np.zeros(n_results, dtype=int)
 
     for i in range(n_results):
+        """
+        Find how many GD iterations before result was achieved.
+        """
         goal_indices[i] = np.where(np.abs(results[i].energies - exact) < tol)[0][0]
 
     for i in range(n_results):
