@@ -4,17 +4,17 @@ In this project we will apply a restricted Boltzmann machine (RBM) to a system o
 
 ## Dependencies
 
-- Python
-- Numpy
-- Matplotlib
-- Time
-- Multiprocessing
+- Python [3.8.5]
+- Numpy [1.19.4]
+- Matplotlib [3.3.3]
+- Numba [0.53.1]
+- Pytest [6.2.3]
 
 ## Usage
 
 The RBM is located in the 'boltzmann_machine.py' script. Here is an example of use:
 
-'''
+```
 q = BruteForce(
       n_particles = 1,
       n_dims = 1,
@@ -36,7 +36,16 @@ q = BruteForce(
 
   q.solve(verbose=False)
 
-''́
+```
+Most notable attributes:
+```
+q.energy_mc_iter
+q.acceptance_rates
+q.energies
+q.times
+q.blocking_final
+q.blocking_all
+```
 
 ## Credit
 
