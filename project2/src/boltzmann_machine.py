@@ -1,12 +1,4 @@
-"""
-Code based off of: http://compphysics.github.io/ComputationalPhysics2/doc/LectureNotes/_build/html/boltzmannmachines.html#representing-the-wave-function.
-Cheat sheet:
-x: visible layer
-a: visible bias
-h: hidden layer
-b: hidden bias
-W: interaction weights
-"""
+# Code based off of: http://compphysics.github.io/ComputationalPhysics2/doc/LectureNotes/_build/html/boltzmannmachines.html#representing-the-wave-function.
 from typing import Union, Type
 import sys, time, os
 import numpy as np
@@ -16,7 +8,7 @@ import other_functions as other
 class Blocking:
     @staticmethod
     @numba.njit
-    def blocking(x):
+    def blocking(x: np.ndarray) -> tuple:
         """
         Credit: Marius Jonsson
         Jonsson, M. (2018). Standard error estimation by an automated
@@ -98,6 +90,47 @@ class _RBMVMC(Blocking):
         parent_data_directory: Union[None, str] = None,
         rng_seed: Union[int, None] = None
     ) -> None:
+        """
+        n_particles:
+            The number of particles. Allowed values are 1 and 2.
+
+        n_dims:
+            The number of spatial dimensions. Allowed values are 1, 2,
+            and 3.
+
+        n_hidden:
+            The number of hidden nodes.
+
+        n_mc_cycles:
+            The number of Monte Carlo cycles. Must be a power of 2 to be
+            blocking compatible.
+
+        max_iterations:
+            The number of gradient descent iterations.
+
+        learning_rate_input:
+            The learning rate. Constant learning rate if input is float
+            or int. Variable learning rate if input is a dict on the
+            form {"init": x, "factor":, y} or
+            {"t0": x, "t1": y, "factor": z}.
+
+        sigma:
+            The standard deviation of the Gaussian part of the Gaussian-
+            binary. Usually set to sigma^2 = 1/omega for better
+            resemblance of the ground state wave function.
+
+        interaction:
+            Toggle the interaction term in the local energy on / off.
+
+        omega:
+            The harmonic oscillator potential frequency.
+
+        parent_data_directory:
+            Name of data directory.
+
+        rng_seed:
+            Seed for the random number generator.
+        """
         self.rng_seed = rng_seed
         self.rng = np.random.default_rng(self.rng_seed)
         self.learning_rate = learning_rate_input
@@ -144,6 +177,12 @@ class _RBMVMC(Blocking):
         loc_scale_weights:
             The loc (mean) and scale (std) of the normal distribution
             of the weights.
+
+        Raises
+        ------
+        ValueError:
+            If loc_scale_all is None and any of the other inputs are
+            None.
         """
         self.loc_scale_all = loc_scale_all
         self.loc_scale_hidden_biases = loc_scale_hidden_biases
@@ -206,37 +245,17 @@ class _RBMVMC(Blocking):
         """
         self.acceptance_rate = 0
         self.local_energy_average = 0
-        self.wave_derivatives_average = np.empty(3, dtype=np.ndarray)
-        # self.wave_derivatives_average[0] = np.zeros_like(self.visible_biases)
-        # self.wave_derivatives_average[1] = np.zeros_like(self.hidden_biases)
-        # self.wave_derivatives_average[2] = np.zeros_like(self.weights)
 
+        self.wave_derivatives_average = np.empty(3, dtype=np.ndarray)
         self.wave_derivative_average_wrt_visible_bias = np.zeros_like(self.visible_biases)
         self.wave_derivative_average_wrt_hidden_bias = np.zeros_like(self.hidden_biases)
         self.wave_derivative_average_wrt_weights = np.zeros_like(self.weights)
         
-        # wave_derivatives_average[0] += wave_derivatives[0]  # Wrt. visible bias.
-        # wave_derivatives_average[1] += wave_derivatives[1]  # Wrt. hidden bias.
-        # wave_derivatives_average[2] += wave_derivatives[2]  # Wrt. weights.
-
-        # self.wave_derivatives_average = [
-        #     np.zeros_like(self.visible_biases),
-        #     np.zeros_like(self.hidden_biases),
-        #     np.zeros_like(self.weights)
-        # ]
         self.wave_derivatives_energy_average = np.empty(3, dtype=np.ndarray)
-        # self.wave_derivatives_energy_average[0] = np.zeros_like(self.visible_biases)
-        # self.wave_derivatives_energy_average[1] = np.zeros_like(self.hidden_biases)
-        # self.wave_derivatives_energy_average[2] = np.zeros_like(self.weights)
-
         self.wave_derivative_energy_average_wrt_visible_bias = np.zeros_like(self.visible_biases)
         self.wave_derivative_energy_average_wrt_hidden_bias = np.zeros_like(self.hidden_biases)
         self.wave_derivative_energy_average_wrt_weights = np.zeros_like(self.weights)
-        # self.wave_derivatives_energy_average = [
-        #     np.zeros_like(self.visible_biases),
-        #     np.zeros_like(self.hidden_biases),
-        #     np.zeros_like(self.weights)
-        # ]
+
         self.reset_state_addition()
         self.pos_new = np.zeros_like(self.pos_current)
 
@@ -263,30 +282,39 @@ class _RBMVMC(Blocking):
         self.current_data_directory += f"{self.n_dims}_"
         self.current_data_directory += f"{self.n_mc_cycles}_"
         self.current_data_directory += f"{self.max_iterations}_"
+        
         if isinstance(self.learning_rate_input, dict):
-            self.current_data_directory += f"{tuple(self.learning_rate_input.values())}_".replace(" ", "")
+            self.current_data_directory += \
+                f"{tuple(self.learning_rate_input.values())}_".replace(" ", "")
         else:
             self.current_data_directory += f"{self.learning_rate_input}_"
+        
         self.current_data_directory += f"{self.sigma}_"
         self.current_data_directory += f"{self.interaction}_"
         self.current_data_directory += f"{self.omega}_"
 
         if self.loc_scale_all is not None:
-            self.current_data_directory += f"all{self.loc_scale_all}_".replace(" ", "")
+            self.current_data_directory += \
+                f"all{self.loc_scale_all}_".replace(" ", "")
         if self.loc_scale_visible_biases is not None:
-            self.current_data_directory += f"a{self.loc_scale_visible_biases}_".replace(" ", "")
+            self.current_data_directory += \
+                f"a{self.loc_scale_visible_biases}_".replace(" ", "")
         if self.loc_scale_hidden_biases is not None:
-            self.current_data_directory += f"b{self.loc_scale_hidden_biases}_".replace(" ", "")
+            self.current_data_directory += \
+                f"b{self.loc_scale_hidden_biases}_".replace(" ", "")
         if self.loc_scale_weights is not None:
-            self.current_data_directory += f"w{self.loc_scale_weights}_".replace(" ", "")
+            self.current_data_directory += \
+                f"w{self.loc_scale_weights}_".replace(" ", "")
         if self.rng_seed is not None:
             self.current_data_directory += f"{self.rng_seed}_"
         
         self.current_data_directory += f"{self.postfix}"
         if self.parent_data_directory is not None:
-            self.full_data_path = f"{self.main_data_directory}/{self.parent_data_directory}/{self.current_data_directory}"
+            self.full_data_path = \
+                f"{self.main_data_directory}/{self.parent_data_directory}/{self.current_data_directory}"
         else:
-            self.full_data_path = f"{self.main_data_directory}/{self.current_data_directory}"
+            self.full_data_path = \
+                f"{self.main_data_directory}/{self.current_data_directory}"
 
     def solve(
         self,
@@ -334,6 +362,9 @@ class _RBMVMC(Blocking):
         self.energy_mc_iter = np.zeros((self.max_iterations, self.n_mc_cycles))
 
         for iteration in range(self.max_iterations):
+            """
+            Perform the gradient descent.
+            """
             timing = time.time()
 
             if self.learning_rate_input == "variable":
@@ -407,12 +438,21 @@ class _RBMVMC(Blocking):
             print(f"Average acceptance rate:    {np.mean(self.acceptance_rates):.5f}")
 
         if self.calculate_blocking_all:
+            """
+            No need to calculate blocking for the final iteration if
+            blocking for all iterations is already calculated.
+            """
             self.blocking_final = self.blocking_all[-1]
         else:
+            """
+            Calculate blocking for only the final iteration.
+            """
             _, self.blocking_final, _, _, _ = self.blocking(self.energy_mc_iter[-1, :])
         self.blocking_final = np.array([self.blocking_final])
 
         if save_state: self._save_state()
+
+        return
 
     def _save_state(self) -> None:
         """
@@ -472,7 +512,7 @@ class ImportanceSampling(_RBMVMC):
         n_hidden: int,
         n_mc_cycles: int,
         max_iterations: int,
-        learning_rate: float,
+        learning_rate: Union[float, str, list, dict],
         sigma: float,
         interaction: bool,
         omega: float,
@@ -481,6 +521,17 @@ class ImportanceSampling(_RBMVMC):
         parent_data_directory: Union[None, str] = None,
         rng_seed: Union[None, int] = None
     ) -> None:
+        """
+        Parameters
+        ----------
+        diffusion_coeff:
+            The diffusion coefficient in Greens function.
+
+        time_step:
+            The importance sampling time step size.
+
+        All other parameters are described in the super class.
+        """
 
         self.diffusion_coeff = diffusion_coeff
         self.time_step = time_step
@@ -501,6 +552,9 @@ class ImportanceSampling(_RBMVMC):
         )
 
     def reset_state_addition(self):
+        """
+        Reset state parameters specific to importance sampling.
+        """
         self.pos_current = self.rng.normal(loc=0.0, scale=0.001, size=(self.n_particles, self.n_dims))
         self.pos_current *= np.sqrt(self.time_step)
 
@@ -513,7 +567,12 @@ class ImportanceSampling(_RBMVMC):
         )
 
     def monte_carlo(self):
-        # For numba compatibility:
+        """
+        Perform the VMC using importance sampling. The actual work is
+        put in a separate staticmethod to be able to compile the VMC
+        loop with numba.njit. Unpacking of instance attributes is for
+        numba compatibility.
+        """
         n_mc_cycles = self.n_mc_cycles
         n_particles = self.n_particles
         time_step = self.time_step
@@ -521,10 +580,21 @@ class ImportanceSampling(_RBMVMC):
         sigma = self.sigma
         interaction = self.interaction
         omega = self.omega
-        pre_drawn_pos_new = self.rng.normal(loc=0, scale=1, size=(self.n_particles, self.n_dims, self.n_mc_cycles))*np.sqrt(self.time_step)
-        pre_drawn_metropolis = self.rng.uniform(size=(self.n_mc_cycles, self.n_particles))
+        
+        pre_drawn_pos_new = self.rng.normal(
+            loc = 0,
+            scale = 1,
+            size = (self.n_particles, self.n_dims, self.n_mc_cycles)
+        )*np.sqrt(self.time_step)
+        
+        pre_drawn_metropolis = \
+            self.rng.uniform(size=(self.n_mc_cycles, self.n_particles))
+        
         interaction_int = 1 if interaction else 0   # Datatype fix for constants array
-        constants = np.array([n_mc_cycles, n_particles, time_step, diffusion_coeff, sigma, interaction_int, omega])
+        constants = np.array(
+            [n_mc_cycles, n_particles, time_step, diffusion_coeff, sigma,
+            interaction_int, omega]
+        )
 
         self.monte_carlo_importance_numba(
             self.pos_new,
@@ -549,30 +619,36 @@ class ImportanceSampling(_RBMVMC):
         )
 
         # All this packing and un-packing is here to make numba happy
-        self.wave_derivatives_average[0] = self.wave_derivative_average_wrt_visible_bias
-        self.wave_derivatives_average[1] = self.wave_derivative_average_wrt_hidden_bias
-        self.wave_derivatives_average[2] = self.wave_derivative_average_wrt_weights
-        self.wave_derivatives_energy_average[0] = self.wave_derivative_energy_average_wrt_visible_bias
-        self.wave_derivatives_energy_average[1] = self.wave_derivative_energy_average_wrt_hidden_bias
-        self.wave_derivatives_energy_average[2] = self.wave_derivative_energy_average_wrt_weights
+        # TODO: Dont need the lists.
+        # self.wave_derivatives_average[0] = self.wave_derivative_average_wrt_visible_bias
+        # self.wave_derivatives_average[1] = self.wave_derivative_average_wrt_hidden_bias
+        # self.wave_derivatives_average[2] = self.wave_derivative_average_wrt_weights
+        # self.wave_derivatives_energy_average[0] = self.wave_derivative_energy_average_wrt_visible_bias
+        # self.wave_derivatives_energy_average[1] = self.wave_derivative_energy_average_wrt_hidden_bias
+        # self.wave_derivatives_energy_average[2] = self.wave_derivative_energy_average_wrt_weights
 
         self.acceptance_rate = self.acceptance_rate[0]
         self.acceptance_rate /= self.n_mc_cycles*self.n_particles
         self.local_energy_average = self.local_energy_average[0]
         self.local_energy_average /= self.n_mc_cycles
-        self.wave_derivatives_energy_average[0] /= self.n_mc_cycles
-        self.wave_derivatives_energy_average[1] /= self.n_mc_cycles
-        self.wave_derivatives_energy_average[2] /= self.n_mc_cycles
-        self.wave_derivatives_average[0] /= self.n_mc_cycles
-        self.wave_derivatives_average[1] /= self.n_mc_cycles
-        self.wave_derivatives_average[2] /= self.n_mc_cycles
+        
+        self.wave_derivative_energy_average_wrt_visible_bias /= self.n_mc_cycles
+        self.wave_derivative_energy_average_wrt_hidden_bias /= self.n_mc_cycles
+        self.wave_derivative_energy_average_wrt_weights /= self.n_mc_cycles
+        
+        self.wave_derivative_average_wrt_visible_bias /= self.n_mc_cycles
+        self.wave_derivative_average_wrt_hidden_bias /= self.n_mc_cycles
+        self.wave_derivative_average_wrt_weights /= self.n_mc_cycles
 
         self.visible_biases_gradient = \
-            2*(self.wave_derivatives_energy_average[0] - self.wave_derivatives_average[0]*self.local_energy_average)
+            2*(self.wave_derivative_energy_average_wrt_visible_bias - \
+            self.wave_derivative_average_wrt_visible_bias*self.local_energy_average)
         self.hidden_biases_gradient = \
-            2*(self.wave_derivatives_energy_average[1] - self.wave_derivatives_average[1]*self.local_energy_average)
+            2*(self.wave_derivative_energy_average_wrt_hidden_bias - \
+            self.wave_derivative_average_wrt_hidden_bias*self.local_energy_average)
         self.weights_gradient = \
-            2*(self.wave_derivatives_energy_average[2] - self.wave_derivatives_average[2]*self.local_energy_average)
+            2*(self.wave_derivative_energy_average_wrt_weights - \
+            self.wave_derivative_average_wrt_weights*self.local_energy_average)
     
     @staticmethod
     @numba.njit
@@ -695,7 +771,14 @@ class BruteForce(_RBMVMC):
         parent_data_directory: Union[None, str] = None,
         rng_seed: Union[int, None] = None
     ) -> None:
+        """
+        Parameters
+        ----------
+        brute_force_step_size:
+            The brute-force step size.
 
+        All other parameters are described in the super class.
+        """
         self.brute_force_step_size = brute_force_step_size
         self.prefix = "brute"
         self.postfix = f"{self.brute_force_step_size}"
@@ -887,45 +970,45 @@ def main():
     """
     # self.brute_force_step_size = 0.05
     # omega = 1/4
-    omega = 1/4
+    omega = 1
     sigma = np.sqrt(1/omega)
     
-    # q = ImportanceSampling(
-    #     n_particles = 1,
-    #     n_dims = 1,
+    q = ImportanceSampling(
+        n_particles = 1,
+        n_dims = 1,
+        n_hidden = 2,
+        n_mc_cycles = int(2**12),
+        max_iterations = 50,
+        learning_rate = 0.1,
+        # learning_rate = {"factor": 0.1, "init": 0.05},
+        sigma = sigma,
+        interaction = False,
+        omega = omega,
+        diffusion_coeff = 0.5,
+        time_step = 0.05,
+        # rng_seed = 1337
+    )
+    # q = BruteForce(
+    #     n_particles = 2,
+    #     n_dims = 2,
     #     n_hidden = 2,
-    #     n_mc_cycles = int(2**12),
-    #     max_iterations = 50,
-    #     learning_rate = 0.05,
+    #     n_mc_cycles = int(2**16),
+    #     max_iterations = 100,
+    #     learning_rate = 0.5,
     #     # learning_rate = {"factor": 0.1, "init": 0.05},
     #     sigma = sigma,
     #     interaction = True,
     #     omega = omega,
-    #     diffusion_coeff = 0.5,
-    #     time_step = 0.05,
+    #     brute_force_step_size = 1,
     #     rng_seed = 1337
     # )
-    q = BruteForce(
-        n_particles = 2,
-        n_dims = 2,
-        n_hidden = 2,
-        n_mc_cycles = int(2**16),
-        max_iterations = 100,
-        learning_rate = 0.5,
-        # learning_rate = {"factor": 0.1, "init": 0.05},
-        sigma = sigma,
-        interaction = True,
-        omega = omega,
-        brute_force_step_size = 1,
-        rng_seed = 1337
-    )
     q.initial_state(
         loc_scale_hidden_biases = (0, 0.5),
         loc_scale_visible_biases = (0, 0.5),
         loc_scale_weights = (0, 0.5)
     )
     q.solve(verbose=True, save_state=False)
-    print(q.energies[-1])
+    # print(q.energies[-1])
     # import matplotlib.pyplot as plt
     # plt.plot(range(q.max_iterations), q.energies)
     # plt.show()
